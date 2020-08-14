@@ -1,0 +1,59 @@
+gracefully shutdown spring boot
+
+what? why?
+-할거 마무리 짓고 종료하는것.. shutdown을 하긴해야하는데 현재 돌아가고있는 프로세스가 있으면 마저 끝내고 죽어라!
+-유실을 막기위함!!
+
+
+http://egloos.zum.com/javalove/v/1216827
+
+
+
+public class GracefulShutdown implements TomcatConnectorCustomizer, ApplicationListener<ContextClosedEvent> {
+    private volatile Connector connector;
+    private Logger logger= LoggerFactory.getLogger(GracefulShutdown.class);
+    private IbkController ibkController;
+
+    @Autowired
+    public void setIbkController(IbkController ibkController){this.ibkController=ibkController;}
+
+    @Override
+    public void customize(Connector connector) {
+        this.connector=connector;
+    }
+
+    @Override
+    public void onApplicationEvent(ContextClosedEvent event) {
+        this.connector.pause();
+        IbkConstant.doWorkFlag=false;
+        ibkController.stopProcess();
+
+
+        Executor executor = this.connector.getProtocolHandler().getExecutor();
+        if (executor instanceof ThreadPoolExecutor) {
+            try {
+                ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
+                threadPoolExecutor.shutdown();
+                if (!threadPoolExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    logger.warn("Tomcat thread pool did not shut down gracefully within "
+                            + "10 seconds. Proceeding with forceful shutdown");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+}
+
+public class Config {
+    @Bean
+    public GracefulShutdown gracefulShutdown() {
+        return new GracefulShutdown();
+    }
+    @Bean
+    public ConfigurableServletWebServerFactory webServerFactory(final GracefulShutdown gracefulShutdown) {
+        TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory();
+        factory.addConnectorCustomizers(gracefulShutdown);
+        return factory;
+    }
+}

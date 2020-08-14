@@ -1,0 +1,86 @@
+암호화 통신..
+
+대칭키 - 개인키를 서버와 클라 두 쪽에 놓고 데이터를 주고받을때 동일한 키로 암호화&복호화
+키 훔쳐가면 보안 끝..
+Ex. AES, DES ..
+
+비대칭키 - 대칭키의 보안을 해결하기위해 만들어짐. 공개키와 개인키가 쌍을 이룬다. 공개키는 말 그대로 공개되어 있고 이를 가지고 암호화를 진행한다.. 서버가 공개키와 개인키를 발급했을때, 클라이언트는 공개키를 전달받아 이를 갖고 데이터를 공개키로 암호화해서 서버에 전달하면 서버는 개인키로 전달받은 데이터를 볼수있다
+
+대칭키와 비대칭키를 짬뽕 - 서버는 공개키와 개인키를 생성하고, 클라이언트에게 공개키를 전달해준다. 클라이언트는 데이터 암호화할 대칭키를 공개키에 암호화해서 서버에 전달한다. 서버는 개인키로 복호화하여 대칭키를 알아내고 그 키로 이제 통신을 한다. 그럼 통신간 복호화 비용도 줄이고(대칭키 복호화비용이 비대칭키보다 훨씬 낮음) 보안도 좋음.. 대칭키는 초기화과정이있다면 계속 바꿀수있으니깐..
+
+서버쪽에서는 대칭키 뭐 쓸건지만 알려주면끝
+
+AES는 한번 keygenerator로 생성하면 계속 써야하네.. 다시 keygenerator로 생성한다면 새로운 key가 만들어지므로 복호화가 불가능
+
+RSA로 데이터를 주고받는것은 사실상 많이 어려움.. 왜냐하면 RSA는 메시지의 길이는 암호키 길이와 같아야 하는데, 기본적으로 PKCS1Padding 을 사용하게 되므로, 11바이트의 해더가 붙는다. 
+예를 들어 암호키 사이즈가 512bits 라면, 512/8-11로 53bytes의 메시지 길이 제한이 생긴다. 
+https://yakolla.tistory.com/117
+
+Nopadding일경우에는 암호화하는 데이터의 크기를 정확하게 맞추어줘야한다.. 그러나 PKCS5Padding과 같은경우는 알아서 채워넣어준다.. 쉽게말하면 암호화하는데 필요한 바이트에 패딩값으로 넣어주냐 안넣어주냐의 차이..
+기존에 PKCS5Padding으로 데이터 채워서 암호화했을때 Nopadding으로 복호화하게되면 공백이남는다..그래서 trim()을 해줘야함..
+
+암호화를 하게되었을때 byte배열로(바이너리..)로 생성이되는데, 이를 String으로 가지고다니려면 Base64(64개의 문자를 이용한 변환)를 활용하거나 Hex String으로 문자열로 변환시켜서 전달가능! 굳이 string으로 변환할필요가없다면 바로 byte배열로 보내도됨..
+
+java소스로 private key를 알고있으면 public key 생성할수있따!!!(아래소스참고)
+
+    private byte[] getPublicKeyFromPrivateKey() {
+        byte[] pubKeyByteArr=null;
+        try{
+            KeyFactory fac = KeyFactory.getInstance("RSA");
+            PKCS8EncodedKeySpec PKCS8Spec = new PKCS8EncodedKeySpec(priKeyByteArr);
+            Key myPrivateKey = fac.generatePrivate(PKCS8Spec);
+
+            RSAPrivateCrtKey privk = (RSAPrivateCrtKey)myPrivateKey;
+
+            RSAPublicKeySpec publicKeySpec = new java.security.spec.RSAPublicKeySpec(privk.getModulus(), privk.getPublicExponent());
+
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey myPublicKey = keyFactory.generatePublic(publicKeySpec);
+            pubKeyByteArr=myPublicKey.getEncoded();
+
+//            System.out.println(new String(Base64.encode(pubKeyByteArr)));
+        }catch(Exception e){
+            logger.error(e.getMessage(),e);
+        }
+
+        return pubKeyByteArr;
+    }
+
+
+
+***********************************참고사항****************************************
+Base64
+-바이너리 데이터를 텍스트로 사용하기위함.. 
+-public key는 바이너리 데이터이다.. 그냥 스트링으로 바꾸면 당연문제.. 이를 텍스트로 가지고 다니기 위해서는 텍스트로 변환시켜주는 base64를 사용해야함..
+-64개의 문자로 표현하는것!
+-바이트 9개는 base64로 전환하면 12자가 나온다(9x8=6x12) 64개의 글자는 6bit로 표현하기때문!
+-OKKY - Base64 왜 사용하는 걸까요? - https://okky.kr/article/276104
+
+Base64 인코딩이란? - https://effectivesquid.tistory.com/m/entry/Base64-%EC%9D%B8%EC%BD%94%EB%94%A9%EC%9D%B4%EB%9E%80
+
+JAVA ) AES256 자바 코드. AES256 암호화, 복호화 하기 / java.security.InvalidKeyException: Illegal key size 해결방법 : 네이버 블로그 - https://m.blog.naver.com/PostView.nhn?blogId=deeperain&logNo=221422362091&proxyReferer=https:%2F%2Fwww.google.com%2F
+
+Hex String으로 변환하여 데이터를 주고받기가능.. 
+Hex.encodeHexString(skey.getEncoded());
+출처: https://techlog.gurucat.net/218 [하얀쿠아의 이것저것 만들기 Blog]
+**********************************************************************************
+
+
+1-(3) [암호] RSA 암호화/복호화 소개 및 코드정리(JAVA 코드) - https://smilek1225.tistory.com/m/3
+
+java RSA 암호화(미리저장되어있는 키를 사용) key 설정 - https://blog.cjred.net/m/entry/java-RSA-%EC%95%94%ED%98%B8%ED%99%94%EB%AF%B8%EB%A6%AC%EC%A0%80%EC%9E%A5%EB%90%98%EC%96%B4%EC%9E%88%EB%8A%94-%ED%82%A4%EB%A5%BC-%EC%82%AC%EC%9A%A9-key-%EC%84%A4%EC%A0%95
+
+[암호화] 비대칭암호화 - RSA 파일 암호화 - https://sinpk.tistory.com/m/entry/%EC%95%94%ED%98%B8%ED%99%94-%EB%B9%84%EB%8C%80%EC%B9%AD%EC%95%94%ED%98%B8%ED%99%94-RSA-%ED%8C%8C%EC%9D%BC-%EC%95%94%ED%98%B8%ED%99%94
+
+
+https://m.blog.naver.com/PostView.nhn?blogId=whdals0&logNo=110153910342&proxyReferer=https:%2F%2Fwww.google.com%2F
+
+http://happinessoncode.com/2019/04/06/java-cipher-algorithm-mode-padding/
+
+ssl...
+
+https://zero-gravity.tistory.com/199
+
+https://ehdvudee.tistory.com/6
+
+https://soul0.tistory.com/372

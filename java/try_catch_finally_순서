@@ -1,0 +1,45 @@
+Try, catch, finally 순서..
+
+try {
+
+// 프로그램 실행 로직
+
+
+
+} catch(Exception e) {
+
+// 예외발생 시의 로직
+
+
+
+} finally {
+
+/* 
+
+1. 기본 실행 순서:
+
+try문에서 예외가 발생하지 않았으면 catch문은 생략되어 try문이 실행된 이후에 finally문이 실행되고, 
+
+try문에서 예외가 발생했으면 try문, catch문 순서로 실행된 이후에 finally문이 실행된다.
+
+try문이나 catch문 안에 return문 또는 throw문이 있다면, 그 return문 또는 throw문 전까지 로직이 실행된 후 finally문이 실행되고 나서 그 return문 또는 throw문이 실행된다(결론적으로 finally문은 무조건 실행된다).
+
+
+
+2. catch문과 finally문 안에 throw문이 있는 경우:
+
+try문에서 예외가 발생했으면, finally문 안에 있는 throw문이 먼저 실행되기 때문에 catch문 안에 있는 throw문은 실행되지 않는다.
+
+*/
+
+
+
+
+
+
+
+}
+
+
+
+출처: https://soohyeon317.tistory.com/entry/trycatchfinally-실행-순서 [Dean Story]

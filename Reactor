@@ -1,0 +1,14 @@
+Reactive
+
+publisher <-> subscriber
+      subscription
+
+=> subscriber가 publisher에 구독을 요청하면 subscription을 건내받게되는데, 이를 subscriber가 subscription에 요청을 하면 publisher에게로 전달된 데이터들을 받기시작한다.. 요청의 갯수를 제한할수있고, subscriber가 publisher에 request하는것은 Back-pressure라고한다함..
+
+publisher : subscriber가 publisher에 
+
+subscriber
+
+subscription
+
+https://brunch.co.kr/@springboot/153

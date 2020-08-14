@@ -1,0 +1,24 @@
+소켓 종료시 주의해야할점..
+-서버에 time_wait이 남으면 큰일.. 서버재기동이 안될수있음..
+-socket 종료시 4단계의 핸드쉐이크 과정이있다..
+    1)소켓을 끊은놈이 상대방에게 나 끊는다라는걸 알려줌(fin)
+    2)상대방이 그에 대한 응답을 보냄(ack)
+    3)상대방이 다시 나도 너르 끊는다 라는 메세지를 보냄(fin)      
+                                                        <-------- 여기서 소켓을 첨 끊은놈이 time_wait이 발생.. "4)"행동을 받지못하면 계속 Time_wait.. 
+    4)소켓을 처음에 끊은놈이 그에대한 ack를 보냄(ack)
+
+
+
+
+=> Linger 사용하여 time_wait을 방지할수있음
+-Linger 옵션이란 소켓종료 함수를 호출했을 때 아직 송신되지 않고 송신 버퍼에 남아있는 데이터를 어떻게 처리해야 하는지 OS에 알려주는 옵션이다. 
+
+쉽게 설명 : https://rammuking.tistory.com/m/entry/소켓의-우아한-연결-종료
+
+TCP Time wait 개념 :: Techdata VINA 지식 공유 - https://otsteam.tistory.com/264
+
+TIME_WAIT를 남기지 않는 세션종료 (Graceful Shutdown) - https://kuaaan.tistory.com/m/118
+
+
+
+"좀 더 찾아봐야한다!!!!!!!!!!"

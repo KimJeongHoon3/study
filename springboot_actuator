@@ -1,0 +1,19 @@
+spring boot actuator
+
+-ip:포트번호/actuator 
+    => 어떤 요청할수있는지 목록나옴
+
+-ip:포트번호/actuator/health
+    => disk공간, db, redis 등에 관한 정보들을 보여줌.. 이에더해 healthIndicator를 구현하게되면 custom하여 health에 담을 정보를 만들어줄수있음..
+    => detail하게 보려면 application.properties에 "management.endpoint.health.show-details=always" 를 추가해줘야함..
+
+-security설정도 가능..
+
+
+
+
+https://supawer0728.github.io/2018/05/12/spring-actuator/
+
+
+http://www.libqa.com/wiki/732
+

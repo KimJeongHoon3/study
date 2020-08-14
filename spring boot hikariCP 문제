@@ -1,0 +1,17 @@
+Spring boot hikariCp 에러
+
+Connection.setNetworkTimeout(com.zaxxer.hikari.pool.PoolBase$SynchronousExecutor@793e70ff, 0
+
+위의 트러블 해결책
+https://annajinee.tistory.com/36
+https://godd.tistory.com/59
+
+
+
+db 상태확인 방법 및 내용정리 : https://km0830.tistory.com/5 
+show variables like '%time%'
+
+
+
+
+https://pkgonan.github.io/2018/04/HikariCP-test-while-idle

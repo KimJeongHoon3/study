@@ -1,0 +1,87 @@
+aws vpc(virtual private cloud)
+
+-multi 데이터 센터를 구성하려면 물리적인 서버의 가격부터 시작하여 network latency(늦는거..) 를 보장하기 위한 전용선 확보 등 부담이 많이든다.. 현실적으로 Multi datacenter는 큰 기업이 아니고서야 무리!
+-그러나 AWS의 VPC를 활용하면 멀티 데이터 센터와 같은 구성을 할수있다.
+
+-하나의 Region에 여러 availity zone 이 있다!
+    -Region: AWS의 서비스가 위치한 지리적 장소,, 글로벌 기준으로 지역적 위치를 묶어서 관리하는 단위..
+    -Availty zone: Region내 실제 컴퓨팅 리소스들이 물리적으로 분리되어잇는단위이다.. AZ하나가 데이터 센터와 맵핑된다 생각하면됨! AZ간의 latency는 low latency link로 연결되어있어서 상당히 빠르다고함..
+
+-이를 가지고 어떻게 VPC를 구성?
+    -subnet을 활용한다
+        -subnet : ip block을 구분짓는 subnet의 개념과 동일
+        -하나의 subnet은 반드시 하나의 AZ에 속해야한다..(1:N=AZ:subnet)
+    -elb(elastic load balancer)를 사용
+        -elb는 region내 멀티 AZ로 설정이 가능..
+        -Region을 벗어나는 로드밸런서를 하려면 Route53을 이용한 DNS Load balancing을 이용해야한다함..
+
+-public/private network 존 구분
+    -외부와 직접적인 통신이 필요하지않으면 Private을 사용!(backend, db 등)
+    -VPC를 생성하면 기본적으로 외부통신과 단절된 상태로 생성.. 이때, 외부로 통신하기위해서는 internet gateway라는 기능을 사용해야함..
+    *internet gateway
+        -하나의 VPC는 하나의 internet gateway를 갖게되는데, internet gateway를 통해서 라우터로 전달을 시켜주고, 라우터는 지정된 subnet으로 전달하게된다.. (그리고 ip랑 포트에 맞춰서 데이터는 가겟지..)
+
+
+-VPC의 ACL과 Security group
+    -VPC의 ACL(Access Control List) : 
+        -subnet단위로 적용가능.. 
+        -ACL규칙은 번호가 낮은것부터 우선으로 적용
+        -VPC당 최대 ACL개수는 200개
+        -ACL당 규칙목록은 inbound 20개, outbound 20개
+        -inbound로 들어온 요청은 응답할때 outbound 규칙을 따른다..그래서 응답포트를 열어놓지않으면 응답안함..(세션의 개념이 아닌가..? - aws 설정보니 모든 트래픽으로 아웃바운드를 잡고있긴함..)
+            -stateless.. 상태를 기억하지않는다함.. 그래서 outbound로 나갈때 다시 포트를 지정해줘야한다함..(아직 확실히 이해안감..)
+    -Security group
+        -ACL은 network레벨에서의 방화벽,, security group은 인스턴스 레벨의 방화벽!
+        -ACL보다 우선적용!
+        -Security Group은 Stateful 하기 때문에 허용된 inbound 트래픽에 대한 응답은 outbound 규칙에 관계없이 허용된다. 
+            -state를 기억하기때문에 outbound나 Ephemeral port 고민안해도된다함..(아직확실히 이해안감..)
+
+-flow log : VPC내 트래픽에 대한 로그정보를 수집하는기능.. 설정해서 reject or accept 된 놈이 누군지에 대한 등등의 로그를 남길수있또록하는 기능이 있음..
+
+-NAT Gateway : private subnet에 배포된 instance가 외부와의 통신을 하기위해서 사용하는방법.. 
+    -기존에는 public subnet에 instance를 배포하고 이를 NAT서버로 구축하여 사용하였다하는데, VPC 환경에서 NAT 서버를 손쉽게 배포하고 관리해주는 NAT Gateway를 제공해준다함
+    *네트워크 주소 변환(Network Address Translation, 줄여서 NAT)
+    출처: https://jwprogramming.tistory.com/30 [개발자를 꿈꾸는 프로그래머]
+    
+    -private subnet에서의 외부접근은 차단하면서 private subnet에서 필요시 외부와의 통신을 하기위해서 필요한것이 NAT gateway!
+        -public subnet에 nat gateway를 추가하고 
+        -라우팅 테이블에 NAT gateway를 등록한다..
+        -private subnet에 해당 라우팅 테이블을 연결
+        -private subnet에서 외부와의 접근을 하려면(즉, NAT을 사용하려면) private subnet의 ACL을 설정해주어야한다..
+        -private subnet에서 소스ip는 nat gateway의 private ip를 등록(보안을위해..)하고 외부와의 통신할때 필요한 인바운드 포트를 ACL에 추가해준다..(데이터 나가는건 자유로워도 들어오는게 문제가 되는듯함..)
+            -ephemeral port를 허용.. 32768~60999 (외부 통신시 사용되는 포트.. 물론 source ip는 gateway의 내부 ip사용)
+
+-Bastion host : public subnet에 등록된 instance.. ssh로 접근하여 내부 인스턴스들 자유롭게 접근하기위해서 사용..
+-SSH tunneling : ssh -L 을 사용하라하는데.. 일단 이것은 좀더 확인해봐야함..
+
+
+
+해당 사이트 참고 : https://bluese05.tistory.com/47?category=559701
+
+
+
+
+
+*CIDR(classless inter-domain routing)
+    -IP주소 할당방법..
+    -CIDR 은 여러 IP가 모인 거대한 블락을 여러 네트워크로 나누는 서브네팅(Subnetting)을 통해 작은 블락으로 나눠 IP주소들을 할당합니다. (ex 123.456.789.123/24)
+    -130.211.0.0/16 는 CIDR 표기법으로 작성한 IP 대역입니다. 앞서 CIDR은 IP 주소모음이라고 했습니다. 결론을 먼저 말씀드리면 130.211.0.0/16은 총 65534개의 IP주소의 모음을 표현한 것입니다.
+        그러면 위의 CIDR 표기법을 어떻게 해석해야 될까요?
+        CIDR 표기법은 네트워크 접두어(Network Prefix)와 호스트 구분자(Host Identifier)로 구성되어있습니다. 여기서 '/16'는 위의 '130.211.0.0'을 이진법으로 변환하였을때 어느 정도의 비트를 네트워크 접두어(Network Prefix)에 할당할 것인가를 의미합니다.
+        130.211.0.0을 이진법으로 변경하면 아래와 같습니다.
+        10000010.11010011.00000000.00000000
+        '/16' 이므로 왼쪽부터 16개의 비트(1000010.11010011)는 네트워크 접두어(Network Prefix)가 되고 호스트 구별자(Host Identifier)는 (00000000.00000001 ~ 11111111.11111110)가 됩니다. 호스트 구별자의 가장 첫번째 값(00000000.00000000)과 마지막 값(11111111.11111111)은 제외합니다.
+        따라서 130.211.0.0/16은 65534개의 IP주소 모음으로 해석할 수 있습니다. 즉 '/' 뒤에 오는 숫자의 크기에 따라서 호스트의 갯수가 크고 작아지게 됩니다.
+ 출처 : https://velog.io/@minholee_93/AWS-VPCVirtual-Private-Cloud-%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0-17k41znrtx
+
+
+*서브넷
+    -가용 ip 대역을 정의
+*라우팅 테이블
+    -서브넷과 인터넷 게이트 웨이를 연결시켜준다..
+*인터넷 게이트웨이
+    -외부망과 연결되는 게이트웨이(들어오는데이터..)
+*NAT 게이트웨이
+    -데이터가 외부로 나갈때 거쳐가는 게이트웨이
+*탄력적ip
+    -고정 ip를 발급받아야할때 사용

@@ -1,0 +1,58 @@
+logback _ MDC!!
+
+MDC는 스레드에 안전하다..
+스레드별로 관리를 하고있기때문에 MDC.put을 통해 로그를 분리하게되면 시작된 스레드는 계속 MDC가 적용이 된다..(중간에 clear 하지않는다면..) 
+-logger에서 현재스레드를 map에 담아두고 처리를 하는듯함....굿
+
+
+api에 나온 설명
+The MDC is managed on a per thread basis. A child thread automatically inherits a copy of the mapped diagnostic context of its parent.
+
++스레드에 안전하다고 설명해준부분
+Advanced Use
+Mapped Diagnostic Contexts shine brightest within client server architectures. Typically, multiple clients will be served by multiple threads on the server. 
+Although the methods in the MDC class are static, the diagnostic context is managed on a per thread basis, allowing each server thread to bear a distinct MDC stamp. MDC operations such as put() and get() affect only the MDC of the currentthread, and the children of the current thread.
+The MDC in other threads remain unaffected. Given that MDC information is managed on a per thread basis, each thread will have its own copy of the MDC. 
+Thus, there is no need for the developer to worry about thread-safety or synchronization when programming with the MDC because it handles these issues safely and transparently.
+
+----------- 테스트해볼 logback.xml -------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="true" scan="true" scanPeriod="10 seconds">
+    <!-- :%-3relative -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%thread] %-5level %logger{35} - %msg%n</Pattern>
+        </layout>
+    </appender>
+    <appender name="SIFT" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator>
+            <key>userid</key>
+            <defaultValue>etc</defaultValue>
+        </discriminator>
+        <sift>
+            <appender name="ROLLING_ROOT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>./Log/${userid}/logback.log</file>
+                <encoder>
+                    <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%thread] %-5level %logger{35} %mdc - %msg%n</pattern>
+                </encoder>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <fileNamePattern>./Log/${userid}/logback.%d{yyyy-MM-dd_HH}.%i.log.gz</fileNamePattern>
+                    <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                        <!-- or whenever the file size reaches 100MB -->
+                        <maxFileSize>50MB</maxFileSize>
+                        <!-- kb, mb, gb -->
+                    </timeBasedFileNamingAndTriggeringPolicy>
+                    <maxHistory>30</maxHistory>
+                </rollingPolicy>
+            </appender>
+        </sift>
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="SIFT" />
+    </root>
+</configuration>
+
+------------------------------------------------------

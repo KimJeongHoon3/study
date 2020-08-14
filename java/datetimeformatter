@@ -1,0 +1,10 @@
+DateTimeforamtter
+-simpledateformat은 thread에 안전하지않은데, 이는 안전하고 성능도 훨좋다함..
+-사용방법 : https://www.concretepage.com/java/java-8/convert-between-java-localdatetime-epoch
+
+ex) 
+1) 특정날짜형식의 문자열을 밀리세컨드로표현
+long time=LocalDateTime.parse(date,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).toEpochSecond(ZoneOffset.UTC);
+
+2) 현재시간을 특정 날짜 형식(문자열)으로 표현
+DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());

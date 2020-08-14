@@ -1,0 +1,5 @@
+for, stream foreach, parallelStream foreach 성능차이..
+
+그냥 단순 반복은 for이 가장빠르다함..
+stream foreach는 뭐해도 좀 느리고..
+parallelStream같은경우 처리해야할 무언가가 프로그램상에서 delay를 가져올수있다라면 제일빠름.. 그러나 cpu를 적극 사용하고있는것이기때문에 사용시 다른 병렬처리에 영향을 미칠수있으니 유의해야함..

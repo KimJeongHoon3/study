@@ -1,0 +1,25 @@
+Redis 개념정리
+https://medium.com/@jyejye9201/%EB%A0%88%EB%94%94%EC%8A%A4-redis-%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80-2b7af75fa818
+
+약간은 깊이있는 redis정리(공부하기좋음)
+https://daddyprogrammer.org/post/1601/redis-cluster/
+
+명령어정리
+https://jhhwang4195.tistory.com/187
+
+spring boot 사용방법정리
+https://dydtjr1128.github.io/redis/2019/04/03/Redis.html
+
+spring boot 사용방법정리(좀더 이해하기쉽게 정리)
+https://ssoco.tistory.com/19
+
+
+
+-nosql,, insert,select 겁나빠름.. master-slave 기능이있어서 이중화가능.. 수많은 언어의 api제공.. 성능이 좋다..
+-restTemplate이란놈이 다양한 redis 작업과 예외변환, 직렬화지원..
+-cluster 지원한다함..
+
+
+
+"Redis ERR Client sent Auth, But no password is set" 해결책
+=> https://blusky10.tistory.com/276

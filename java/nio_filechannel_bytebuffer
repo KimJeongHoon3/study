@@ -1,0 +1,9 @@
+fileChannel과 DirectByteBuffer에 관한 글! 
+out of memory상황시 꼭 봐볼것!
+
+http://amgen.medimedia.co.kr/contents/chatbot/01.png
+
+
+FileChannel 관련 설명도 좋음
+
+https://homoefficio.github.io/2019/02/27/Java-NIO-Direct-Buffer를-이용해서-대용량-파일-행-기준으로-쪼개기/

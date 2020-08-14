@@ -1,0 +1,14 @@
+jmx
+
+-원격이든 로컬이든 프로그램을 GUI로 모니터링 할수있게해주는 툴..
+-실행하는 자바에 jmx설정을 가능하도록 해주고, 원격에서 jconsole을 실행하여 remote로 앱 구동되고있는 서버의 ip와 jmx port를 입력하여 모니터링!
+-memory, threads, classes, MBeans 등등이 나옴.. 
+    -MBean은 플랫폼 혹은 사용자에 의해 만들어진 모니터링용 객체로 커스텀가능,, 특히 set함수 get함수를 통해서 runtime중에 데이터를 조회와 "수정"이가능..!!!!!
+
+https://kangwoo.tistory.com/76
+
+
+https://jg-seo.tistory.com/27 
+=> runtime중 Mbean을 통해 데이터 수정가능하도록 만든 샘플소스 있음
+
+=> 나중에 한번 만들어볼것!!
