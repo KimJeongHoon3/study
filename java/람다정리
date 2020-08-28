@@ -1,0 +1,57 @@
+람다
+"([타입] 매개변수,...) -> {실행코드}" 형태
+-타입은 생략가능
+-매개변수가 하나일때는 괄호 빼도됨
+-매개변수가 아예 없을때는 "() ->" 이렇게 괄호 넣어줘야함
+-(x,y) -> {return x+y;}; 는 (x,y) -> x+y; 이렇게 사용가능
+
+람다식은 인터페이스의 익명 구현 객체를 생성한다! 하나의 추상메소드를가진!! 
+    -추상메소드외 정적메소드나 디폴트 메소드는 1개이상 추가가능..(ex. Consumer,Function,Operator종류의 andThen(), compose()..)
+        *인터페이스A.andThen(인터페이스B): 인터페이스A실행후 인터페이스B실행
+        *인터페이스A.compose(인터페이스B): 인터페이스B실행후 인터페이스A실행
+
+        ex) Function<T,R>
+        default <V> Function<T, V> andThen(Function<? super R, ? extends V> after) {
+            Objects.requireNonNull(after);
+            return (T t) -> after.apply(apply(t));
+        }
+
+        default <V> Function<V, R> compose(Function<? super V, ? extends T> before) {
+            Objects.requireNonNull(before);
+            return (V v) -> apply(before.apply(v));
+        }
+
+        
+
+
+    *일반적으로 익명 객체 내부에서는 this가 익명객체의 참조이지만, 람다식의 this는 람다식을 실행하는 객체를 참조한다..!~!@!@#!@#
+
+
+
+표준 API의 함수적 인터페이스
+-Consumer : 매개값 있음.. 리턴값 없음
+-Supplier : 매개값 없음.. 리턴값항상있음
+-Function : 매개값들을 리턴값으로 매핑(타입변환) => 기본적으로 Function으로 다 활용가능할듯..?
+    -Function<T,R> : 객체 T를 객체 R로 맵핑(추상메소드 : R apply(T t))
+    -BiFunction<T,U,R> : 객체 T,U를 객체 R로 맵핑(추상메소드 : R apply(T t,U u))
+    -DoubleFunction<R> : double을 객체 R로 맵핑 (추상메소드 : R apply(double value))
+    -IntToLongFunction : int를 long으로 맵핑(추상메소드 : long apply(int value))
+    -ToLongBiFunction<T,U> : 객체 T,U를 long으로 맵핑(추상메소드 : long applyAsLong(T t, U u))
+-Operator : 매개값을 이용해서 연산수행후 동일한 타입으로 리턴 (Function<T,U,R> 써도 동일하게 구현가능할듯..)
+-Predicate : 매개값을 가지고 boolean을 return
+
+
+
+-메소드 참조
+    -정적 메소드와 인스턴스 메소드 참조
+        -정적메소드일때 : "클래스 :: 메소드"
+        -인스턴스 메소드 일떄 : "참조변수 :: 메소드"
+    -매개변수의 메소드 참조 (ArgumentMethodReferencesExample 참고)
+        -(a,b) -> {a.instanceMethod(b);}  =>  a의 클래스 :: instanceMethod
+    -생성자 참조
+        -(a,b) -> {return new 클래스(a,b);} => 클래스 :: new
+        -넘겨받는 매개변수에 따라 생성자 클래스를 알아서 찾아간다.. 예를들면 위의 예시처럼 매개변수가 2개인경우 생성자의 매개변수가 2개인것을 찾는다.. 만약없으면 컴파일에러!
+
+
+
+    

@@ -1,0 +1,49 @@
+프로메테우스 + 그라파나를 이용한 kafka 모니터링
+
+-프로메테우스 :대상 시스템으로 부터 각종 모니터링 지표를 수집하여 저장하고 검색할 수 있는 시스템이다. 
+    -데이터를 가져오는 타겟을 알아야하는데, 이를 쿠버네티스 or DNS를 통해서 타겟을 가져온다..
+    -타겟에 exporter를 통해 특정 메트릭을 "pulling"방식으로 가져온다. 그리고 이를 저장하게된다.
+        -저장공간을 늘릴수있는 방법은 디스크 용량을 늘리는것뿐이다..
+    -이렇게 저장된 메트릭은 PromQL 쿼리 언어를 이용해서 조회가 가능하고, 이를 외부 API나 프로메테우스 웹콘솔을 이용해서 서빙이 가능하다. 또한 그라파나등과 통합하여 대쉬보드등을 구성하는 것이 가능하다. 
+
+
+기본설명 베리굿 : https://bcho.tistory.com/1372?category=731548 [조대협의 블로그]
+https://arisu1000.tistory.com/27857
+
+
+-데이터구조
+
+    -데이터이름 {라벨} 값
+    Ex) kafka_server_socket_server_metrics_outgoing_byte_total{instance="b-1.test-msk-bgms.pzp78i.c3.kafka.ap-northeast-2.amazonaws.com:11001",job="jmx",listener="CLIENT",networkProcessor="0"}  429258538
+    -데이터이름:Metrics를 구분하기 위한 고유한 이름이다. 프로메테우스에서는 데이터 이름을 입력하는 것만으로도 해당 데이터의 목록을 조회할 수 있다. 
+    -라벨:동일한 데이터에서 종류를 구분하기 위한 식별자이다. 같은 데이터 이름이라도 다른 라벨을 갖는 여러 개의 데이터가 존재할 수 있다. 프로메테우스의 쿼리는 대부분 라벨을 기준으로 수행된다. 쿼리실행시 특정 라벨을 입력하면 해당라벨에 해당하는 데이터만 가져옴..
+    -값: Scalar : 데이터의 값을 나타내는 부분을 스칼라 (Scalar) 라고 한다. 좀 더 정확히 말하자면, 프로메테우스에서는 단순 숫자 값에 대해서는 모두 스칼라 라는 표현을 사용한다. 위에서 언급했던 것처럼, 프로메테우스는 스칼라 값으로서 float64 범위의 실수만을 사용할 수 있다.
+
+-sample, instant vector, range vector 
+    alicek106_http_requests라는 데이터가 있다고 가정해보자. 이 데이터는 method가 get인 경우와 put인 경우 두 가지가 존재한다.
+    1. smaple :  단일 데이터 이름과 라벨, 스칼라 값으로 이루어진 한 개의 데이터를 Sample 이라고 지칭하며, 쿼리 결과값의 가장 기본 단위가 된다. 위와 같이 alicek106_http_request {method="put"} 6 이라는 단일 Metrics 데이터는 하나의 Sample이 된다.
+    2. instant vector : 동일한 시간대에 속하는, 그러나 다른 라벨을 가진 데이터를 쿼리해 가져올 경우 Instant Vector 데이터 타입의 결과를 반환한다. 예를 들어, 위에서 단순히 데이터 이름만으로 검색했을 때 반환된 데이터 또한 Instant Vector 타입이라고 할 수 있다. 단지 가장 최신의 Instant Vector를 보여주고 있는 것 뿐이다.
+    3. range vector : 위에서 사용했던 alice_k106_http_requests[1m] 처럼 특정 시간대의 데이터를 가져올 경우, 쿼리 결과값의 데이터 타입은 Range Vector가 된다. Instant Vector가 특정 시간대의 Sample을 가로로 잘라서 가져온 결과의 데이터 타입이라면, Range Vector는 일정 시간대의 데이터를 가져오도록 쿼리를 사용했을 때의 결과 데이터 타입이다.
+    출처 : https://blog.naver.com/alice_k106/221535163599
+
+
+프로메테우스 쿼리(PromQl) 사용법 : https://devthomas.tistory.com/15
+                            
+
+PromQl (설명 굿 : https://blog.naver.com/alice_k106/221535575875)
+-sum : 합계.. instant vector 값이 오면되고, by를 통해서 특정 라벨끼리 합칠수있다 
+-avg : 평균.. sum과 동일하게사용
+-rate : range vector값이 와야하기때문에 시간을 지정해주어야한다.. Ex) rate(kafka_server_socket_server_metrics_outgoing_byte_total[5m])
+
+
+
+
+새로운 기술 테스트하기좋은 사이트라함.. :https://www.katacoda.com/
+
+
+-그라파나 : 시각화해서 보여주는툴
+
+
+
+
+https://bourbonkk.tistory.com/m/80?category=794341

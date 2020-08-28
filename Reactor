@@ -22,3 +22,12 @@ https://javacan.tistory.com/entry/spring-reactor-intro-list
 
 reactor core 공식 문서 번역
 https://godekdls.github.io/Reactor%20Core/contents/
+
+
+
+kafka reactor
+https://github.com/spring-projects/spring-kafka/blob/master/spring-kafka/src/main/java/org/springframework/kafka/core/reactive/ReactiveKafkaConsumerTemplate.java#L55
+
+
+리액터를 어떻게 써야하는지에 대한 간단명료정리..
+[세미나] 스프링 리액티브 프로그래밍 세미나 참석 후기 - https://monthly-jiandson.tistory.com/m/36
