@@ -162,3 +162,8 @@ Netty 정리
  
 여러 ChannelHandler중 특정 ChannelHandler는 이벤트를 처리할 때 외부 서비스들과 네트워크 통신이 일어날수도 있고 DB에 write하는 작업이 있을수도 있습니다. 비즈니스 로직을 구현하다 보면 흔하게 발생할 수 있는 상황인데 Netty에서는 이런 blocking작업을 어떻게 처리해야할까요? Netty는 이벤트 루프가 blocking되지 않게 blocking구간이 있는 ChannelHandler를 다음과 같이 별도의 EventExecutor에서 실행될 수 있도록 지원합니다.
 https://effectivesquid.tistory.com/entry/Netty의-스레드-모델
+
+주기적이거나 주기적이지않은 작업(ex. heartbeat)는 어떻게?
+-channel의 evnetloop를 이용하는것이 성능상의 이익을 볼수있음..
+-channel.eventLoop().schedule~
+슬라이드로 정리된것(사진으로 잘 정리되어있음) : https://www.slideshare.net/JangHoon1/netty-92835335
