@@ -31,3 +31,10 @@ https://github.com/spring-projects/spring-kafka/blob/master/spring-kafka/src/mai
 
 리액터를 어떻게 써야하는지에 대한 간단명료정리..
 [세미나] 스프링 리액티브 프로그래밍 세미나 참석 후기 - https://monthly-jiandson.tistory.com/m/36
+
+
+***** reactive 에 대한 내 생각 정리.. (계속정리필요..) ****
+이벤트를 받는놈이있고 처리하는 놈이 있는데, 쉽게말해 react는 이걸분리해놓은느낌.. 요청이들어온 event가 있고, 이 event에 따른 실제 수행해야할 뭔가를 하는 스레드가 존재.. 그러나 이 모든것이 IO로하면 의미없고.. NIO(async,non-block)으로 해야지만 의미가있다..
+크게보면..(혹은 좀더 추상적으로보면) 그냥 생산자 소비자방식을 응용한느낌..? 
+
+*************************************************
