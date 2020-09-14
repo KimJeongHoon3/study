@@ -49,6 +49,7 @@ Revert : 커밋을 되돌리는기능으로 reset과 유사하나 차이점은 �
 	-master 브랜치에있는 중간중간에 끼어있는 특정 커밋들을 되돌려야할때 revert를 사용하면된다!! 예를들어 C1<-F1<-C2<-F2<-C3(master)일때, F1과 F2의 커밋들을 되돌려야한다고하였을경우 git revert F2, git revert F1 명령을 때리면 C1<-F1<-C2<-F2<-C3<-RF2<-RF1(master) 이렇게됨!
 
 stash(넣어두다) : 잠깐 치워놨다가 다시쓰는것.. 현재 작업중에 급하게 먼저 고쳐야할 일이 생겼을때 기존의 파일 내용들을 잠시 치워놔야할때 사용! 현재 변경점이 있는 내용은 모두 스테이지상에 사라지게만들고 필요작업하고 커밋한뒤에 잠깐 치워놨던것들을 다시 불러와서 작업할수있음
+    -track이 되고있어서 파일이 변경된게있으면, pull이나 다른 브랜치로의 이동이 안되므로 stash를 사용함으로 잠시 변경이 필요할때 유용하게 사용할수있을듯..! 근데 pull하고 stash에 있는거 가져오다가 충돌일어날수있지않을까..?
 
 체크섬 : 해당 커밋의 고유번호..
 
@@ -130,8 +131,6 @@ https://recoveryman.tistory.com/392
     author jeonghun kim <jeremy@biztalk.co.kr> 1597729794 +0900
     committer jeonghun kim <jeremy@biztalk.co.kr> 1597729794 +0900
 
-    업
-
     -tree의 내용은아래와같다
     $git ls-tree 7a5459
     100644 blob ff5bda20472c44e0b85e570185bc0769a6adec68	cat.txt     //  실제 파일내용
@@ -150,7 +149,7 @@ https://recoveryman.tistory.com/392
 
 
 
-*유용한 명령어
+*원리 이해하기 유용한 명령어
 git show <커밋체크섬>
 git cat-files -t <커밋체크섬> : 커밋체크섬의 타입 
 git cat-files <커밋체크섬 타입> <커밋체크섬> : 해당 커밋체크섬의 내용나옴
@@ -158,3 +157,24 @@ git ls-tree <커밋체크섬> : 트리객체 볼수있음
 git ls-files --stage : 스테이지 내용
 
 *******************************************
+
+
+
+
+git 메뉴얼
+
+-브랜치 이름 및 특징
+    master branch : 출시전 베타버전으로 사용. 직접 커밋하지 않고 반드시 병합을 통해서만 진행
+    feat/기능이름 : 개발진행 필요시 해당 브랜치 네이밍으로 작업할것
+    latest : 실제 출시할 코드 올리는 브랜치. 언제나 운영계에 반영되어있는 소스만 적용
+    bugfix : 버그 수정시 사용하는 브랜치
+
+-협업을 위한 에티켓
+    -master브랜치에 병합하기전 pull request를 반드시 사용(gitlab은 merge request)
+        -병합시 compare 우측에 able to merge인지 conflict인지 항상확인!
+    -본인이 작업한 브랜치에서 병합하고 master에 push하기
+    -reset, rebase 등 강제 push와 연관된 작업에는 반드시 본인의 브랜치에서만 작업할것!
+    
+*참고사항
+    -git commit메세지 어떻게쓰면좋은가?
+    https://blog.ull.im/engineering/2019/03/10/logs-on-git.html

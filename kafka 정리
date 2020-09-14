@@ -137,6 +137,7 @@ https://soon-devblog.tistory.com/19
 -batch listener : Spring Kafka Batch Listener - https://brunch.co.kr/@springboot/322
     =>list 형식으로 가져와서 병렬처리가 가능하기에 이를 활용하면 속도를 극대화할수있음..
     =>이게 겁나빠르긴한데.. seek을 하는부분이 애매.. topic을 하나만 가져온다면 상관없겠지만.. topic 여러개 있을때는 poll로 땡겨받은 모든 topic의 record 대해 seek을 해야함... 개별적으로하기가 난해.. ack도그렇고..
+    
 
 -Spring Kafka Retry - https://gunju-ko.github.io/kafka/spring-kafka/2018/04/16/Spring-Kafka-Retry.html
 
@@ -148,8 +149,44 @@ https://soon-devblog.tistory.com/19
     - onPartitionsRevoked 함수에서 넘겨주는 partitions 파라미터는 rebalancing 하기전 Consumer 클래스가 물고있는 topic의 partition들이다.. 즉, rebalancing할때 revoke되는 파티션만 전달받음
     *추가로 해당 인스턴스를 구현할때 consumer를 같이 넘겨주게되면, Rebalancing 일어나기직전의 offset들을 저장가능..
 
-
 출처 : https://gunju-ko.github.io/kafka/2018/04/02/Kafka-Offsets.html
+
+
+-ErrorHandler : 카프카 consuming중 Runtime 에러났을때 처리해주는 handler 
+    -batch listener일때와 아닐때 handler 설정하는게 다름..
+    -batch listener 사용시 구현되어있는 SeekToCurrentBatchErrorHandler 를 사용하면 어느부분에서 에러났던 배치에서 처음 받아온 값을 다시 가져옴
+        ex) factory.setBatchErrorHandler(new SeekToCurrentBatchErrorHandler());
+        -만약 루프를 돌다가 멈춘곳에서 offset을 커밋하고 seek 하기위해서는 ConsumerAwareBatchErrorHandler 인터페이스를 구현해야함(아래 소스 참고.,,)
+            @Override
+            public void handle(Exception thrownException, ConsumerRecords<?, ?> data, Consumer<?, ?> consumer) {
+                String topicPartition=thrownException.getCause().getLocalizedMessage();
+                data.partitions().forEach(tp ->{ //내가 batch로 가져온것만 matching 되어있음..
+                    logger.info("ConsumerErrorHandler : "+tp.toString());
+                    String key=tp.topic()+"_"+tp.partition();
+                    Long offset=topicPartitionOffsetMap.get(key); //map으로 계속 현재까지 진행한 offset 저장해놔야함..
+                    long initOffset=data.records(tp).get(0).offset();
+
+                    if(offset==null || offset<initOffset){
+                        offset=initOffset;
+                    }
+
+                    consumer.seek(tp,offset);
+
+                    logger.info("offset : "+offset +", initOffset : "+initOffset);
+                    if(!topicPartition.equals(key) && (offset>initOffset)){
+                        offset++;
+                    }
+
+                    if(offset!=0){
+                        Map<TopicPartition, OffsetAndMetadata> commit = Collections.singletonMap(tp,new OffsetAndMetadata(offset));
+                        consumer.commitSync(commit);
+                    }
+
+                });
+            }
+
+-특정 offset의 메세지 하나만 읽어오기 : https://dev.to/adzubla/reading-one-specific-message-from-a-kafka-topic-50b7
+
 
 ****************************************************** 
 

@@ -33,8 +33,8 @@ https://arisu1000.tistory.com/27857
 PromQl (설명 굿 : https://blog.naver.com/alice_k106/221535575875)
 -sum : 합계.. instant vector 값이 오면되고, by를 통해서 특정 라벨끼리 합칠수있다 
 -avg : 평균.. sum과 동일하게사용
--rate : range vector값이 와야하기때문에 시간을 지정해주어야한다.. Ex) rate(kafka_server_socket_server_metrics_outgoing_byte_total[5m])
-
+-rate : range vector값이 와야하기때문에 시간을 지정해주어야한다.. Ex) rate(kafka_server_socket_server_metrics_outgoing_byte_total[5m]) ,, 초당 처음과 마지막의 메트릭 평균
+-irate : 초당 가장 마지막 포인트의 변화량
 
 
 
