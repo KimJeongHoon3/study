@@ -1,0 +1,243 @@
+RxJava 프로그래밍
+
+reactive programming : "함수형 프로그래밍 도구를 활용한 비동기 프로그래밍"
+    -다 좋은게아니라.. 통신시 비동기 로직사용할때 강력함!
+
+
+chapter01 - Reactive 프로그래밍 소개
+-
+
+
+
+chapter02 - Observable 처음 만들기
+
+명령형 프로그래밍 Vs 선언형 프로그래밍 설명 굿! :https://boxfoxs.tistory.com/430
+-명령형은 목적에 이르는 "방법"에 대한 서술
+    -코드 읽기가 쉽지않음 / 디버깅 용이
+    -길을 물어보면 좌회전, 우회전, 100M 직진, 도착 이런느낌 
+    -코드예시
+    ex) function double (arr) {
+            let results = [] 
+            for (let i = 0; i < arr.length; i++){ 
+                results.push(arr[i] * 2) 
+            } return results 
+        }
+
+-선언형은 "목적"을 서술
+    -코드 읽기 쉬움(직관적) / 디버깅 어려울수있음(추상화때문)
+    -길을 물어보면 "광교마을로90 4101-1208" 이렇게 답변..("방법"이 구현된것들이 추상화되어있는것이 전제.. ex) 목적지 이야기하면 길을 안내해주는 GPS)
+    -코드예시
+    function double (arr) { 
+        return arr.map((item) => item * 2) 
+    }
+
+
+
+-Subject : 차가운 Observable을 뜨거운 Observable로 변환
+    -AsynObservable : Observable에서 발행한 마지막 데이터를 얻어올수있는 subject 클래스
+        -Observer(subscriber) 와 Observable(publisher)를 모두 상속&구현 하고있기때문에 발행자가 될수도있으며 구독자가 될수도있다
+        -onCompleteㄱㅣ준으로 마지막에 보낸 데이터를 보여준다! 즉, onComplete 이후에 onNext로 호출했다면 데이터 무시
+    -BehaviorSubject : 가장 최근값 혹은 기본값을 넘겨주는 클래스
+    -PublishSubject : 가장 평범한 subject 클래스.. 구독한시점부터 발행한데이터 가져옴! 가장 최근값 혹은 마지막데이터 이런거없음!
+    -ReplaySubject : 구독자가 새로 생기면 항상 데이터의 처음부터 끝가지 발행하는것 보장.. 중간에 구독해도 처음부터다시.. 콜드시퀀스처럼동작..
+-ConnectableObserver : 차가운 Observable을 뜨거운 Observable로 변환
+    -Subject와의 차이점은 connect를 호출해야 구독자들이 구독을 할수있음.. (구독한 시점이후에 들어온 데이터는 모두 받음.. ㄷㅔ이터받는거는 PublishSubject와 동일)
+    -connect를시작하면 별도 RxComputationThreadPool에서 돌아간다..
+-share : publish + refCount
+    *refCount : 구독자가 얼마나 있는지 추적해서 구독.. 처음 구독이 이뤄지면 그때부터 connect가됨.. 추가로 구독이이루어지면 hot시퀀스 이니깐 같이 받기는하는데, 구독자가 구독모두하고 해제된다면, 다시 처음부터 받게됨(콜드 시퀀스와같이..)
+
+
+chapter03 리액티브 연산자 입문
+-연산자 분류
+    -생성 연산자 : just, range, create, fromArray ...
+    -변환 연산자 : map, flatmap..
+    -필터연산자 : 원하는 데이터만 걸러냄.. filter(), first(), take()..
+    -합성(conbining) 연산자 : 여러 Observable을 조합하는 역할
+    -오류처리(Error Handling) 연산자 : retry, onErrorRetrun, onErrorResumeNext..
+    -유틸리티(Utility) 연산자 : 비동기 지원
+    -조건(Condition) 연산자 : Observable의 흐름제어
+    -수학과 집합형(Mathematilcal and Aggregate) 연산자
+    -배압(back pressure) 연산자
+
+-map : 1:1로 변환.. 비동기 지원x 
+    -Function<T,R> : T 타입 받아서 R 타입으로 반환
+-flatmap : 1:1 or 1:N 으로 변환.. 
+    -Function<T,ObservableSource<R>> : T 타입 받아서 ObservableSource<R> 타입으로 반환
+    *ObservableSource : Observable, AsynSubject, BehaviorSubject ..등등 공급자(publisher)들의 인터페이스
+    -Function<T,ObservableSource<R>>, Bifunction<T,U,R>> : T 타입 받아서 ObservableSource<R> 타입으로 반환ㅎㅏ고 전달하는 T와 해당 결과값(U)을 BiFunction으로 받아서 새로운 R타입으로 반환 => 개꿀
+-filter : 걸러내는것
+    -Predicate
+-reduce : 발행한 데이터를 모두 사용하여 어떤 최종데이터를 합성할때 활용 ,, (감소해서 최종적으로 합쳐지니깐..reduce..?)
+    -BiFunction<T,T,T> : 첫번째 파라미터(처음데이터)와 두번째 파라미터(그다음데이터)를 원하는대로 합치고 return 
+
+*Pair나 Tuple같은 자료구조를 사용한다함.. 사용자정의클래스 만들지말고 이를 가지고 활용할것! 함수형 프로그래밍할때는!
+
+
+Chapter04 - 리액티브 연산자 활용
+-생성 연산자
+	-interval : 일정시간 간격으로 데이터 흐름생성
+		-별도 스레드(스케줄러)에서 실행
+		-폴링용도로 많이쓰임
+	-timer : interval과 매우 유사하나 “한번”만실행..
+	-range : n부터 m까지의 숫자발행
+		-반복문을 대체 가능
+		-현재스레드에서만실행
+	-intervalRange : interval(일정시간으로) + range(n부터 m까지숫자발행)
+		-m되면 종료(onComplete)
+		-별도 스레드(스케줄러)에서 실행
+		-interval, map, take로 intervalRange 구현가능
+		ex) Observable.interval(100L, TimeUnit.MILLISECONDS)
+			.map(val -> val+1)
+			.take(5)
+			.subscribe(System.out::println);
+			1~5찍힘..(0부터시작함)	
+		intervalRange로 1,5한거와같음
+	-defer : 데이터의 흐름을 구독하기전까지 미룰수있다  (=> 확실히 이해안감..)
+		-데이터 흐름의 생성을 지연하는효과를 보여줌..
+		-내부적으로 구독자가 subscribe() 호출하면 그때 call해줌..
+	-repeat : 반복실행하도록해줌
+		-timer + repeat으로 heartbeat사용(interval로도 구현가능)
+			-timer가 지나면 계속 별도의 스레드를 생성해서 호출해준다
+
+-변환 연산자
+	-concatMap : flatMap과 거의 동일하나, 인터리빙을 허용하지않음
+		*인터리빙: 끼어들기
+		-작업을 순차적으로 처리.. 그래서 flatmap보다 처리시간 더 걸림
+		-인터리빙이 발생할수있는 상황에서 동작의 순서를 보장해준다
+	-switchMap : 발행중 뭔가 끼어드는게 있으면 끼어드는게 모든걸 덮어버림..(다른 스레드간에 경합이 일어나면 최근에 들어온놈이 다 덮음..)
+	-groupBy : 특정 key로 구분하여 GroupedObservable 객체를 반환해주는데, 이는 subscribe를 두번해야 값을 가져올수있음.. 처음 subscribe에서 반환되는값은 group(key)!
+	
+	*map : 데이터 형태를 변환
+	**flatMap : 여러 데이터들로 변환(Observable)
+	***groupBy : key를 기준으로 Observable 여러개 반환(GroupedObservable)
+ 	
+	-scan : reduce와 거의 동일,,
+		-return type이 Observable
+		-reduce는 값이 하나만 잇는 반면 위의 Observable을 구독하면 계산한 과정들 모두 나옴
+
+-결합연산자
+	-zip : 두개 이상의 Observable을 합쳐줌,, 발행해야할 Observable이 모두 발행할때까지 기다림
+		-Observable<? Extends T1>, Observable<? Extends T2>, BiFunction<? Super T1, ? Super T2, ? Extends R> zipper => T1 타입의 Observable과 T2타입의 Observable 를 zipper에 정의된 대로 합친다..(Observable R로 반환)
+		-숫자합칠때 사용많음,, interval과 결합하면 하나씩보여줌..
+		-zipWih() : zip과 역할은 동일하나 Observable에 붙여쓸수있음
+	-combineLatest : zip과 매우유사하나, 합치려는 발행자를 처음빼고는 기다리지않고 최신데이터로 갱신해서 바로바로 보내준다!(zip은 합치려는 Observable이 1:1로 매칭될때까지 기다림..)
+		-combine/ReactiveSum 으로 연습해보기
+	-merge : 걍 발행하는 Observable들에서 들어오는 족족 발행
+	-concat : Observable을 이어붙여줌!
+		-두개의 Observable을 concat한다면, 처음의 Observable에 complete이 되어야 두번째 Observable 실행.. 
+		-처음께 onComplete 되지않으면 다음꺼는 계0속 기다림.. => 누수..
+
+-조건연산자
+	-amb : 여러 Observable중에 젤 먼저 발행된것만 가져옴
+	-takeUntil : 특정 Observable이 데이터를 발행하고있을때, 다른 Observable의 조건에 따라 발행되고있던 Observable은 중지됨
+	-skipUntil : takeUntil과 정반대.. Observable의 조건에ㄷ맞으면 특정 Observable 발행된거 구독시작..
+	-all : 주어진 조건에 100% 맞으면 true 반환, 아니면 false 반환
+
+-수학 및 기타연산자
+	-수학연산자
+	Integer[] data = {1, 2, 3, 4};
+
+	//1. count 
+	Single<Long> source = Observable.fromArray(data)
+			.count();
+	source.subscribe(count -> Log.i("count is " + count));
+
+	//2. max() & min() 
+	Flowable.fromArray(data)
+		.to(MathFlowable::max)
+		.subscribe(max -> Log.i("max is " + max));
+
+	Flowable.fromArray(data)
+		.to(MathFlowable::min)
+		.subscribe(min -> Log.i("min is " + min));
+
+	//3. sum() & average 
+	Flowable<Integer> flowable = Flowable.fromArray(data)
+			.to(MathFlowable::sumInt);
+	flowable.subscribe(sum -> Log.i("sum is " + sum));
+
+	Flowable<Double> flowable2 = Observable.fromArray(data) 
+			.toFlowable(BackpressureStrategy.BUFFER) //배압 default값
+			.to(MathFlowable::averageDouble);
+	flowable2.subscribe(avg -> Log.i("average is " + avg));	
+
+	-delay : 지정된 일정시간 지나서 구독시작(데이터 발행을 지연)
+		-스케줄러가 실행(별도스레드)
+	-timeInterval : 데이터 발행간의 시간차이를 나타냄..(어디에쓸까..)
+
+
+chapter05 - 스케줄러
+-RxJava 코드를 어느 스레드에서 실행할지 지정할수있음
+-뉴 스레드 스케줄러
+	-Schedulers.newThread()
+	-되도록이면 상황에 맞게 계산스케줄러나 IO스케줄러 사용권장
+-계산 스케줄러 : 계산용 스케줄러.. 
+	-Schedulers.computation()
+	-입출력(I/O)작업을 하지않는 스케줄러..
+	-내부적으로 스레드풀을 생성하며 스레드개수는 프로세서 개수와 동일
+-IO 스케줄러
+	-Schedulers.io()
+	-각종 입출력 작업을 실행하기 위한 스케줄러
+	-계산 스케줄러와 스레드갯수가 다름(필요할때마다 스레드를 계속 생성..)
+	-네트워크상의 요청, 파일입출력, DB쿼리..
+-트렘펄린 스케줄러
+	-새로운 스레드 생성하지않고 현재 스레드에 무한한 크기의 대기행렬을 생성하는 스케줄러
+-싱글스레드 스케줄러
+	-그냥 새로운 단일스레드하나생성.. 이는 하나생성하면 모두가 같이씀.. 구독하는 Observable이 달라도.. 그냥 마련해놓은 하나만쓴다!
+-Executor 변환 스케줄러
+	-Schedulers.from(Executors.newFixedThreadPool(4)); //스레드 4개의 스레드풀
+	-Executor와 스케줄러 동작방식이다르다함.. 그래서 비추한다함..
+
+-subscirbeOn
+	-Observable에서 구독자가 subscribe를 호출했을때 데이터 흐름을 발행하는 스레드를 지정(구독시(subscribe on) 발행시작하니깐.. 무튼 발행할때 사용되는 스레드인듯..?)
+	-처음 지정한 스레드를 고정시키기때문에 subscribeOn을 계속 호출해도 이후꺼는 무시
+-observeOn
+	-처리된 결과를 구독자에게 전달하는 스레드 지정(처리된 결과를 observer에게 전달할때(observe on) 사용되는 스레드)
+	-observeOn은 여러번 호출할수있고, 호출되면 그 다음부터 동작하는 스레드를 바꿀수있음..
+
+
+Chapter07 - 디버깅과 예외처리
+	-디버깅
+		-doOnNext()
+		-doOnComplete()
+		-doOnError()
+		-doOnEach : 한번에 위의 세가지를 처리할수있음.. notification이라는 파라미터로 구성가능
+		-doOnTerminate : Observable이 끝나는조건인 onError와 onComplete 이벤트 발생 직전에 호출
+		-doOnLifecyle : 구독과 해지시 
+		-Objservable의 이벤트 로깅함수의 관계
+			-onNext 이벤트 : doOnEach
+			-onError 이벤트 : doOnEach / doOnTerminate  / doFinally
+			-onComplete 이벤트 : doOnEach / doOnTerminate / doFinally
+			-onSubscribe 이벤트 : doOnLifecyle  
+			-onDispose 이벤트 : doOnLifecyle  / doFinally. -> dispose라는 호출로 종료시 발생,, 정상종료 or 에러발생에서 호출안함.. 오직 dispose에서만!
+	-예외처리
+		-onErrorReturn : 에러발생시 정의한 값으로 교체
+			-onError를 정의하면 에러발생시 구독은 종료가되는데, onErrorReturn은 정의한 값으로 
+		-onErrorResumeNext : 에러발생시 특정작업을진행하고 특정값을 return 해주는 Observable<T>를 파라미터로 넘겨줌..
+		-retry : onError 발생시 다시 처음부터 구독…
+		-retryUntil : 특정 조건이 충족될때까지 재시도
+	-흐름제어
+		-sample : 구독시 sample 실행되는 시점에서 최근에 발행된 한놈만 가져옴..(엄밀하게는 마지막 한놈만 발행한다는게 맞겟다..) sample이 끝나기 전에 발행이완료되어 종료되면 flag값에따라 마지막 데이터 구독할것인지 말것인지를 결정할수있음
+		-buffer : 지정한 갯수만큼 모아서 발행
+		-throttle : 
+			-throttleFirst : 특정시간동안 들어온 데이터들은 다 막음.. 긍까 데이터 발행하고 3초동안 막고(그 사이에 들어온것들은 당연 아예 무시..) 그리고 다시 데이터 발행하고..
+			-throttleLast : sample과 동일한효과
+		-window : 지정한 갯수에 맞춰서 Observable을 새로 만들어줌.. groupby와 비슷한 느낌.. 그러나 groupBy는 Observable<GroupedObservable<K,Y>>를 리턴하고 병렬적으로 Observable을 만들지만, window는 Observable<Observable<T>> 를 리턴하고 순차적으로 Observable을 만든다…
+			-Observable을 만들고 count로 지정한갯수까지 채우고 다음 Observable 만들고..
+		-debounce : 빠르게 들어오는 연속이벤트를 처리하는 흐름제어 함수..
+			-ex) 버튼을 빠르게 누를때 마지막에 누른 이벤트만 처리해야할때 적용..
+			-업스트림에서 발행시 debounce에 지정한 시간 동안 다른 발행이없으면 다운스트림에서 발행
+
+	-Flowable 클래스
+		-배압처리를 위한 클래스
+		-Observable 클래스의 성능 향상시키기위해서 나옴
+		-사용방법도 Observable과 매우 유사함
+		-p314의 Observable과 Flowable선택기준 참고
+		-우선적으로 Observable에서 흐름제어가 가능한지 먼저 확인하고 접근하라권함..
+
+******* 업스트림 발행 -> 함수 -> 다운스트림 발행 -> 구독 ******* 
+
+
+*************자료구조를 사용해서 특정데이터를 만들어서 공급해주거나, 비동기 클래스를 만들어서 실행시키고 return값을 넘겨주는 작업도 가능하다ㅓ.. 이를 잘 활용해볼것*************
+
+*****

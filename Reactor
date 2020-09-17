@@ -42,4 +42,18 @@ https://github.com/spring-projects/spring-kafka/blob/master/spring-kafka/src/mai
 심플하게 설명 굿 : https://m.blog.naver.com/jdub7138/220983291803
 
 
+Reactor vs rxjava
+https://hyoj.github.io/blog/java/spring/rxjava-vs-reactor/#_1-reactive-landscape-%EC%97%90-%EC%96%B8%EA%B8%89%EB%90%9C-rxjava-reactor
 
+
+
+
+
+
+
+------------
+
+kafka reactor
+
+onPublish(스케줄러)로 호출하면 좀더 빠를듯..?
+flatmap써서 작업하면 return으로 flux.just()ㅎㅐ주면될듯..?
