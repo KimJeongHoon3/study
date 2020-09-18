@@ -48,6 +48,57 @@ https://hyoj.github.io/blog/java/spring/rxjava-vs-reactor/#_1-reactive-landscape
 
 
 
+-----------
+
+
+Spring reactor
+
+-BaseSubscriber : 해당 클래스를 오버라이딩하여 에러이벤트발생시, cancel이벤트발생시, complete이벤트발생시, subscribe이벤트발생시, next이벤트발생시 등 특정 이벤트 발생직전에 행동을 정의할수있다!! 
+	ex) hookOnNext 함수에서 request 조절가능.. 
+
+4.4. Programmatically creating a sequence
+-Flux나 Mono를 직접 생성할수있는데, 이렇게 만들어진것을 sink라고함
+	-generate(Supplier<S>, BiFunction, Consumer<S>) : 동기!!! Supplier에는 초기값(당연 객체도 상관없음),  BiFunction에는 작업하고(next,complete 등등 사용) 다음 값 return, Consumer는 complete 이후 최종 데이터 넘겨받음
+	-create 
+
+-handle : map + filter
+
+-스케줄러
+	-Schedulers.boundedElastic() 이 IO처리하는데는 이상적. (Schedulers.elastic()이는 너무 많은 스레드를사용할수있게되서 비추)
+	-스케줄러 생성하는 함수(스레드 변경)
+		-publishOn : RxJava의 ObserverOn과 동일.. 생성하면 계속 스레드 생성되어서 전환됨.,, 그렇기에 위치중요 (뒤의 함수에 새로운 스레드로 발행하여 진행)
+		-subsribeOn : RxJava의 subsribeOn과 동일.. 구독할때 실행되는 스레드.. 위치 중요 x,, 한번만사용 
+
+-에러처리
+	-리엑티브 시퀀스에서 발생하는 모든 에러는 종료 이벤트임.. 에러처리 연산자를 잘 구현했어도 기존시퀀스 유지불가! OnError신호는 새로운 시퀀스를 시작하는것임! 즉, 종료된 시퀀스의 업스트림을 이어서 새로운 시퀀스를 주는것이다!
+
+	-아래 예제 볼것..
+		Flux.just("timeout1", "unknown", "key2")
+		    .flatMap(k -> callExternalService(k)
+        			.onErrorResume(error -> { // (1)
+		            if (error instanceof TimeoutException) // (2)
+		                return getFromCache(k);
+		            else if (error instanceof UnknownKeyException)  // (3)
+		                return registerNewEntry(k, "DEFAULT");
+		            else
+		                return Flux.error(error); // (4)
+		        })
+		    );
+	-위 예제 안먹음.. 다시 자세히볼것..
+
+-finally
+	-사용방법은 아래와같음
+	Flux.using(
+	        () -> disposableInstance, // (1)
+	        disposable -> Flux.just(disposable.toString()), // (2)
+	        Disposable::dispose // (3)
+	);
+
+-retry
+	-재시도.. 단, 이는 업스트림 Flux를 재구독한다는 점을 명심하라. 이는 완전히 다른 시퀀스이며, 기존 시퀀스는 종료시킨다.
+
+
+
 
 
 
@@ -57,3 +108,9 @@ kafka reactor
 
 onPublish(스케줄러)로 호출하면 좀더 빠를듯..?
 flatmap써서 작업하면 return으로 flux.just()ㅎㅐ주면될듯..?
+rxJavaㄱㅣ준 share()와 같은거로 사용가능한지 생각해볼것
+자료구조를 사용해서 특정데이터를 만들어서 공급해주거나, 비동기 클래스를 만들어서 실행시키고 return값을 넘겨주는 작업도 가능하다ㅓ.. 이를 잘 활용해볼것
+스케줄러는 Schedulers.boundedElastic() ㅇㅣ거 사용하면될듯(IO에 사용되는부분!)
+
+
+

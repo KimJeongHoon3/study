@@ -347,7 +347,8 @@ kafka/bin/kafka-server-stop.sh /home/dennis/kafka/config/server-3.properties &
 
 kafka manager 설치
 https://m.blog.naver.com/PostView.nhn?blogId=occidere&logNo=221395731049&proxyReferer=https:%2F%2Fwww.google.com%2F
-
+이게 겁나 잘나와있음 : https://program-error-review.tistory.com/27
+    -손쉽게 java version도 바꿀수있도록..
 kafka manager / jmx 연동
 https://bigdatalab.tistory.com/26
 
