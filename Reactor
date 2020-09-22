@@ -85,6 +85,18 @@ Spring reactor
 		        })
 		    );
 	-위 예제 안먹음.. 다시 자세히볼것..
+*************
+아래로 예외처리할경우 문제있는것만 onErrorContinue로 빠지고 나머지는 정상 구독
+
+.onErrorContinue((throwable,record)->{
+                    logger.info("error : "+throwable.getMessage()+", record : "+record);
+                    //throw throwable;  //만약 모든 프로세스종료를 원한다면 이거주석해제
+                });
+
+
+*************
+
+
 
 -finally
 	-사용방법은 아래와같음
@@ -100,6 +112,25 @@ Spring reactor
 
 
 
+-Flux의 flatMap으로 스케줄러 사용하여 병렬처리하는방법 (야매같음..)
+Flux.fromIterable(list).log()
+               .flatMap(s ->
+                   Flux.just(s).subscribeOn(Schedulers.boundedElastic()).doOnNext(ss-> {
+                       try {
+                           Thread.sleep(100);
+                           if(ss.equals("499")){
+                               throw new RuntimeException("abc");
+                           }
+                       } catch (InterruptedException e) {
+                           e.printStackTrace();
+                       }
+                   }).onErrorContinue((errr,obj) -> logger.info("errrr : "+errr.getMessage()))  //여기서 예외처리 해주면될듯.. 이것은 에러났다고 하위 스트림에 전달안함.. 본인이 끝내니깐..그래서 밑의 onErrorContinue에 안찍힘
+               ).onErrorContinue((er,obj) -> logger.info("er : "+er.getMessage()))
+               .subscribe(
+                   str -> logger.info("str : "+str)
+               );
+
+
 
 
 ------------
@@ -112,5 +143,17 @@ rxJavaㄱㅣ준 share()와 같은거로 사용가능한지 생각해볼것
 자료구조를 사용해서 특정데이터를 만들어서 공급해주거나, 비동기 클래스를 만들어서 실행시키고 return값을 넘겨주는 작업도 가능하다ㅓ.. 이를 잘 활용해볼것
 스케줄러는 Schedulers.boundedElastic() ㅇㅣ거 사용하면될듯(IO에 사용되는부분!)
 
+예외처리는 이걸로!
+.onErrorContinue((throwable,record)->{
+                    logger.info("error : "+throwable.getMessage()+", record : "+record);
+                });
 
 
+
+
+
+
+11receiverOptions = receiverOptions
+            .addAssignListener(partitions -> partitions.forEach(p -> p.seekToEnd()))   //파티션 리밸런싱될때 해야할작업들..
+            .subscription(Collections.singleton(topic));
+Receiver.create(receiverOptions).receive().subscribe();
