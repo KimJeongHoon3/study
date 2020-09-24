@@ -24,6 +24,10 @@ reactor core 공식 문서 번역
 https://godekdls.github.io/Reactor%20Core/contents/
 
 
+Web on Reactive Stack 한글번역
+https://parkcheolu.tistory.com/134
+
+webflux의 장점에대한 심플한 설명 : https://alwayspr.tistory.com/44
 
 kafka reactor
 https://github.com/spring-projects/spring-kafka/blob/master/spring-kafka/src/main/java/org/springframework/kafka/core/reactive/ReactiveKafkaConsumerTemplate.java#L55

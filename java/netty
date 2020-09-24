@@ -167,3 +167,13 @@ https://effectivesquid.tistory.com/entry/Netty의-스레드-모델
 -channel의 evnetloop를 이용하는것이 성능상의 이익을 볼수있음..
 -channel.eventLoop().schedule~
 슬라이드로 정리된것(사진으로 잘 정리되어있음) : https://www.slideshare.net/JangHoon1/netty-92835335
+
+
+
+Http로는 어떻게 동작..?
+    -timeout 어떻게 확인?
+        => userEventTriggered에서 일정시간동안 read (또는 write시) 없을때 event호출하는 방식으로 진행!(핸들러에서 IdleStateHandler 추가해줌)
+        => webclient에서는 만들때 ReadTimeoutHandler(또는 WriteTimeoutHandler)를 넘겨주어서 해결(webClient는 netty를 사용하여 http통신함)
+소켓통신시 메세지 전송후 응답받았는지 체크하는 방법?
+    -스케줄러를 실행시키고 future를 받아서 일정시간내에 응답받으면 future를 close한다..(!!!!!!!!!!!!!!!!스케줄러 많이 생성해도 문제없는지 확인이필요하다..!!!!!!!!!!!!!)
+        ScheduledFuture<?> futrue=ch.eventLoop().schedule(Runnable, 60, TimeUnit.Seconds))  

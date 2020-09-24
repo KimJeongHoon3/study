@@ -1,3 +1,9 @@
 webclient
 
 정리굿 : https://medium.com/@odysseymoon/spring-webclient-%EC%82%AC%EC%9A%A9%EB%B2%95-5f92d295edc0
+
+-netty를 사용했음..(비동기 라이브러리..)
+    => 이벤트 루프구조를 사용하므로 스레드에대한 최적의 활용이 진행..
+
+
+??? 어떻게 http를 비동기로 가능할까..? Netty를 사용한다하는데, Http는 요청을 하고 응답을 받아야하는데,, 어떻게..?
