@@ -11,3 +11,14 @@ https://homoefficio.github.io/2019/02/27/Java-NIO-Direct-Buffer를-이용해서-
 
 FILE NIO가 생각보다 NIO하지않다는 글.. (=> 읽다보면 대안으로 async로 파일읽는방법도나옴)
 https://homoefficio.github.io/2016/08/06/Java-NIO%EB%8A%94-%EC%83%9D%EA%B0%81%EB%A7%8C%ED%81%BC-non-blocking-%ED%95%98%EC%A7%80-%EC%95%8A%EB%8B%A4/
+
+
+
+IO vs NIO 성능비교 : https://sshkim.tistory.com/99
+
+파일간의 복사를 통해서 성능비교를 위에서 수행함..
+transferTo가 제로카피를 사용하여 생각보다 많이 빠를줄알았는데, 위의 예제에서는 그렇게 나오지않음.. 그냥 directBuffer를 써서 파일복사하는게 제일빨랐음..
+근데 만약 클라이언트로 데이터를 이동해야하는거였다면, transferTo가 kernel 영역에서 read한다음에 소켓도 거치지않고 NIC(네트워크 물리적 장치에서 사용하는버퍼) 로 direct로 꽂아주기때문에 좀더빠르지않을까싶음..
+
+
+transferTo에 대한 영어설명 : https://www.developer.com/java/article.php/10922_3837206_2/An-Introduction-to-Java-NIO-and-NIO2.htm

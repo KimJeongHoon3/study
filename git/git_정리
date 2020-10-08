@@ -9,6 +9,8 @@
 https://stackoverflow.com/questions/7438313/pushing-to-git-returning-error-code-403-fatal-http-request-failed
 Ssh://git@github~
 
+노트북이 원격저장소에 등록안되어있을때 나는 에러처리 방법 : https://zeddios.tistory.com/120
+
 
 HEAD : 현재 가리키고 잇는 커밋을 보여줌.. 
 	ex) ORIGIN / HEAD 라고 되어있다면 원격저장소(ORIGIN이라 이름을 칭한것인데 바꿀수있음..)에서 가리키고있는곳이다

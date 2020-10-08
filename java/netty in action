@@ -1,0 +1,205 @@
+netty in action
+01 네티: 비동기식 이벤트 기반 네트워킹 프레임워크
+-사용하기 쉬운 API를 보여주고 자바의 고급 API로 내부를 무장
+    -selector(NIO) 기가막히게 만듬.. => 추상화 매우 굿 => 객체지향설계 매우매우 굿
+-netty 핵심컴포넌트
+    -channel 
+    -콜백 : 
+        -콜백이 트리거 되면 channelHandler 인터페이스의 구현을 통해 이벤트를 처리할수있다.(무슨 말인지 이해가안감.. 그냥 인터페이스로 빼서 실행시켰다는건가..)
+    -future
+    -이벤트와 핸들러
+        -channelHandler : 데이터를 처리하는 비지니스 논리를 구현한곳(네트워킹 코드로부터 비지니스로직을 분리!!!)
+    
+    *콜백, future (설명 굿 : https://okky.kr/article/668901)
+        -콜백은 main thread가 아닌 callback을 처리하는 worker thread가 따로 있음.. 그냥 동시에 사용하기위함
+        -future는 생성한 스레드에서 프로세스를 실행한 후 결과값을 공유자원(Future)에 저장하고 가져오는 방법,, worker thread가 일하되, 결과를 기다리기위해서 future.get을 사용하여 동기식으로 확인가능..즉 main thread는 worker thread가 결과값을 return 해줄때까지 block..
+        -ListenableFuture는 작업완료한후에 callback을 실행시키는것!(위의 두개 합친느낌..)
+
+    **eventloop역할
+        -관심이벤트 등록
+        -이벤트를 channelHandler로 발송
+        -추가 동작 스케줄링
+        ***eventLoop는 하나의 스레드에서 동작함!!(하나의 eventLoop에는 여러개의 channel이 등록될수있음)
+
+02 첫번째 네티 어플리케이션
+-ChannelInboundHanlderAdapter vs SimpleChannelInboundHandler
+    -ChannelInboundHanlderAdapter는 channelReadComplete에서 writeAndFlush가 호출될때 넘겨받은 데이터를 저장한 ByteBuf의 자원이 해제..
+    -SimpleChannelInboundHandler는 channelRead0 메소드가 반환될때 ByteBuf자원이해제..
+
+03 네티 컴포넌트와 설계
+-Channel : 소켓
+    -소켓으로 직접 작업할때의 복잡성을 크게 완화할수있는 API를 제공하는데, 요놈임
+    -EmbeddedChannel, LocalServerChannel, NioSocketChannel, OioSocketChannel ...
+
+-EventLoop : 제어흐름, 멀티스레딩, 동시성제어
+-ChannelFuture : 비동기 알림
+-부트스트랩 : 애플리케이션의 네트워크 레이어를 구성하는 컨테이너를 제공 ex) 지정된 포트로 바인딩, 다른 호스트로 연결
+
+04 전송
+-ChannelHandler의 일반적인 용도
+    -데이터를 한 포맷에서 다른 포맷으로 전환(encoder,decoder)
+    -예외에 대한 알림 제공
+    -Channel의 활성화 또는 비활성화에 대한 알림제공 (channelActive, channelInactive)
+    -Channel을 eventloop에 등록 또는 해제할때 알림제공 (channelRegister, channelUnregister)
+    -사용자정의 이벤트에 대한 알림제공 (userEventTriggered)
+-ChannelPipeline
+    -가로채기 필터(intercepting filter)라는 공통 설계 패턴을 구현
+    -ChannelHandler를 필요에따라 추가 또는 삭제가능(런타임시에도 변경할수있음)
+-Channel은 스레드에 안전하다!!
+-운영체제가 리눅스이면 Epoll(EpollEventLoopGroup, EpollServerSocketChannel로만 변경하면됨)을 사용하자!!!(mac은 kqueue..)
+    *linux계열 : epoll
+    **bsd계열(맥포함) : kqueue
+    
+05 ByteBuf
+-장점
+    -사용자정의 버퍼형식으로 확장가능
+    -내장 복합 버퍼 형식을 통해 투명한 제로카피 달성
+    -용량을 필요에 따라 확장가능(stringbuilder와 유사)
+    -ByteBuffer의 filp 메소드 호출없이 리더와 라이터모드 전환가능
+    -읽기와 쓰기의 고유 인덱스가 따로있음
+    -메서드 체인이 지원됨(뭔솔)
+    -참조카운팅이 지원됨(풀링이랑 엮이는 이야기)
+    -풀링이 지원됨(pool을 사용하여 자원재사용가능 -> 오버헤드 줄여줌,, 가비지컬렉터의 부담 줄여줌..)
+
+    *제로카피란
+    -커널 영역에서 파일 데이터를 읽은 후 웹서버로 돌아가지않고 바로 소켓에 데이터를 담아 전달하는것!
+        -기존에 파일을 읽어서 전송할때는 다음과 같은 과정이 있다.
+            1. 클라이언트가 서버에게 정적 파일을 요청
+            2. 서버의 웹 어플리케이션이 요청을 받음
+            3. 웹 어플리케이션(유저 영역)이 디스크에서 파일 데이터를 읽기 위해서 커널(커널 영역)이   파일 데이터를 읽도록 요청
+            4. 파일을 다 읽은 후 커널(커널 영역)이 다시 웹 어플리케이션(유저 영역)으로 데이터를 반환
+            5. 하지만 웹 어플리케이션(유저 영역)은 클라이언트에 반환하기 위해서 소켓에 파일 데이터를 넣어야 하므로 다시 커널(커널 영역)에 요청
+            6. 커널(커널 영역)은 소켓을 처리
+
+            => 4,5번에서 context switching+데이터복사 로 인해 CPU와 메모리를 소모.. 
+            => 요약하면, 웹서버에서 데이터를 복사했다가 소켓으로 데이터를 보내지말고 커널영역에서 데이터를 읽으면 바로 소켓에서 보내라는것..(그로인해 복사가 없어지니깐 zero copy!)
+        
+    참고 사이트 : https://medium.com/sunhyoups-story/zero-copy%EB%9E%80-e113d5df7191
+               https://onecellboy.tistory.com/128
+            설명아주 굿 : https://soft.plusblog.co.kr/7 
+-사용패턴
+    -힙버퍼 : JVM에서 메모리 할당받음
+    -다이렉트버퍼 : 네이티브 호출을 통해 메모리를 할당.. 즉, 중간에 따로 복사하는 버퍼가 있지않고 직접접근,, 그래서 힙버퍼는 가비지컬렉터의 대상이 되지만 디이렉트버퍼는 안됨
+        -힙버퍼보다 할당과 해제의 비용부담이 약간 더 큼,,
+        -데이터가 heap에 있지않기 때문에 복사도해줘야한다함..(heap 영역에 올라와야지 사용할수있어서그런듯..?)
+
+    *네이티브란?
+        -OS수준 으로 해석하면됨.. 즉, 위의 "네이티브 호출을 통해 메모리를 할당" 한다는것은 OS의 함수를 다이렉트로 호출(커널영역으로 접근)하는것으로보임..
+
+-파생버퍼
+    -duplicate,slice,order,readSlice ..
+    -이는 수정하면 원본도 동일하게 수정된다
+        -독립된 복사를 원한다면 copy를 사용할것!
+
+06 ChannelHandler와 ChannelPipeline
+-Channel의 일반적인 수명주기
+    -ChannelRegistered(eventLoop에 저장) -> ChannelActive(원격 피어와 연결됨,, 데이터 주고받을수있음) -> ChannelInactive(원격피어와 연결x) -> ChannelUnregistered(eventLoop에 channel 제거)
+    *server에서 Channel이 새로 생성될때 ChannelInitializer로 channelHandler를 추가할때 new를 사용하여 객체를 새로 만들면 해당 handler는 channel별로 새로이 생성된다! 그렇기에 handler안에는 오직 하나의 session만이 있기에 전역변수에 원하는거 막써도댐..
+    그러나, ChannelInitializer에서 객체를 계속 생성하지않고 @sharable을 사용하면 전역변수 조심해야겟지..
+    **client가 새로 연결될때마다 channel이 새로이 생성되고, 정의한 파이프라인이 생성되고, 파이프라인에 잇는 channelHandler들이 연결되는데, 이 연결될때 항상 ChannelInitializer.initChannel 함수가 호출된다.. 그렇기에 해당 함수안에서 계속 핸들러를 새로이 생성하면 당연 클라이언트가 들어올때마다 핸들러가 새로 생성되겟지!!
+
+-ChannelInboundHandler vs SimpleChannelInboundHandler
+    -ByteBuf를 명시적으로 해제해주어야하는것이 ChannelInboundHandler
+    -ByteBuf를 해제해주는 로직을 이미 만들어놓은것이 SimpleChannelInboundHandler..
+    -ByteBuf의 자원을 해제했다는것은 해당 ByteBuf값을 참조할수는 없다는것!
+
+
+-IdleStateHandler
+    -이또한 결국 channelHandler의 개념임..
+    -스케줄러를 사용해서 지정한 시간이 넘어가면(IDLE 이 지속되면) fireUserEventTriggered(evt) 호출함,, => userEventTriggered 함수 실행
+
+-ChannelPromise vs ChannelFuture(????)
+    -promise는 결과값에대한 성공과 실패를 사용자가 전달가능..한듯한데.. 좀더 찾아보자..
+
+-ChannelPipeline
+    -Channel이 생성될때 영구적인것으로 만들어짐,,
+    -다른 Channel의 ChannelPipeline과 연결하거나 합치거나 할수없음
+    -ChannelHandlerContext에서 ChannelPipeline내에잇는 다른 channelHandler에게 알림을 전달하는것은 물론, 속해 있는 pipeline을 수정할수도있음
+    -하나의 Channel과 여러 ChannelHandler를 포함함
+
+-ChannelHandlerContext
+    -하나의 Channel에서 ChannelHandler 마다 ChannelHandlerContext는 다 다른 객체..!
+    -ChannelHandler와 ChannelPipeline내의 다른 ChannelHandler 간의 상호작용을 관리함!
+    -ChannelHandlerContext에서 바로 제공하는 메서드와 ChannelHandlerContext에서 채널이나 파이프라인을 불러와서 메서드를 호출하는데에는 차이가있다(둘이 상당히 유사함)
+        -후자와같은경우는 전체 파이프라인을 통해 전파된다.. write를 호출했을때 outboundhandler가 현재 호출한 핸들러보다 뒤에 등록되었어도 outboundHandler를 탄다
+        -전자와같은경우는 이벤트흐름이 자신이거나 다음이다.. 흐름이 짧다.. write를 호출했을때 outboundhandler가 현재 호출한 핸들러보다 뒤에 등록되어있으면 outboundhandler 타지않는다.
+            => 이를 잘 활용하면 성능상의 이점을 얻을수있음,, 아무래도 파이프라인을 다 휘젓고 돌아오지않으므로..!
+
+07 EventLoop와 스레딩 모델
+-스레딩 모델 : 운영체제, 프로그래밍 언어, 프레임워크 또는 애플리케이션의 맥락에서 스레드 관리에 대한 주요측면을 정의하는것 을 의미
+    -스레드를 사용하게되면 필수적으로 멀티스레드, 동시성관련한 문제를 발견하게되는데 이를 어떻게 처리할것인가.. 라는것과 일맥상통하지않나..?ㅎ
+
+-네티의 모든 입출력 작업과 이벤트는 eventLoop에 할당된 (1개의)Thread에 의해서 처리된다!
+
+-EventLoopGroup 1 : eventLoop N
+    -eventLoop 1 : Channel N
+    -eventLoop 1 : Thread 1
+
+??????해당 channel의 스레드 스케줄링을 여러개 실행하면 왜 안될까? eventLoop에 그냥 스케줄러 등록하는 개념이 아닌가..?
+
+08 부트스트랩
+-bind와 connect 호출 이전에 group, channel, handler와 같은 함수를 호출해 필수컴포넌트를 설정해야한다
+
+-serverBootStrap에서 수락된 채널의 이벤트루프를 공유하여 특정 client에 데이터를 send 할수있음(proxy같은역할..) bootStrap을 새로 만들되 group에 이벤트루프를 공유한다!(이런 환경 크게 의미없는듯하다.. 그냥 bean으로 만들던지해서 EventLoopGroup을 공유(재사용)하면될듯..)
+
+-ChannelInitializer는 여러 channelHandler를 사용가능할수있도록해준다..
+    -ChannelInitializer 또한 channelInboundHandler를 상속한것이며, 여러 channelHandler를 엮어준뒤 ChannelPipeline에서 자신을 삭제한다..
+
+-AttributeMap, AttributeKey 사용
+    -AttributeMap을 사용하면 Channel마다 필요한 값들을 저장할수있다..! 해당 Channel의 자원이 없어지기전까지!(session이 끊어지기전까지)
+    -Channel은 AttributeMap을 상속받고있어서 해당 채널은 가져온뒤 attr 함수의 인자로 AttributeKey를 전달하면 값을 가져올수있음.. 해당 값은 String, Queue, Map등 모든 클래스가 가능! AttributeKey의 제네릭으로 선언하면댐 (AttributeKey<?>)
+    -ChannelHandlerContext에서 해당 채널정보를 가져오고 값을 셋팅한다! 그리고 해당값은 channel을 불러올수있는곳이면 어디에서든지 사용가능하다!!! (ChannelHandlerContext는 channelHandler마다 다르지만 channel은 동일하니깐 어떤 channelHandler에서도 값을 가져올수있음 가능!) 
+
+09 단위테스트
+-EmbeddedChannel을 이용해서 ChannelHandler를 검증가능!
+    EmbeddedChannel channel=new EmbeddedChannel(테스트할 핸들러);
+    channel.writeInbound  // InboundHandler 타게함.. 쭉탓을때 read할게있으면 true, 없으면 false반환
+    channel.readInbound   // InboundHandler 쭉 탄거 결과값 받아옴
+
+    channel.writeOutbound // OutboundHandler 타게함.. 쭉탓을때 read할게있으면 true, 없으면 false반환
+    channel.readOutbound  // OutboundHandler 쭉 탄거 결과값 받아옴
+
+
+10 코덱 : 데이터의 포맷을 바꿔주는것! " 인코더 + 디코더 " 로 구성
+-encode, decode 따로 구현해서 pipeline에 넣을수도있고
+-encode, decode를 한번에 구현할수도있음
+    -MessageToByteCodec
+        -decode와 encode를 한번에 구현
+    -CombinedChannelDuplexHandler<I extends ChannelInboundHandler, O extends ChannelOutboundHandler>
+        -MessageToByteCodec과 하는역할은 동일하지만 이를 상속받은 생성자에 super(DecodeHandler, EncodeHandler) 넘겨주면끝
+
+11 네티에서 제공하는 ChannelHandler와 코덱
+-일반적인 프로토콜을 쉽게 사용할수있또록 Netty 자체에서 제공해주는 handler가 있음,, 사용할일있으면 꼭 사용하길..
+    ex)SSL,TLS,HTTP,HTTPS..
+-HTTP
+    -컴포넌트 
+        -FullHttpRequest(HttpRequest(헤더포함) + HttpContent ..(하나 이상의 추가 HttpContent 파트가 뒤에 올수 있음) + LastHttpContent(Http요청의 끝을 표시하며 후행 헤더 포함가능))
+        -FullHttpResponse(위와동일)
+    -코덱  
+        -클라이언트 : HttpClientCodec()
+        -서버 : HttpServerCodec()
+    -aggregator(집계자) 를 사용하여 FullHttpRequest or FullHttpResponse 메세지로 병합할수있다함..(이 또한 파이프라인에 추가..)
+    -내용 압축
+        -서버 : HttpContentCompressor (서버에서 내용압축)
+        -클라이언트 : HttpContentDepressor (서버에서 전달받을때 압축한내용 해제)
+    -Https
+        -걍 pipeline 맨 앞에다가 ssl 핸들러 하나 추가해주면끝(물론 sslContext같은거는 다 받아야겠지..)
+
+-유휴연결과 시간만료
+    -IdleStateHandler : 오랫동안 유휴상태인 경우 IdleStateEvent를 생성,, 이는 ChannelInboundHandler의 userEventTriggered를 호출
+    -ReadTimeoutHandler : 일정시간 데이터 받지못하면 ReadTimeoutException 발생.. exceptionCaught를 호출
+    -WriteTimeoutHandler : 일정시간 데이터를 쓰지않으면 WriteTimeoutException 발생.. exceptionCaught를 호출
+-DelimiterBasedFrameDecoder : 사용자가 지정한 구분자에따라 decode..
+-LineBasedFrameDecoder : \n or \r\n 을 기준으로 decode..
+-FixedLengthFrameDecoder : 고정된 크기로 계속 잘라서 넘겨줌
+-LengthFiledBasedFrameDecoder : 헤더(1,2,3,4,8 byte 중 하나,,)에 길이를 지정한대로 body를 읽어서 넘겨줌(body만)
+    ex) 헤더가 2바이트일때, 0x000C 는 12이므로 body가 12바이트.. 
+
+-대용량데이터기록
+    -ChunkedStream 사용 (p189 참고)
+-데이터 직렬화(p190부터 참고)
+
+12 웹소켓
+-웹소켓은 양방향 통신이 가능.. 그래서 실시간으로 알림같은 기능또한 구현가능
+-웹소켓을 사용하기위해서는 HTTP/S로 시작한 다음 웹소켓으로 업그레이드하는개념임..(업그레이드 핸드쉐이크 라는 메커니즘이 사용된다함)
+

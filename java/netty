@@ -26,7 +26,8 @@ Netty 정리
         (reactor 패턴을 이용했다함.. - http://i5on9i.blogspot.com/2013/11/reactor-pattern.html)
 
         *bootStrap은 데이터 처리하는 스레드만 있으면되기때문에, group에 하나의 이벤트루프만 전달받는다!(serverSocketChannel, socketChannel을 둘다가지고 있기때문에 ServerBootStrap은 두개! socketChannel만 가지고있기때문에 bootstrap은 한개!)
-        
+            -nioEventLoopGroup에 전달해주는 스레드갯수는 eventLoop의 갯수를 의미..??????
+
         -ServerBootStrap의 handler는 ServerSocketChannel의 이벤트 핸들러를 정의하고(로그 남기는 핸들러와같은..), childHandler는 socketChannel에 대한 이벤트 핸들러(데이터 송수신 이벤트~)를 정의한다!
 
     -BootStrap(abstractBootStrap 상속)
@@ -139,8 +140,9 @@ Netty 정리
         -별도의 읽기, 쓰기 인덱스 존재 => flip안써도댐!
         -가변 바이트 버퍼 : 크기를 자유롭게 조절할수있다.. 꼭 처음에 지정해야하는것아님! 기존보다 줄이면, 줄인만큼 뒤의 데이터는 잘려나간다..
         -바이트 버퍼 풀 : 생성된 바이트 버퍼를 풀에 저장하여 재사용할수도 있음!,,
-            -가비지컬렉터는 할당되지않는 객체를 알아서 힙 메모리에서 지워주는 역할을 하는데, JVM에 할당된 메모리의 크기가 증가될수록 그리고 할당되지않는 객체들이 많이 생성될수록 가비지컬렉터의 수행 시간이 오래걸린다. 그렇기에 풀로 관리를해서 객체를 재사용하여 가비지컬렉터의 부담을 줄여주는것!!
+            -가비지컬렉터는 할당되지않는 객체를 알아서 힙 메모리에서 지워주는 역할을 하는데, JVM에 할당된 메모리의 크기가 증가될수록 그리고 할당되지않는 객체들이 많이 생성될수록 가비지컬렉터의 수행 시간이 오래걸린다. 그렇기에 풀로 관리를해서 객체를 재사용하여 가비지컬렉터의 부담을 줄여주는것!! + 오버헤드 줄여줌!
             -네티는 바이트 버퍼를 풀링하기 위해서 바이트 버퍼에 참조 수를 기록한다.. 참조수 관리하기위해서 ReferenceCountUtil를 사용하고, retain함수는 은 참조수를 증가시키고 release 함수는 참조수를 감소시킨다.
+                -참조수가 0이되면 객체 더이상 사용불가
             -ctx에서 alloc을 실행하면 ByteBufAllocator를 가져온다.. ByteBufAllocator는 서버소켓채널이 초기화될때 같이 초기화되며 channelRead에서 인수로 넘어오는 ByteBuf는 다 풀에서 가져오는것이다.. 또한 ByteBuf를 write하게되면 해당 버퍼를 채널에 기록하고 다시 풀로 돌아간다..(아마 풀링한 바이트 버프일것이라는 전제..?)     
         -복합 버퍼
             -엔디안변환도 가능.. 기본값은 빅엔디안인데 리틀엔디안으로 변환도가능.. 변환시 데이터 유지
@@ -162,6 +164,7 @@ Netty 정리
  
 여러 ChannelHandler중 특정 ChannelHandler는 이벤트를 처리할 때 외부 서비스들과 네트워크 통신이 일어날수도 있고 DB에 write하는 작업이 있을수도 있습니다. 비즈니스 로직을 구현하다 보면 흔하게 발생할 수 있는 상황인데 Netty에서는 이런 blocking작업을 어떻게 처리해야할까요? Netty는 이벤트 루프가 blocking되지 않게 blocking구간이 있는 ChannelHandler를 다음과 같이 별도의 EventExecutor에서 실행될 수 있도록 지원합니다.
 https://effectivesquid.tistory.com/entry/Netty의-스레드-모델
+    -EventExecutorGroup을 pipeline에 추가해주어야한다..  DefaultEventExecutorGroup 라는 클래스를 제공해줌.. 여기서 channelHandler를 추가해주면, 이벤트루프에서 처리하는것이아닌, 별도의 스레드에서 사용한다.. 이게 db작업이나 레거시 block작업 처리를 가능하게해줌!
 
 주기적이거나 주기적이지않은 작업(ex. heartbeat)는 어떻게?
 -channel의 evnetloop를 이용하는것이 성능상의 이익을 볼수있음..
@@ -177,3 +180,31 @@ Http로는 어떻게 동작..?
 소켓통신시 메세지 전송후 응답받았는지 체크하는 방법?
     -스케줄러를 실행시키고 future를 받아서 일정시간내에 응답받으면 future를 close한다..(!!!!!!!!!!!!!!!!스케줄러 많이 생성해도 문제없는지 확인이필요하다..!!!!!!!!!!!!!)
         ScheduledFuture<?> futrue=ch.eventLoop().schedule(Runnable, 60, TimeUnit.Seconds))  
+
+
+
+******** channelReadComplete는 언제실행되나??? ********
+하나의 데이터를 받고 완전히 끝나는 함수는 channelReadComplete 임..
+데이터를 받으면 channelRead로 읽게되는데, channelRead함수에서 write하면 outboundHandler(Encode도 outboundHandler쪽임..)의 write 함수를 호출함.. (flush까지 했으면 outboundhandler의 flush도 호출함..) 그렇게 데이터받은것들에대해 할거 다 처리했으면 channelREadComplete로 끝남!
+*************************************************
+
+
+ChannelOption - 서버 소켓 채널의 소켓 옵션 설정
+    -기본적으로 자바에서 설정할 수 있는 모든 소켓 옵션 설정 가능
+    -TCP_NODELAY: Nagle 알고리즘 비활성화 여부 설정
+    -SO_KEEPALIVE: 정해진 시간마다 keepalive packet 전송
+    -SO_SNDBUF: 커널 송신 버퍼 크기
+    -SO_RCVBUF: 커널 수신 버퍼 크기
+    -SO_REUSEADDR: TIME_WAIT 상태의 포트에도 bind 가능해짐
+    -SO_LINGER: 소켓을 닫을 때 송신 버퍼에 남은 데이터 전송 대기 시간
+    -SO_BACKLOG: 동시에 수용 가능한 소켓 연결 요청 수
+
+
+***** OutBoundHandler 의 Read 함수는 왜 계속 호출되나.. ****
+ctx.read(); // 채널로부터 데이터를 읽으라는 요청.. ChannelInboundHandler가 사용가능하도록해줌.. 다시 데이터를 읽기위해서 해당 메소드를 계속 호출.. readComplete이후에 현재 read(ctx)를 호출.. 
+Channel에 데이터 읽기를 요청하는것!
+*****************************************************
+
+
+왜 갑작스레 session이 끊킨후 WriteAndFlush 하고나면 콜백에 성공이라고 뜰가..
+	=> native socekt에 데이터 넣어주는것으로 역할끝,, 이후 실제로 잘갔는지는 신경안쓰기때문..
