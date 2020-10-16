@@ -1,0 +1,42 @@
+MAT(Memory Analyzer Tool)
+-메모리 분석툴..
+
+https://m.blog.naver.com/2feelus/220780114184
+https://woowabros.github.io/tools/2019/05/24/jvm_memory_leak.html
+
+-jvm 옵션으로 heap 덤프 뜰수있음.. 이 파일을 불러와서 분석하면댐
+    -XX:+HeapDumpOnOutOfMemoryError : out of memory가 발생시에 힙덤프를 현재 실행 디렉토리에 생성한다.
+    -XX:HeapDumpPath=힘덤프를 생성할 경로/힙덤프이름.hprof : 지정한 경로에 생성한다.
+    https://starplaying.tistory.com/430 
+    
+-jmap으로 덤프뜨기
+    jmap -dump:format=b,file=/home/gwadmin/heap_new2_bgw.hprof [pid]
+
+
+
+-mat 설명
+    -http://kohlerm.blogspot.com/search/label/memory
+
+    -leak suspect
+    -dominator tree
+        -Dominator tree를 띄우면 현재 덤프 된 매모리 스냅 샷 중 가장 큰 용량을 차지하고 있는 객체 순으로 정렬하여 보여줍니다. 
+    -꾸준하게 증가하고잇는 메모리확인방법
+        -일정시간 간격으로 뜬 heap dump를 두개를 mat에 올리고, 히스토그램뷰가 열린상태에서 좌우화살표 버튼을 누름!
+        -이를 통해서 증가되고잇는 오브젝트를 확인할수있으며 메모리 누수를 확인할수있다
+        -마냥 heap 덤프뜬것에서 많이차지하고있는 비중만을 확인하는것은 메모리누수를 확인하는데 큰 의미가 없을수있다
+        http://donzbox.tistory.com/150
+
+    *용어
+        -shallow heap : 해당 객체의 메모리
+        -Retained heap : 객체의 메모리와 해당 객체에 의해서만 직접, 간접적으로 참조하는 다른 객체들을 포함한 메모리..
+            -Retained Heap 메모리는 자신의 메모리 공간의 크리와 자신이 GC 될때 함께 GC 될수있는 참조하고 잇는 객체의 메모리 공간의 크기를 모두 합산하느기.. Heap 분석시 Retained Heap 크기가 큰 객체를 찾아내는것이 메모리 누수찾는데 매우중요..(Shallow는 작은데 Retained heap 높으면 누수확률높겟지..?)
+        https://brunch.co.kr/@springboot/367
+        https://byplacebo.tistory.com/25
+
+
+1)jmap으로 dump
+2)mat으로 열어서 확인
+    -leak 분석 다해줌..
+    참고 사이트 : https://slothink.tistory.com/m/123
+
+MAC에서 압축푼후 실행안될때 : https://brocess.tistory.com/204

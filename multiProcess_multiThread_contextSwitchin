@@ -1,0 +1,121 @@
+multiProcess_multiThread_contextSwitching_jvm
+
+multiProcess 
+    -OS 관점에서 두개이상의 작업이 진행되는것
+    -메모리(RAM)에 할당이 이루어져서 프로그램이 동작되는것이 프로세스!
+        -하나의 프로세스에는 Code, Data, Stack, Heap의 구조로 되어 있는 독립된 메모리 영역을 가지게됨
+    -장점
+        -하나가 죽어도 다른 프로세스에 영향없음,,
+    -단점
+        -상호 프로세스간의 통신은 IPC를 통해가능,,(IPC는 구현에 드는 인적비용이 좀 잇음)
+            -변수공유가안되니.. 따로 통신이 필요
+        -contextSwitching에서의 오버헤드
+            -Context Switching 과정에서 캐쉬 메모리 초기화 등 무거운 작업이 진행되고 많은 시간이 소모되는 등의 오버헤드가 발생하게 된다.(이때 CPU는 아무작업못함..)
+            -프로세스는 각각의 독립된 메모리 영역을 할당받았기 때문에 프로세스 사이에서 공유하는 메모리가 없어, Context Switching가 발생하면 캐쉬에 있는 모든 데이터를 모두 리셋하고 다시 캐쉬 정보를 불러와야 한다.
+            
+            –> 프로세스 간의 Context Switching시 단순히 CPU 레지스터 교체 뿐만 아니라 RAM과 CPU 사이의 캐쉬 메모리에 대한 데이터까지 초기화되므로 오버헤드가 크기 때문
+
+multiThread  
+    -Process 관점에서 두개이상의 작업이 진행되는것
+    -프로세스 안에서 여러개의 스레드..
+        -Code, Data, Heap은 공유되고, Stack은 계속해서 생성됨
+        
+        *자바 스레드(Java Thread) 란
+            -일반 스레드와 거의 차이가 없으며, JVM가 운영체제의 역할을 한다.
+            -자바에는 프로세스가 존재하지 않고 스레드만 존재하며, 자바 스레드는 JVM에 의해 스케줄되는 실행 단위 코드 블록이다.
+            -자바에서 스레드 스케줄링은 전적으로 JVM에 의해 이루어진다.
+            -아래와 같은 스레드와 관련된 많은 정보들도 JVM이 관리한다.
+                -스레드가 몇 개 존재하는지
+                -스레드로 실행되는 프로그램 코드의 메모리 위치는 어디인지
+                -스레드의 상태는 무엇인지
+                -스레드 우선순위는 얼마인지
+            -즉, 개발자는 자바 스레드로 작동할 스레드 코드를 작성하고, 스레드 코드가 생명을 가지고 실행을 시작하도록 JVM에 요청하는 일 뿐이다.
+            https://gmlwjd9405.github.io/2018/09/14/process-vs-thread.html
+    
+    -장점
+        -contextSwitching 비용 적음
+            -stack외의 자원은 공유하기때문에 contextSwiching할때 캐쉬에서 바로바로 참조가능,, stack만 새로 저장하면됨!
+        -간단한 통신방법 사용가능(스텍영역 외에는 공유하기때문)
+    -단점
+        -디버깅 약간 까다롭..
+        -동기화문제(스레드 안전을 유의하여 코딩)
+
+
+
+
+contextSwitching
+    -왜 필요한가?
+        -여러 task(thread or process)들을 진행해야할때 CPU가 하나의 task만 붙잡고있으면 다른 task는 진행되지않으므로, 여러 task들을 빠르고 동시에 처리하도록하기위함,,
+        -즉, CPU가 Task를 바꿔 가며 실행하기 위해 Context Switching이 필요하게 됨
+    -정의
+        -현재 진행하고 있는 Task(Process, Thread)의 상태를 저장하고 다음 진행할 Task의 상태 값을 읽어 적용하는 과정을 말합니다.
+    -진행과정
+        -Process1과 Process2가 하나의 CPU에 할당되었다고가정..
+        1)Process1 execute 
+        2)Process1 idle
+        3)Process2 execute
+        4)Process2 idle
+        
+        => 2와 3사이에 contextSwitching이 발생하는데, 이때 Process1의 상태를 PCB에 저장하고 Process2의 상태를 가져온다.. 이 과정에서 CPU는 아무런 일을 하지 못하게되는데, 그래서 contextSwitching이 잦으면 성능이 떨어진다!
+            +Context정보가 저장이 되어야 나중에 다시 실행되었을때 어디부터 시작할지를 알수있게되는데, 이에대한 정보를 PCB에 저장하게된다(엄밀하게는 레지스터에 PCB로 저장)
+                -PCB는 프로세스가 실행되면 생성되고 프로세스종료시 함께 사라진다..
+                -Task 의 PCB 정보는 Process Stack, Ready Queue 라는 자료구조로 관리
+                -멀티스레드는 프로세스 내부의 TCB(task control block)로 관리가되는데, TCB의 context switching이 당연히 비용이 훨 적음,,
+        
+            *context : CPU가 해당 프로세스를 실행하기 위한 해당프로세스의 정보들
+            *PCB(Process Control Block)의 저장정보
+                -프로세스 상태 : 생성, 준비, 수행, 대기, 중지
+                -프로그램 카운터 : 프로세스가 다음에 실행할 명령어 주소
+                -레지스터 : 누산기, 스택, 색인 레지스터
+                -프로세스 번호
+
+            *컨텍스트 스위칭 인터럽트
+                컨텍스트 스위칭은 다음과 같은 상황에서 일어난다.
+                1. I/O interrupt
+                2. CPU 사용시간 만료
+                3. 자식 프로세스 Fork
+                등등
+
+    https://jins-dev.tistory.com/entry/%EC%BB%A8%ED%85%8D%EC%8A%A4%ED%8A%B8-%EC%8A%A4%EC%9C%84%EC%B9%98Context-Switching-%EC%97%90-%EB%8C%80%ED%95%9C-%EC%A0%95%EB%A6%AC
+    https://www.crocus.co.kr/1364
+
+
+-------------
+
+멀티스레드/멀티프로세스 모두 작업이 필요하면 cpu를 사용한다!
+암튼 cpu를 사용해야만 스레드든 프로세스든 작업이 가능하다! 
+
+
+멀티스레드는 아무래도 멀티프로세스보다 공유하는 영역이 있기때문에 context switching하는데 부담이 덜간다함..
+스레드가 생성될때마다 stack영역이 계속 생기는거말고는 나머지는 공유함..
+java에서는 jvm이 OS로부터 메모리를 가져오고, 스레드 생성시 heap과 method 영역을공유하고 stack, native method stack, pc register 를 계속해서 새로이 생성..
+=> java에서 스레드 생성할때마다 생성되는것과 OS에서 stack영역이 계속 생성되는것과 같은개념인가? 그렇다면 context switching은?
+
+Context Switching이란?
+현재 진행하고 있는 Task(Process, Thread)의 상태를 저장하고 다음 진행할 Task의 상태 값을 읽어 적용하는 과정을 말합니다.
+
+Computer multitasking을 통해 빠른 반응속도로 응답할 수 있습니다.
+빠른 속도로 Task를 바꿔 가며 실행하기 때문에 사람의 눈으론 실시간처럼 보이게 되는 장점이 있습니다.
+CPU가 Task를 바꿔 가며 실행하기 위해 Context Switching이 필요하게 되었습니다.
+
+
+멀티프로세스
+-장점 : 여러 프로세스중 하나 죽어도 영향 안받음
+-단점 : IPC(inter process communication) 구현에 공수가듬,, context switching 비용겁나듬
+
+멀티스레드
+-장점 : context switch 비용이 상당히 적음,, 스레드간의 통신이 쉬움
+-단점 : 동기화(스레드안전에 유의)
+
+어쨋든 자바로 스레드를 만들면 이를 실행시키기위해서는 기계어로 변형을 해야하고 이것이 스레드를 만들어주겠지..(C는 좀더 직접적(low level)으로 만들어주는것이고..)
+이런것들을 jvm에서 관리를 해주는거지.. OS와 계속 대화하면서..
+
+
+https://nesoy.github.io/articles/2018-11/Context-Switching
+출처: https://www.crocus.co.kr/1364 [Crocus]
+
+jvm에 대한 자세한 설명 : https://12bme.tistory.com/382
+                    https://blog.naver.com/PostView.nhn?blogId=rokey_89&logNo=221658053244&redirect=Dlog&widgetTypeCall=true&directAccess=false
+                    https://aljjabaegi.tistory.com/387
+
+    -가비지 컬렉션 : https://yaboong.github.io/java/2018/06/09/java-garbage-collection/

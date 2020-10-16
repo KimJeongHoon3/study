@@ -32,6 +32,7 @@ webflux의 장점에대한 심플한 설명 : https://alwayspr.tistory.com/44
 kafka reactor
 https://github.com/spring-projects/spring-kafka/blob/master/spring-kafka/src/main/java/org/springframework/kafka/core/reactive/ReactiveKafkaConsumerTemplate.java#L55
 
+https://projectreactor.io/docs/kafka/release/reference/#_start_kafka
 
 리액터를 어떻게 써야하는지에 대한 간단명료정리..
 [세미나] 스프링 리액티브 프로그래밍 세미나 참석 후기 - https://monthly-jiandson.tistory.com/m/36
