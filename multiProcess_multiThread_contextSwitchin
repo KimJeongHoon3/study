@@ -114,8 +114,6 @@ CPU가 Task를 바꿔 가며 실행하기 위해 Context Switching이 필요하�
 https://nesoy.github.io/articles/2018-11/Context-Switching
 출처: https://www.crocus.co.kr/1364 [Crocus]
 
-jvm에 대한 자세한 설명 : https://12bme.tistory.com/382
-                    https://blog.naver.com/PostView.nhn?blogId=rokey_89&logNo=221658053244&redirect=Dlog&widgetTypeCall=true&directAccess=false
-                    https://aljjabaegi.tistory.com/387
+
 
     -가비지 컬렉션 : https://yaboong.github.io/java/2018/06/09/java-garbage-collection/

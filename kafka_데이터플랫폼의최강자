@@ -168,6 +168,7 @@ accumulator라는놈이 메세지를 쌓아주게되면, sender가 RecordAccumul
     -heartbeat.interval.ms : 그룹 코디네이터에게 어느 주기로 하트비트를 보낼것인지 조정하는것.. 보통 session.timeout.ms의 1/3 정도로 설정함.. (별도 스레드가 돌아감.. poll과 상관없이!)
     -max.poll.records : poll에 대한 최대 레코드 수 조정
     -max.poll.interval.ms : 코디네이터에게 하트비트는 주기적으로보내서 문제없는듯하나, 실제로 poll을 하지않고 있을수 잇으므로 이 설정을 통해서 해당 interval동안 poll을 하지않으면 장애로 판단하여 그룹에서 제외
+                           -> poll해서 데이터 처리하는시간이 해당 설정값보다 초과되면 문제생긴걸로 간주하고 카프카가 연결끊는다.. poll() -> max.poll.interval.mx 시간안에 데이터 처리 -> poll()
     -auto.commit.interval.ms : 주기적으로 오프셋을 커밋하는 시간
     -fetch.max.wait.ms : fetch.min.bytes에 의해 설정된 데이터보다 적은 경우 요청에 응답을 기다리는 최대시간.. (이거 넘어가면 바로 메세지 전송하겠지..) 
 

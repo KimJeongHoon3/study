@@ -1,0 +1,212 @@
+Docker
+
+-서버환경도 바뀌고 버전이나 설정에 따라서, 혹은 개발환경에 따라서 어떨때는 됐다가 또는 안됐다가를 반복하는데, 이를 해결하기위해서 나온것이 도커!
+-도커의 특징
+    -확장성이 좋음
+        -도커 설치되어있다면 어디서든 컨테이너 실행가능
+        -특정회사나 서비스에 종속x
+        -쉽게 개발서버를 만들수있고 테스트서버 생성도 간편
+    -표준성
+        -어떤 언어를 사용하던 docker-composeup 이 명령어 하나면 끝~?
+    -이미지
+        -이미지 : 컨테이너를 생성하기위한 압축파일
+        -빌드서버에서 이미지를 만들면, 해당이미지를 이미지 저장소에 저장하고 운영서버에서 이미지를 불러옴
+    -설정관리
+        -설정은 보통 환경변수로 제어
+            ex) mysql같은경우 비밀번호 바꿀때 그냥 환경변수에서 암호바꿔서 컨테이너 실행하면끝
+    -자원관리
+        -컨테이너는 삭제후 새로 만들면 모든 데이터 초기화됨..
+        -파일들을 별도 저장소에 넣어놔야함..(S3, Redis..)
+-도커가 가져온 변화
+    -클라우드 이미지보다 관리하기 쉬움
+    -다른프로세스와 격리되어 가상머신처럼 사용하지만 성능저하 거의없음
+    -복잡한기술을 몰라도 사용가능
+    -이미지빌드 기록이 남음 (docker파일이라는 스크립트를 쓰는데, git에다가 저장하면서 기록이 가능)
+    -코드와 설정으로 관리해서 재현및 수정이 가능
+    -오픈소스기때문에 특정회사기술에 종속x
+
+****************
+컨테이너의 미래
+-컨테이너를 활용한 기술의 현재 대표적인것은 쿠버네티스!
+    -스케줄링
+        -컨테이너를 적당한 서버에 배포해주는작업(놀고 있는 서버에다가 배포함..)
+        -서버 죽으면 다른 서버에 띄워줌..
+        -중앙에있는 API를 통해서 모든 서버를 쉽게 관리가능
+    -서비스 디스커버리
+        -클러스터 환경에서 컨테이너는 어느 서버에 생성될지 알수없기때문에 어떤 서버에 서비스가 설치되었는지를 확인할수있는 기능이있음
+
+
+-docker는 설치하면 client+server가 설치되게되고, 명령어를 치는것은 client로 docker server에 명령을 날리는것이다
+-명령어
+    -run 명령어 : 컨테이너 실행
+        docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
+        -[OPTIONS] 종류
+            -"-d" : detached mode (백그라운드 모드)
+            -"-p" : 호스트와 컨테이너의 포트를 연결
+            -"-v" : 호스트와 컨테이너의 디렉토리를 연결  (ex. /my/own/datadir:/var/lib/mysql   => /my/own/datadir 디렉토리와 컨테이너의 /var/lib/mysql 디렉토리를 연결하겠다!) docker는 프로세스 종료시 모든 데이터가 사라지게되니깐 프로세스 죽었을때 사리지면 안되는 데이터들은 항상 해당 옵션을 통해서 유지시켜야한다.
+            -"-e" : 컨테이너 내에서 사용할 환경변수 설정
+            -"--name" : 컨테이너 이름 설정
+            -"--rm" : 프로세스 종료시 컨테이너 자동제거
+            -"-it" : -i와 -t를 동시에 사용한것으로 터미널 입력을 위한 옵션
+                *-i(interactive), -t(Pseudo-tty) 옵션을 사용하면 실행된 Bash 셸에 입력 및 출력을 할 수 있습니다.
+            -"--network" : 네트워크 연결
+
+        ** Bash 셸에서 exit 또는 Ctrl+D를 입력하면 컨테이너가 정지됩니다. 여기서는 Ctrl+P, Ctrl+Q를 차례대로 입력하여 컨테이너를 정지하지 않고, 컨테이너에서 빠져나옵니다.
+
+    -exec 명령어 : exec 명령어는 run 명령어와 달리 실행중인 도커 컨테이너에 접속할때 사용,, 컨테이너 안에 ssh server 등을 설치하지않고 exec로 접속한다!
+        -"-it" 같이 써서 접속하는거 잊지말것!
+    -ps 명령어 : docker로 실행한 컨테이너 볼수있음
+        -a : 종료했떤 컨테이너도 다 나옴
+    -stop 명령어 : 실행중인 컨테이너 중지하는 명령어.. 뒤에 컨터이너 이름 또는 id 주면된다.. 여러개 줘도됨(띄어쓰기로)
+    -rm 명령어 : 종료된 컨테이너를 완전히 제거하는 명렁어
+    -logs 명령어 : 컨테이너가 정상적으로 동작하는지 확인가능..
+        -"-f" : tail -f 와 같음
+        -"--tail" : 
+    -images 명령어 : 도커가 다운로드한 이미지 목록 보여줌
+    -pull 명령어 : 이미지 다운로드하는 명령어
+        -이미지 run하려할때 없으면 알아서 pull함..
+    -rmi 명령어 : 다운로드한 이미지 지우는 명령어
+        -컨테이너가 실행중인 이미지는 삭제가안된다!
+    -network create 명령어 : 도커 컨테이너끼리 이름으로(--name) 통신할수있는 가상 네트워크를 만듦
+    -network connect 명령어 : 기존에 생성된 컨테이너에 네트워크를 추가
+        -docker network connect [OPTIONS] NETWORK CONTAINER(name)
+
+-"docker-compose"
+    -설치
+        1) sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        2) chmod +x /usr/local/bin/docker-compose
+    -yml파일로 작성하여 up(실행), down(중지) 가능
+        -restart:always(종료시 다시 실행가능하도록)
+    -yml 문법
+        -version : docker-compose파일의 명세버전,, yml 버전에 따라 지원하는 도커 엔진버전도다름..
+        -services : 실행할 컨테이너 정의
+            docker run --name "서비스이름" 와 같음
+        -image : 컨테이너에 사용할 이미지 이름과 태그 
+            -image: mysql:5.7
+        -environment : 컨테이너에서 사용할 환경변수
+            ex)
+            environment:
+                -MYSQL_ROOT_PASSWORD: wordpress //{환경변수 이름} : {값}
+
+        -volumes : 마운트 하려는 디렉터리(들)
+            {호스트 디렉터리}:{컨테이너 디렉터리}
+            ex)
+             volumes:
+                - ./mysql:/var/lib/mysql
+
+        -restart : 재시작 정책
+            -restart: "no"
+            -restart: always
+            -restart: on-failure 
+            -restart: unless-stopped
+        -expose : container 포트 지정
+        -ports : "host port: container port",, 만약 포트 하나만 명시한다면 container포트를 지정한것이고 host는 자동으로 할당됨 
+        -build : 이미지를 자체 빌드 후 사용,, image 속성대신사용,, 여기세 사용할 별도의 도커파일이 필요함..
+            ex)
+                django: 
+                  build:
+                    context: .
+                    dockerfile: ./compose/django/Dockerfile-dev
+            
+
+        *expose와 ports 차이점정리 : https://stackoverflow.com/questions/40801772/what-is-the-difference-between-docker-compose-ports-vs-expose
+        **기본적으로 ports를 안쓰면 서비스 내부에서만 통신가능.. 즉 docker compose에서 연결한 컨테이너끼리만 통신가능,, 외부에서 접근불가
+    -명령어
+        -up : docker-compose.yml에 정의된 컨테이너를 실행
+            -docker-compose up
+            -docker-compose up -d
+                -docker run의 -d 옵션과 동일 
+            -docker-compose up --force-recreate
+                -컨테이너를 새로 만들기 
+            -docker-compose up --build
+                -도커 이미지를 다시 빌드(build로 선언했을 때만)
+        -start : 멈춘 컨테이너 재개
+            -docker-compose start
+            -docker-compose start wordpress
+                -wordpress컨테이너만 재개
+        -restart : 컨테이너 재시작
+            -docker-compose restart
+            -docker-compose restart wordpress
+                -wordpress컨테이너만 재시작
+        -stop : 컨테이너 멈춤
+            -docker-compose stop
+            -docker-compose stop wordpress
+                -wordpress만 멈춤
+        -down : 컨테이너 종료하고 삭제
+            -docker-compose down
+        -logs : 컨테이너의 로그
+            -docker-compose logs
+            -docker-compose logs -f
+                -로그 follow
+        -exec : 실행중인 컨테이너에서 명령어실행
+            -docker-compose exec {컨테이너 이름} {명령어}
+            ex)docker-compose exec wordpress bash
+        -build : 컨테이너 build 부분에 정의된 내용대로 빌드
+            -docker-compose build
+            -docker-compose build wordpress
+                -wordpress컨테이너만 build
+        
+****************
+-이미지란?
+    -프로세스가 실행되는 파일들의 집합
+
+-Dockerfile : 이를 build하여 image 생성가능
+
+    -문법
+        FROM : 기본이미지
+        RUN : 쉘 명령어 실행
+        CMD : 컨테이너 기본 실행 명령어    
+        ENTRYPOINT : 컨테이너 기본 실행 명령어
+            *RUN vs CMD vs ENTRYPOINT
+            -Run이 실행될때마다 하나의 이미지를 만들어지게되는데, 베이스 이미지(기본이미지)에 layer가 더해진다고 표현한다.. 그리고 Run명령어를 여러번 사용하다가 특정 RUN에서 에러가나면 그 이전까지 build는 성공으로 간주하고 에러난부분부터 실행한다
+            -CMD Docker Container가 실행될때 수행함
+
+            -https://show-me-the-money.tistory.com/46#:~:text=CMD%EB%A5%BC%20%ED%99%9C%EC%9A%A9%ED%95%98%EB%A9%B4%20Docker,%EC%9D%B8%EC%9E%90%EA%B0%92%EC%9D%80%20%EB%AC%B4%EC%8B%9C%EB%90%A9%EB%8B%88%EB%8B%A4.
+            -https://blog.leocat.kr/notes/2017/01/08/docker-run-vs-cmd-vs-entrypoint
+        EXPOSE : 오픈되는 컨테이너 포트 정보
+        ENV : 환경변수설정
+        ADD : 파일 또는 디렉토리추가. URL/ZIP 사용가능
+        COPY : 파일 또는 디렉토리 추가
+        VOLUME : 외부 마운트 포인트 생성
+        USE : RUN,CMD,ENTRYPOINT를 실행하는 사용자
+        WORKDIR : 작업디렉토리 설정
+        ARGS : 빌드타임 환경변수 설정(?)
+        LABEL : key - value 데이터
+        ONBUILD : 다른 빌드의 베이스로 사용될때 사용하는 명령어
+
+    -빌드하기
+        -docker build -t {이미지명:이미지태크} {빌드 컨텍스트} .  //현재 디렉토리의 "Dockerfile"로 빌드함
+        -옵션
+            - "-t" : 도커 이미지 이름지정
+            - "-f" <Dockerfile위치> : 다른 위치의 Dockerfile 사용가능
+    -.dockerignore
+        -.gitignore와 비슷한 역할
+        -도커 빌드 컨텍스트에서 지정된 패턴의 파일을 무시 .git이나 민감한 정보를 제외하는 용도로 주로 사용 
+        -.git이나 에셋 디렉터리만 제외시켜도 빌드 속도 개선 
+        -이미지 빌드 시에 사용하는 파일은 제외시키면 안 됨
+
+    *FROM에서 "-alpine"을 붙여주게되면 해당 서비스의 최소한의 필요기능만 가져오기때문에 용량줄일수있음
+
+*******************
+더보기
+-이미지를 만들기 위한 다양한 쉘 스크립트 & 환경변수 사용 CI/CD 자동빌드, 자동배포, blue & green 배포 / 무중단 배포하기 모니터링, 로그
+-가상 네트워크
+-보안
+-쿠버네티스 (kubernetes)
+-이스티오 서비스매시 (istio)
+
+
+
+
+-만약 ubuntu나 centOS를 run 하였을때 리눅스의 kernel은 공유한다..!
+
+
+************ 조심할것!!!! *************
+-컨테이너에서 쉘 스크립트로 무언가 실행할때 반드시 exec 붙여줄것!!
+    관련내용설명 : https://hynek.me/articles/docker-signals/
+
+
+초보를 위한 도커 안내서 도커 쿡북 보기
+가장빨리만나는 docker : http://www.pyrasis.com/docker.html
+
+
