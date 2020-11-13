@@ -87,7 +87,7 @@ Docker
             ex)
             environment:
                 -MYSQL_ROOT_PASSWORD: wordpress //{환경변수 이름} : {값}
-
+        
         -volumes : 마운트 하려는 디렉터리(들)
             {호스트 디렉터리}:{컨테이너 디렉터리}
             ex)
@@ -108,6 +108,7 @@ Docker
                     context: .
                     dockerfile: ./compose/django/Dockerfile-dev
             
+        -privileged: true (요거는 volumes에 폴더 접근 권한같은거 안될때 사용하면됨)
 
         *expose와 ports 차이점정리 : https://stackoverflow.com/questions/40801772/what-is-the-difference-between-docker-compose-ports-vs-expose
         **기본적으로 ports를 안쓰면 서비스 내부에서만 통신가능.. 즉 docker compose에서 연결한 컨테이너끼리만 통신가능,, 외부에서 접근불가
@@ -159,6 +160,7 @@ Docker
         ENTRYPOINT : 컨테이너 기본 실행 명령어
             *RUN vs CMD vs ENTRYPOINT
             -Run이 실행될때마다 하나의 이미지를 만들어지게되는데, 베이스 이미지(기본이미지)에 layer가 더해진다고 표현한다.. 그리고 Run명령어를 여러번 사용하다가 특정 RUN에서 에러가나면 그 이전까지 build는 성공으로 간주하고 에러난부분부터 실행한다
+                -RUN은 빌드시에 실행.. MSSQL의 경우 기본 환경셋팅을 docker-compose에서하게되니깐 Dockerfile에서 MSSQL을 실행하는명령어를 RUN이나 ENTRYPOINT로 하면안됨.. CMD로!
             -CMD Docker Container가 실행될때 수행함
 
             -https://show-me-the-money.tistory.com/46#:~:text=CMD%EB%A5%BC%20%ED%99%9C%EC%9A%A9%ED%95%98%EB%A9%B4%20Docker,%EC%9D%B8%EC%9E%90%EA%B0%92%EC%9D%80%20%EB%AC%B4%EC%8B%9C%EB%90%A9%EB%8B%88%EB%8B%A4.
@@ -208,5 +210,25 @@ Docker
 
 초보를 위한 도커 안내서 도커 쿡북 보기
 가장빨리만나는 docker : http://www.pyrasis.com/docker.html
+Dockerfile 관련 설명 굿 : https://arisu1000.tistory.com/27795
 
 
+
+3.4.1 docker-compose.yml 수정시
+수정하게 되면 stop -> 삭제(rm) -> 시작 (up) 해야 하지만
+up 명령어만 실행해도 알아서 컨테이너를 재생성하고 서비스 재시작
+
+volumes를 사용하는 두가지방법
+1) 내가 지정한 디렉터리로 마운트
+2) 도커내부적으로 관리해주는 디렉토리로 마운트(여기서 쓰는게 top level)
+
+아래 참고(https://www.reddit.com/r/docker/comments/ekj5j9/why_do_people_put_toplevel_volumes_in_the/)
+
+Docker volumes can come from:
+A specific, absolute path to somewhere on your Host (ie: /data:/usr/var/foo)
+A Docker-managed volume, which is basically a directory under /var/lib/docker unless you use storage drivers.
+Using storage drivers you can carve out persistent storage from other devices in your environment such as a SAN or NAS.
+
+db2 connect to jeremy_test_1_0_7
+db2 -tvmf /var/custom/ata_sp_com.sql
+db2 -tvmf /var/custom/ata_sp_mmt.sql

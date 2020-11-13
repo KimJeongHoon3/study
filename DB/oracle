@@ -1,3 +1,32 @@
 oracle
 
 table space 개념 정리 : https://jmraz.tistory.com/61
+
+
+using index tablespace 쓰는 이유 : https://stackoverflow.com/questions/42534607/using-index-tablespace
+
+
+ sqlplus / as sysdba
+
+ 1. 테이블스페이스 생성
+ CREATE TABLESPACE oraTest
+DATAFILE '/oracle/oradata/ora11/oraTest.dbf'
+SIZE 100M
+AUTOEXTEND ON NEXT 10M;
+
+2. 유저 생성 및 권한 부여
+CREATE USER oraTestUser IDENTIFIED BY 1234
+DEFAULT TABLESPACE oraTest
+QUOTA UNLIMITED ON oraTest
+
+3. 권한부여
+ GRANT CONNECT, RESOURCE TO oraTestUser;
+
+출처: https://blueray21.tistory.com/35 [블루레이]
+
+
+table space 확인
+-select * from DBA_DATA_FILES;
+
+USER 정보 & default_tablespace 확인
+-select * from DBA_USERS;
