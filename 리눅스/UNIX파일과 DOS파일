@@ -1,0 +1,50 @@
+UNIX파일과 DOS파일
+
+텍스트를 처리하면서 Unix(Linux)환경과 Windows(Dos)환경의 차이로 인한 오류가 발생하기도 한다.
+그 중 많이 발생하는 오류가 개행문자로 인한 오류가 된다.
+이유는 Unix(Linux)에서는 개행문자를 LF(\n)로 사용되지만 Windows(Dos)는 CRLF(\r\n)로 사용되기에 발생하는 문제다.
+그래서 환경이 변했을 때 아래 명령어를 실행해주면 개행문제를 해결 할 수 있다.
+
+Dos -> Unix
+    $sed -i -e 's/\r//' myFile.txt
+
+Unix -> Dos
+    $sed -i -e 's/$/\r/' myFile.txt
+
+출처: https://hanggoo.tistory.com/19 [핸꾸]
+
+
+유닉스 텍스트(Unix Text)로 변환 명령
+vim tt.pl
+이렇게 파일을 vim 에디터로 불러옵니다.
+
+Esc키를 누른 후
+:se ff=unix
+이런 명령을 입력하고
+
+:wq
+명령으로 파일 저장 + vim을 종료합니다.
+
+
+
+도스 텍스트(DOS Text)로 변환 명령어
+위와는 반대로, 유닉스 텍스트를 도스 텍스트로 변환하려면
+
+:se ff=dos
+이런 명령을 입력하고
+
+:w
+명령을 치면 파일을 변환 저장할 수 있습니다.
+
+
+
+맥(애플) 텍스트(Mac Text)로 변환
+:se ff=mac
+이렇게 하면 됩니다.
+
+:q
+로 vim을 종료할 수 있습니다.
+
+
+
+출처: https://darkdevilness.tistory.com/29 [현무]
