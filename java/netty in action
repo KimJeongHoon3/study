@@ -135,10 +135,8 @@ netty in action
     -eventLoop 1 : Channel N
     -eventLoop 1 : Thread 1
 
-??????해당 channel의 스레드 스케줄링을 여러개 실행하면 왜 안될까? eventLoop에 그냥 스케줄러 등록하는 개념이 아닌가..?
-
 08 부트스트랩
--bind와 connect 호출 이전에 group, channel, handler와 같은 함수를 호출해 필수컴포넌트를 설정해야한다
+-bind와 connect 호출 이전에 group(이벤트루프), channel(채널전송모드), handler(이벤트핸들러)와 같은 함수를 호출해 필수컴포넌트를 설정해야한다
 
 -serverBootStrap에서 수락된 채널의 이벤트루프를 공유하여 특정 client에 데이터를 send 할수있음(proxy같은역할..) bootStrap을 새로 만들되 group에 이벤트루프를 공유한다!(이런 환경 크게 의미없는듯하다.. 그냥 bean으로 만들던지해서 EventLoopGroup을 공유(재사용)하면될듯..)
 
