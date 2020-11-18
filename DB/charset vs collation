@@ -1,0 +1,48 @@
+charset vs collation
+
+문자셋(Character set) 과 콜레이션(Collation)
+
+CHAR, VARCHAR, TEXT 등의 문자열 Datatype에는 문자셋(Character set)과 콜레이션(Collation) 속성이 있다.
+문자셋(Character set)은 각 문자가 컴퓨터에 저장될 때 어떠한 '코드'로 저장될지에 대한 규칙의 집합을 의미하며 콜레이션(Collation)은 특정 문자 셋에 의해 데이터베이스에 저장된 값들을 비교 검색하거나 정렬 등의 작업을 위해 문자들을 서로 '비교' 할때 사용하는 규칙들의 집합을 의미한다.
+같은 문자셋이라도 콜레이션에 따라 영어의 경우 대소문자의 구분 비교 여부, 일본어의 경우 히라가나와 카타카나의 구분 방법 등이 달라진다.
+UTF8 문자셋을 사용하는 경우 utf8-general-ci 또는 utf8-unicode-ci 둘중 하나를 collation으로 지정하는 경우가 많은데 utf8-general-ci는 utf8-unicode-ci 를 사용해서 정렬할 때 보다 다소 정확도가 떨어지는 경향이 있으나 속도는 빠르다.
+MySQL의 경우 utf8-general-ci 가 Default Collation이다
+
+
+*mysql 
+데이터베이스 collation 확인
+-show variables like 'collation_database';
+
+데이터베이스 collation 변경
+-ALTER DATABASE jeremy_test DEFAULT COLLATE utf8mb4_unicode_ci;
+
+테이블 컬럼들의 collation, charset 볼수있음
+-show full columns from jeremy_test.ata_mmt_tran;
+
+테이블의 특정 컬럼 collation, charset 바꾸는 방법
+-ALTER TABLE jeremy_test.ata_banlist MODIFY service_type char(2) CHARACTER SET euckr
+      COLLATE euckr_korean_ci;
+
+
+show table status;
+drop table jeremy_test.ata_banlist;
+drop procedure jeremy_test.sp_common_banlist;
+
+=> 기본적으로 테이블만들어질때 혹은 프로시저 생성시 데이터베이스의 collation을 따라감..
+
+테이블과 프로시저의 collation이 일치하지않으면 아래와 같은 에러뜬다
+java.sql.SQLException: Illegal mix of collations (euckr_korean_ci,IMPLICIT) and (latin1_swedish_ci,IMPLICIT) for operation '='
+	at com.mysql.jdbc.SQLError.createSQLException(SQLError.java:964)
+	at com.mysql.jdbc.MysqlIO.checkErrorPacket(MysqlIO.java:3970)
+	at com.mysql.jdbc.MysqlIO.checkErrorPacket(MysqlIO.java:3906)
+	at com.mysql.jdbc.MysqlIO.sendCommand(MysqlIO.java:2524)
+	at com.mysql.jdbc.MysqlIO.sqlQueryDirect(MysqlIO.java:2677)
+	at com.mysql.jdbc.ConnectionImpl.execSQL(ConnectionImpl.java:2549)
+	at com.mysql.jdbc.PreparedStatement.executeInternal(PreparedStatement.java:1861)
+	at com.mysql.jdbc.PreparedStatement.execute(PreparedStatement.java:1192)
+	at com.mysql.jdbc.CallableStatement.execute(CallableStatement.java:823)
+	at biz.ata.db.mysql.MySQLMMTDBHandler.selectBanList(MySQLMMTDBHandler.java:179)
+	at biz.ata.worker.MMSMTCollector.initializeDB(MMSMTCollector.java:201)
+	at biz.ata.worker.MMSMTCollector.run(MMSMTCollector.java:259)
+ 
+ 
