@@ -165,6 +165,25 @@ Netty 정리
 여러 ChannelHandler중 특정 ChannelHandler는 이벤트를 처리할 때 외부 서비스들과 네트워크 통신이 일어날수도 있고 DB에 write하는 작업이 있을수도 있습니다. 비즈니스 로직을 구현하다 보면 흔하게 발생할 수 있는 상황인데 Netty에서는 이런 blocking작업을 어떻게 처리해야할까요? Netty는 이벤트 루프가 blocking되지 않게 blocking구간이 있는 ChannelHandler를 다음과 같이 별도의 EventExecutor에서 실행될 수 있도록 지원합니다.
 https://effectivesquid.tistory.com/entry/Netty의-스레드-모델
     -EventExecutorGroup을 pipeline에 추가해주어야한다..  DefaultEventExecutorGroup 라는 클래스를 제공해줌.. 여기서 channelHandler를 추가해주면, 이벤트루프에서 처리하는것이아닌, 별도의 스레드에서 사용한다.. 이게 db작업이나 레거시 block작업 처리를 가능하게해줌!
+    -ex) channel.pipeline().addAfter(new DefaultEventExecutorGroup(1), "first", "second", 핸들러);
+            /**
+            * Inserts a {@link ChannelHandler} after an existing handler of this
+            * pipeline.
+            *
+            * @param group     the {@link EventExecutorGroup} which will be used to execute the {@link ChannelHandler}
+            *                  methods
+            * @param baseName  the name of the existing handler
+            * @param name      the name of the handler to insert after
+            * @param handler   the handler to insert after
+            *
+            * @throws NoSuchElementException
+            *         if there's no such entry with the specified {@code baseName}
+            * @throws IllegalArgumentException
+            *         if there's an entry with the same name already in the pipeline
+            * @throws NullPointerException
+            *         if the specified baseName or handler is {@code null}
+            */
+            ChannelPipeline addAfter(EventExecutorGroup group, String baseName, String name, ChannelHandler handler);
 
 주기적이거나 주기적이지않은 작업(ex. heartbeat)는 어떻게?
 -channel의 evnetloop를 이용하는것이 성능상의 이익을 볼수있음..
@@ -180,7 +199,7 @@ Http로는 어떻게 동작..?
 소켓통신시 메세지 전송후 응답받았는지 체크하는 방법?
     -스케줄러를 실행시키고 future를 받아서 일정시간내에 응답받으면 future를 close한다..(!!!!!!!!!!!!!!!!스케줄러 많이 생성해도 문제없는지 확인이필요하다..!!!!!!!!!!!!!)
         ScheduledFuture<?> futrue=ch.eventLoop().schedule(Runnable, 60, TimeUnit.Seconds))  
-
+    -CountDownLatch라는 concurrent 패키지의 클래스를 사용하여 처리하는게 좋음..
 
 
 ******** channelReadComplete는 언제실행되나??? ********
