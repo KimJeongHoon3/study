@@ -1,0 +1,32 @@
+mySQL
+
+<계정 생성 및 권한부여>
+
+
+
+grant all privileges on 데이터베이스명.* to '계정명'@'IP주소' identified by '비밀번호'; 
+
+
+desc 테이블명
+=> 테이블 구조보여줌
+
+
+테이블생성
+http://zetawiki.com/wiki/MySQL_%ED%85%8C%EC%9D%B4%EB%B8%94_%EC%83%9D%EC%84%B1_CREATE_TABLE
+
+
+ROWNUM사용방법
+http://cremazer.blogspot.com/2013/09/mysql-rownum.html
+
+select
+@rownum:=@rownum+1 as row_num
+,a
+,b
+,c
+from table
+,(select @rownum:=0) TMP --rownum 초기화해주는것,, 안해주면 다음조회때 누적해서나옴,,
+
+
+select한것들 바로 insert 하는쿼리
+INSERT INTO [table] SELECT * FROM [table] WHERE [조건];
+INSERT INTO [table] (column1, colum2, colum3) SELECT column1, colum2, colum3 FROM [table] WHERE [조건];
