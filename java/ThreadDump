@@ -1,0 +1,28 @@
+ThreadDump
+
+-스레드 상태 알수있음.. 데드락상태인지(block이 두개) runnable상태인지, wait상태인지
+    *스레드상태 : NEW(Thread가 생성된 상태, 아직 start()되지않음), runnable(run 가능한상태.. 스케줄러에 올라와서 run할 준비..), waiting(스레드 잠시 대기 - ex. wait, join..), timed_waiting(시간 정해준 wait, sleep ..), blocked(sync처리와같은부분으로 인해 실행못하고 대기중인것), running(실행중), TERMINAGED(실행마침)
+
+
+-뭔가 프로세스가 급격히 느려질떄..(어딘가에서 먹통일때..) 어디서 문제 있는지 찾기좋음(스레드 상태보고..)
+    -Runnable들중에 뭔가 느리게 실행되고있는게 있을수 있겠지..
+-데드락이 나타날때..
+    -blocked 되어있는것이 두개이고 어떤 스레드를 기다리고있는지 확인하면 교착상태를 확인가능!
+예제로 설명 굿 : https://brunch.co.kr/@springboot/126
+
+
+-모든 시스템에 응답이 없을 때
+-사용자 수가 많지 않은데 CPU사용량이 높을때
+-특정어플리케이션 수행 시 응답이 없을때
+-간헐적으로 응답이 느릴때
+-서비스 실행시간이 길어질수록 응답시간이나 cpu 사용량이 늘어날떄 등등
+출처: https://sjh836.tistory.com/151 [빨간색코딩]
+
+
+
+*cpu 많이 점유하는거 찾아서 스레드 덤프하기
+1) cpu 많이 점유하는 PID 찾기
+    $ ps -mo pid,lwp,stime,time,cpu -C java
+2) 찾은 PID로 스레드 덤프
+3) 1)에서 검색해서 찾은 lwp값을 16진수로 변경하여 NID 검색(여기가 cpu 많이 먹는곳..)
+설명 매우 굿 : https://d2.naver.com/helloworld/10963
