@@ -1,7 +1,8 @@
 fileChannel과 DirectByteBuffer에 관한 글! 
 out of memory상황시 꼭 봐볼것!
 
-http://amgen.medimedia.co.kr/contents/chatbot/01.png
+????
+
 
 
 FileChannel 관련 설명도 좋음
@@ -22,3 +23,32 @@ transferTo가 제로카피를 사용하여 생각보다 많이 빠를줄알았�
 
 
 transferTo에 대한 영어설명 : https://www.developer.com/java/article.php/10922_3837206_2/An-Introduction-to-Java-NIO-and-NIO2.htm
+
+
+
+파일을 읽고 데이터를 소켓으로 전달하는것에 특별한 파싱이 필요하지않다면 어플리케이션에서 해당 일이 이루어질떄 많은 복사와 모드스위칭이 생겨난다..
+어플리케이션에서 read를 요청하면 DMA라는걸 통해서 디스크에서 읽어와 커널의 버퍼에 담겨진다.
+traditional file read & send
+1) 어플리케이션에서 Read를 요청 (user mode)
+2) 커널에서 DMA를 통해서 디스크에서 해당 파일을 커널의 READ버퍼로 복사 (kernel mode) 
+3) 어플리케이션의 버퍼에 해당 내용을 복사 & 어플리케이션에서 send (user mode)
+4) 커널의 소켓버퍼로 데이터가 복제 (kernel mode)
+5) DMA 엔진이 프로토콜 엔진으로 데이터 복제 (kernel mode)
+
+zero copy (transferTo())
+1) transferTo() 호출(user mode)
+2) 커널의 DMA 엔진이 요청 파일을 kernel의 READ버퍼로 복제(kernel mode)
+3) 커널의 socket 버퍼로 전달(kenel mode)
+4) DMA 엔진이 프로토콜 엔진으로 데이터 복제 (kernel mode)
+
+근데 여기서 
+리눅스 커널 2.4 이후 커널 파일 디스크립터가 수정되어 네트워크 카드가 gather operation을 지원하면 좀더 생략가능
+1) transferTo() 호출(user mode)
+2) 커널의 DMA 엔진이 요청 파일을 kernel의 READ버퍼로 복제(kernel mode)
+3) 네트워크 카드가 gather operation을 지원하면 DMA 엔진이 프로토콜 엔진(NIC BUFFER)으로 데이터 복제 (kernel mode)
+(메모리 접근(DMA:Direct Memory Access)엔진에 의해 Read buffer의 내용을 가리키는 Descriptor를 가짐으로써 데이터를 읽을 수 있게 됩니다. )
+
+
+https://m.blog.naver.com/PostView.nhn?blogId=kgw1988&logNo=221218267855&proxyReferer=https:%2F%2Fwww.google.com%2F
+
+https://free-strings.blogspot.com/2016/04/zero-copy.html

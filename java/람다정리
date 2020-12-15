@@ -38,6 +38,7 @@
     -IntToLongFunction : int를 long으로 맵핑(추상메소드 : long apply(int value))
     -ToLongBiFunction<T,U> : 객체 T,U를 long으로 맵핑(추상메소드 : long applyAsLong(T t, U u))
 -Operator : 매개값을 이용해서 연산수행후 동일한 타입으로 리턴 (Function<T,U,R> 써도 동일하게 구현가능할듯..)
+    => Function과의 큰 차이는 Operator는 매개값과 리턴값이 동일하다는것!
 -Predicate : 매개값을 가지고 boolean을 return
 
 

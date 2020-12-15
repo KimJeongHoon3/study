@@ -30,3 +30,13 @@ table space 확인
 
 USER 정보 & default_tablespace 확인
 -select * from DBA_USERS;
+-select * from DBA_TABLESPACES;
+
+*table space를 사용할때 계정마다 default로 쓰는 tablespace에 맞춰서 사용해야하는듯함.. 안그러면 권한 어쩌구 뜸..ㄴ 
+
+*다국어사용!
+-다국어 사용을 위해서는 varchar2가 아닌 nvarchar2를 사용해야한다..
+-기본적으로 varchar2는 영문을 위한것이고, 명시하는 길이는 byte길이를 이야기한다.
+-그러나 nvarchar2는 다국어 지원이 가능하며, 명시하는 길이는 문자갯수를 이야기한다.. 그리고 해당 컬럼으로 insert시 반드시 앞에 N을 넣어줘야한다
+    -여기서 N은 유니코드로 바꾼다는것을 이야기함..
+

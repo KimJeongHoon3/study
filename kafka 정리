@@ -398,3 +398,15 @@ kafka에서 send 하고 callback함수에서 다시 send하면 timeoutexception�
 -kafka 실행시 아래와 같은 clusterID 매칭안된다는 에러날때..
 ERROR Fatal error during KafkaServer startup. Prepare to shutdown (kafka.server.KafkaServer) kafka.common.InconsistentClusterIdException: The Cluster ID Reu8ClK3TTywPiNLIQIm1w doesn't match stored clusterId Some(BaPSk1bCSsKFxQQ4717R6Q) in meta.properties. The broker is trying to join the wrong cluster. Configured zookeeper.connect may be wrong. at
     => 로그 폴더안에 meta.properties를 지운다..
+
+
+
+
+-docker 사용시 참고 사이트
+
+https://www.joinc.co.kr/w/man/12/Kafka/docker
+
+
+-외부에서 kafka 연동할때 셋팅해야할것!
+advertise~~ 요거 셋팅해줘야함
+https://medium.com/@eun9882/kafka-trouble-shooting-remote-connect-error-a7970b00ffca

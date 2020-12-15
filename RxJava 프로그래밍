@@ -64,7 +64,7 @@ chapter03 리액티브 연산자 입문
 -flatmap : 1:1 or 1:N 으로 변환.. 
     -Function<T,ObservableSource<R>> : T 타입 받아서 ObservableSource<R> 타입으로 반환
     *ObservableSource : Observable, AsynSubject, BehaviorSubject ..등등 공급자(publisher)들의 인터페이스
-    -Function<T,ObservableSource<R>>, Bifunction<T,U,R>> : T 타입 받아서 ObservableSource<R> 타입으로 반환ㅎㅏ고 전달하는 T와 해당 결과값(U)을 BiFunction으로 받아서 새로운 R타입으로 반환 => 개꿀
+    -Function<T,ObservableSource<R>>, Bifunction<T,R,U>> : T 타입 받아서 ObservableSource<R> 타입으로 반환ㅎㅏ고 전달하는 T와 해당 결과값(R)을 BiFunction으로 받아서 새로운 U타입으로 반환 => 개꿀
 -filter : 걸러내는것
     -Predicate
 -reduce : 발행한 데이터를 모두 사용하여 어떤 최종데이터를 합성할때 활용 ,, (감소해서 최종적으로 합쳐지니깐..reduce..?)
@@ -240,7 +240,7 @@ Chapter07 - 디버깅과 예외처리
 ******* 업스트림 발행 -> 함수 -> 다운스트림 발행 -> 구독 ******* 
 
 
-*************자료구조를 사용해서 특정데이터를 만들어서 공급해주거나, 비동기 클래스를 만들어서 실행시키고 return값을 넘겨주는 작업도 가능하다ㅓ.. 이를 잘 활용해볼것*************
+*************자료구조를 사용해서 특정데이터를 만들어서 공급해주거나, 비동기 클래스를 만들어서 실행시키고(??뭔말) return값을 넘겨주는 작업도 가능하다ㅓ.. 이를 잘 활용해볼것*************
 
 *****
 

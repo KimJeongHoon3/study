@@ -1,0 +1,21 @@
+Mariadb
+
+-만든사람의 셋째딸 이름 maria
+-mysql과 클라이언트나 jdbc는 모두 호환가능(MySQL쓰는 사람들이 Mariadb쓰는데 불편함 없게하기위해!)
+-mysql과 서버의 옵티마이저나 스토리지엔진에는 명확한 차이가 잇음!
+-dump뜨고 source로 가져오는게 좋음(source는 mysql클라이언트로 접근해서 가능)
+    -source는 진행상황볼수있음
+    -mysql -u root -p < backup.dump 이런식으로 가져오면 화면상에 아무것도 출력안됨..
+
+-userId와 ip가 같이 인증대상이다.. ex) 'root'@'127.0.0.1' 이건 127.0.0.1외의 ip는 접근불가.. 'root'@'%' root로 모든곳에서 접근가능,, 이 두개가 모두 등록되어있을때는 범위가좁은것이적용! 즉, 127.0.0.1
+
+-CREATE DATABASE [DB이름] DEFAULT CHARATER SET [utf8mb4];
+-SHOW CREATE TABLE 테이블명
+    -desc와 같이 테이블에 대한 정보들 보여주나, 인덱스나 PK ENGINE 관련한것들도 볼수있다! create 하는 문장 고대로 보여줌!
+
+-설정관련
+    -버퍼 풀 사이즈는 전체 메모리의 50~80프로 권장
+
+-권한
+    -특정 테이블이나 열에 권한을 부여하는 계정이 필요하다면, view를 만들어서 제공하라!
+
