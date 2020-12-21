@@ -1,0 +1,203 @@
+volatile
+
+-자바의 스레드는 cpu 캐시를 통해 변수들의 데이터를 빠르게 읽고 쓸수가있는데, 그러다보니 다른 스레드가 동일한 변수에 대한 값을 변경시키더라도 기존 스레드의 값이 반영이 안될수있음..
+-예를 들어 루프문을 flag값을 조건으로 열심히 돌고있는 A 스레드가 잇었는데, B스레드가 루프를 나오도록 flag값을 변경한다해도, B스레드가 변경한 값이 A스레드에 반영안될수있다..
+    -이는 B스레드가 자신의 cpu 캐시에 데이터를 썼기때문이고 A스레드는 또한 자신의 cpu캐시만 보고있으니 그렇다..
+=> 이를 막기위해서 volatile 이라는 키워드를 통해서 캐시가 아니라 메모리에 접근하도록 할수있다.. 그리고 volatile 키워드를 사용한 변수외에도 volatile 변수에 쓰기/읽기 이전 혹은 이후의 변수에 대한 데이터가 업데이트됨(메모리에서 가져오는거겟지.. 암튼 그래서 모든곳에 volatile을 쓸필요는없음!),, 당연히 생각해야할것은 volatile을 사용하면 캐시보단 비용이많이들겠지!
+    => "volatile 키워드를 사용한 변수외에도 volatile 변수에 쓰기/읽기 이전 혹은 이후의 변수에 대한 데이터가 업데이트됨"
+        => 좀더 자세히 설명하자면, volatile 키워드를 사용한 변수에 수정을 할때, 그 이전에 non volatile 변수가 있었다면 해당 변수들은 모두 메모리에 업데이트된다! 반대로 volatile 변수를 읽어들일때 현재 메모리에 저장된 모든 변수들을 새롭게 읽어들인다!
+        ( 여기가 설명 아주 잘 되어있음 : https://parkcheolu.tistory.com/16#:~:text=%EC%9E%90%EB%B0%94%20volatile%20%ED%82%A4%EC%9B%8C%EB%93%9C%EB%8A%94%20%EC%9E%90%EB%B0%94,%EA%B2%83%EC%9D%84%20%EB%AA%85%EC%8B%9C%ED%95%98%EA%B8%B0%20%EC%9C%84%ED%95%B4%20%EC%93%B0%EC%9D%B8%EB%8B%A4.&text=%EC%8B%A4%EC%A0%9C%EB%A1%9C%EB%8A%94%20%EC%9E%90%EB%B0%94%205%20%EB%B6%80%ED%84%B0,%EC%9E%91%EC%97%85%20%EC%9D%B4%EC%83%81%EC%9D%98%20%EA%B2%83%EC%9D%84%20%EB%B3%B4%EC%9E%A5%ED%95%9C%EB%8B%A4. )
+
+=> synchronized를 하게되면 이 또한 메모리에서 가져옴..
+
+=> 싱글톤 패턴에서도 double checked lock을 사용할때 volatile에 관한 고려가 필수적임..(재배치 관련한내용..)
+    => 이에대한 고려를 다른 접근으로 해석한 것에 대한 설명 굿 : https://asfirstalways.tistory.com/335 
+
+
+
+
+https://jusungpark.tistory.com/4
+https://m.blog.naver.com/jysaa5/221854703163
+https://parkcheolu.tistory.com/16#:~:text=%EC%9E%90%EB%B0%94%20volatile%20%ED%82%A4%EC%9B%8C%EB%93%9C%EB%8A%94%20%EC%9E%90%EB%B0%94,%EA%B2%83%EC%9D%84%20%EB%AA%85%EC%8B%9C%ED%95%98%EA%B8%B0%20%EC%9C%84%ED%95%B4%20%EC%93%B0%EC%9D%B8%EB%8B%A4.&text=%EC%8B%A4%EC%A0%9C%EB%A1%9C%EB%8A%94%20%EC%9E%90%EB%B0%94%205%20%EB%B6%80%ED%84%B0,%EC%9E%91%EC%97%85%20%EC%9D%B4%EC%83%81%EC%9D%98%20%EA%B2%83%EC%9D%84%20%EB%B3%B4%EC%9E%A5%ED%95%9C%EB%8B%A4.
+
+
+
+
+
+
+
+
+
+volatile 의 성능 고려사항
+volatile 변수에 대한 읽기와 쓰기는 변수를 메인 메모리로 부터 읽거나 쓰게 됩니다. 메인 메모리에 읽고 쓰는것은 CPU 캐시보다 더 비싸다고 할 수 있습니다. 또한 volatile 변수는 성능을 개선 기법인 명령(instruction)들의 재배치를 방지하기 때문에 변수의 가시성을 강제할 필요가 있는 경우에만 volatile 변수를 사용하는 것이 좋습니다.
+
+
+2. 아래의 내용은 블로그 http://tomowind.egloos.com/4571673 에서 가저온 것입니다.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+volatile이란 단어의 뜻은 "변덕스러운"이다. 다시 말하자면 "자주 변할 수 있다"로 생각할 수 있다. 프로그래밍 언어에서는 정의는 언어와 버전마다 다르지만, 대충은 "자주 변할 수 있는 놈이니 있는 그대로 잘 가져다써"정도로 생각을 하면 되겠다. 조금 더 엄밀히 정의를 하자면, (1) 특정 최적화에 주의해라, (2) 멀티 쓰레드 환경에서 주의해라, 정도의 의미를 준다고 보면 된다.
+
+Java에서는 어떤 의미를 가질까? volatile을 사용한 것과 하지 않은것의 차이는 뭘까? volatile의 버전마다의 차이는 뭘까? synchronization과 volatile의 차이는 뭘까? 이 의문들에 대해서 정리한 것은 다음과 같다.
+
+
+volatile을 사용하지 않은 변수: 마구 최적화가 될 수 있다. 재배치(reordering)이 될 수있고, 실행중 값이 캐쉬에 있을 수 있다.
+volatile을 사용한 변수 (1.5미만): 그 변수 자체에 대해서는 최신의 값이 읽히거나 쓰여진다.
+volatile을 사용한 변수 (1.5이상): 변수 접근까지에 대해 모든 변수들의 상황이 업데이트 되고, 변수가 업데이트된다.
+synchronziation을 사용한 연산: synch블락 전까지의 모든 연산이 업데이트 되고, synch안의 연산이 업데이트된다.
+
+무슨 말인지 전혀 모를 수 있다. 앞으로 예제를 들면서 이해를 시켜보도록 노력하겠다.
+
+첫 예제는 Jeremy의 블로그에서 가져온다. 나는 위의 4가지의 경우를 완전히 정립하지 못한 상태에서 봐서 이 예제의 설명이 모호했다고 느꼈다. 블로그의 설명을 보고 내 설명을 보면 이해가 더 될지도 모르겠다.
+
+
+Thread 1
+1: answer = 42;
+2: ready = true;
+
+Thread 2
+3: if (ready)
+4: print (answer);
+
+예제1. 1 -> 2 -> 3 -> 4 순서로 프로그램이 진행된다. ready는 애초에 false다.
+
+첫번째로 ready를 volatile을 걸지 않았다고 해보자. 그럼, answer와 ready가 마구 최적화가 된다. 또한, 그들이 실행시간에 캐쉬된 값들이 바로바로 메인 메모리에 업데이트 되지 않을 수 있다. 만약, 2번 문장의 ready값이 실행이 된 후에 캐쉬만 업데이트를 한 후, 3번이 실행되었다면, 3에서는 ready를 false로 읽었을 수가 있다. --> 에러
+
+두번째로 ready에 volatile을 걸었다고 하자 (버전 1.5 미만). 그럼, ready의 값은 읽혀지거나 쓰여질 때마다 바로 업데이트 된다. 즉, 2번 문장이 실행된 후에 메인 메모리의 ready는 true라고 쓰여진다. 따라서, 3번 문장이 실행될때에 ready는 메인 메모리에서 값을 읽어와서 4번을 안정적으로 실행을 한다. 하지만, answer는 volatile이 정의되지 않았다면 값이 정확히 전해지는 것을 보장할 수가 없다. 4번 문장이 42말고 그 전의 값을 "읽을수도 있다". ---> 에러
+
+세번째로 ready에 volatile을 걸었다고 하자 (버전 1.5 이상). 그럼, ready의 값이 읽혀지거나 쓰여질 때마다 그 때까지의 쓰레드의 모든 상태가 없데이트 된다. 즉, 2에서 ready값이 메인 메모리로 업데이트 되면서, 같은 쓰레드에 있는 answer도 메인 메모리에 업데이트가 된다! 그래서, 3번의 if문은 당연히 참이 되고, 4번에서 answer값도 42를 읽게 된다. --> 성공
+
+이제 대충 감이 잡히는가? 그럼 예제를 하나 더 보자. 그 유명한 Double-Checked Locking 문제이다.
+
+
+class Foo {
+  private Helper helper = null;
+    public Helper getHelper() {
+1:    if (helper == null)
+2:      helper = new Helper();
+3:    return helper;
+    }
+}
+
+코드 1. Single-thread 버전의 singleton pattern (Multi에서 안돌아).
+
+이 글을 읽는 사람들이 singleton 디자인 패턴은 다 안다고 가정을 하고 설명을 하겠다. 위의 코드는 singleton 패턴을 사용한 코드다. 쓰레드가 하나일 때에는 잘 동작을 한다. 하지만, 쓰레드가 여럿일 때에는 문제가 생긴다. 예를들어, 다음과 같은 순서를 생각해봐라.
+
+
+Thread 1이 Statement 1접근 (if --> true)
+Thread 2가 Statement 1접근 (if --> true)
+Thread 1이 Statement 2접근하여 할당
+Thread 2가 Statement 2접근하여 할당 ---> 에러!
+
+위의 에러를 피하기 위해서 간단한 방법을 생각해보면 아예 함수자체를 동기화 시키는 방법이 있다. 아래처럼 말이다.
+
+class Foo {
+  private Helper helper = null;
+  public synchronized Helper getHelper() {
+    if (helper == null)
+      helper = new Helper();
+    return helper;
+  }
+}
+
+코드 2. Multi-thread 버전의 singleton pattern (너무 비쌈).
+
+
+코드 2는 완벽히 잘 동작한다. 하지만. 문제는 synchronization이 너무 비싸다는 데에 있다. 우리는 저렇게 비싼걸 접근시 매번 불러주기는 싫다. 그래서, 아래처럼 double checked locking이라는 요상한 방법을 고안해낸다.
+
+class Foo {
+  private Helper helper = null;
+    public Helper getHelper() {
+      if (helper == null)
+        synchronized(this) {
+          if (helper == null)
+            helper = new Helper();
+        }
+        return helper;
+      }
+    }
+
+코드 3. Double Checked Locking (문제있음).
+
+
+우아, 똑똑하다. 왠지 잘 동작할 것 같은 코드다. 만약 할당 안된 두 개의 쓰레드가 접근을 하면 멈춰서 하나만 할당을 해주고 넘겨준다. 당연히 잘 되야 하지 않는가? 근데, 이것도 잘 안된다. 문제는 아래처럼 컴파일 될 때이다.
+
+class Foo {
+  private Helper helper = null;
+    public Helper getHelper() {
+1.    if (helper == null)
+2.      synchronized(this) {
+3.        if (helper == null) {
+4.          some_space = allocate space for Helper object;
+5.          helper = some_space;
+6.          create a real object in some_space;
+          }
+          return helper;
+        }
+    }
+
+예제 2. Double Checked Locking (상세하게).
+
+
+머신 코드단에서는 최적화에 의해 저렇게 재배치(reordering)이 될 수 있다. 그러면 이제 어떤 시나리오가 문제가 되냐?
+
+1. Thread1이 1~5까지 실행. 즉, helper는 null은 아니지만, 완전한 객체는 아님.
+2. Thread2가 1을 실행후에 helper가 생성되었다고 인지.
+3. Thread2가 getHelper()함수를 탈출하고, 외부에서 helper를 이용해서 무언가를 하려함 --> 에러!
+
+진짜 생각지도 못한 low-level버그가 생기는 것이다. 이 버그는 volatile을 안쓰면 당연히 생기고, helper를 volatile로 선언해도 version에 따라 차이가 있다. 왜 그런가?
+
+버전 1.5 미만일 경우에는 접근에서 그 변수 자체에만 업데이트를 해주도록 되어있다. 즉, some_space는 상관없이 5번 문장을 실행한 후에 helper가 가진 값이 some_space라고 메인 메모리에 써주기만 하면 되는 것이다. 즉, 위의 시나리오가 그냥 그대로 진행될 수가 있다.
+
+버전 1.5 이상일 경우에는 그 변수를 포함한 모든 값이 업데이트가 된다고 했다. 즉, 코드 3에서 new Helper() 가 다 만들어지고 그게 업데이트가 되고 helper에 그 값이 들어가야 하는 것이다. 다시 말하면, 애초에 예제 2처럼 컴파일이 되지도 않는 다는 거다! 재배치 없이 컴파일이 되고, Helper()가 업데이트가 되고, 그게 helper에 써지고, helper가 메인 메모리에 업데이트가 되어 문제가 생길 소지가 없게 된다.
+
+이렇게, 두 예제를 살펴봤다. 대충 volatile이 쓰면 어떻게 변하는지, 버전에 따른 변화가 어떤지 감이 잡힐꺼라고 생각을 한다.
+
+마지막으로 volatile과 synchronization을 살펴보자. 아래의 코드가 이해를 도와줄 거라고 생각한다. i와 j를 보고 연산에 어떤 차이가 있을지 생각해봐라. 어느 변수가 멀티쓰레드 환경에서 문제가 될까?
+
+1. volatile int i;
+2. i++;
+3. int j;
+4. synchronized { j++; }
+
+코드 4. volatile vs synchronized
+
+
+대략 감이 잡힌다면 정말 센스 만점인 사람이다. 답은 i가 문제가 될 수 있고, j는 괜찮다는 거다. 왜냐면 i++ 이란 문장은 read i to temp; add temp 1 ; save temp to i; 라는 세개의 문장으로 나뉘어지기 때문이다. 따라서, read나 write하나만 완벽히 실행되도록 도와주는 volatile은 2번 문장이 3개로 나뉘어 질 경우에 다른 쓰레드가 접근하면 문제가 생길 수가 있다. 하지만, synchronized는 그 블럭안에 모든 연산이 방해받지 않도록 보장해주기에 j는 제대로 업데이트가 된다.
+
+이제 대략 감이 잡혔으면 한다. 다른 자료들에 나온 설명이 어려운 용어들을 써서 이해가 잘 안될수가 있는데, 내 글이 이해에 도움이 되길 바란다. 만약 이 글도 너무 어렵다면 리플을 남기면 최대한 노력해서 답변하겠다.
+
+참고자료.
+1. Volatile in wikipedia: 1.5 전후의 설명을 아래처럼 해놨다. 어려워 보이지만 내가 위에 써놓은 것과 같은 뜻이다.
+Java (모든 버전): volatile로 선언한 변수의 read, write에는 global ordering이 주어진다.
+Java 1.5 이후: volatile로 선언한 변수의 read, write마다 happens-before relationship이 성립이 된다.
+2. The volatile keyword in Java: volatile, synchronized를 테이블로 깔끔하게 비교해 놓음
+3. What Volatile Means in Java: 예제 1이 나온 블로그. 아마 헷갈릴 수도 있으니 내 글과 비교해서 보길...
+4. The "Double-Checked Locking is Broken" Declaration: volatile보다는 double-checked locking에 대해서 제대로 나와있다. synchronized를 사용한 비싼 방법이나, volatile을 사용하는 방법 이외에도 재미있는 해결책이 많다.
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+내용추가
+
+동기화에 소요되는 자원낭비를 막기 위하여, 불러오고 저장하는(load & store) 단순한 작업을 하는 상황에서 동기화 설정을 생략하는 경우가 있다. 하지만 이것은 두 가지의 이유 때문에 위험할 수 있다. 첫 번째로, 64비트 값을 불러오거나 저장하는 작업은 원자성을 가진다고 확신할 수 없다. double이나 long형에 값을 대입하는 경우, 전체의 반(32비트)이 우선 대입된 후 다른 스레드에 의해 선점(preempted)될 수 있다. 그렇게 되면 나중에 수행되는 스레드는 예상과는 다른 값을 가지게 될 것이다. 게다가, 멀티프로세서 환경일 경우 각각의 프로세서는 주 메모리상에 있는 데이터와 분리된, 프로세서 자체 캐시(레지스터)를 사용하여 작업을 처리하는데, 이 두 데이터가 서로 다를 수 있다. synchronized 구문은 로컬(프로세서) 캐시가 주 메모리와 동일한 값을 가지도록 보장해준다. 동기화 되지 않은 메소드의 경우, 다른 스레드에 의해 공유자원이 변경되어도 인지하지 못한다.
+
+
+
+volatile 구문은 이러한 문제를 해결하기 위하여 만들어졌다. volatile로 지정된 64비트 변수의 불러오기와 저장하기 작업은 원자성이 보장된다. 멀티프로세서의 경우에도 마찬가지로, 이 작업은 프로세서 캐시와의 동기화를 보장한다. 특정한 경우에 따라, 동기화 설정 대신 volatile 변수만을 사용하여 작업을 처리하는 경우도 있을 수 있다. 하지만 이것은 프로그램의 복잡도를 높여줄 수 있다. 뿐만 아니라 volatile 변수가 VM에서 정상적으로 동작하지 않는 경우 또한 보고된 적이 있기 때문에 주의를 요한다.  따라서 volatile변수를 사용하는것 대신 동기화를 사용하는 것을 권장한다.
+
+
+참고자료.
+1. http://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.7
+
+
+
+출처: https://jusungpark.tistory.com/4 [정리정리정리]
+
+
+
+
+
+
+
