@@ -639,3 +639,11 @@ SQL 고급
 
 *SHOW GLABAL STATUS LIKE 'Innodb_pages_read';
     => 현재 읽은 페이지수,, 이거로 페이지수 확인하고 쿼리날리고 다시 호출하면 얼마만큼 페이지를 읽엇는지 확인가능
+
+*show full columns from 테이블명
+    => 테이블의 컬럼정보 자세하게나옴
+
+*SELECT * FROM information_schema.`COLUMNS` C
+WHERE table_schema = 'jeremy_test'
+  AND table_name = 'ata_mmt_tran';
+    => 테이블의 컬럼정보 엄청 자세하게나옴..
