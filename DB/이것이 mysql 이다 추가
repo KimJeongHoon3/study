@@ -647,3 +647,16 @@ SQL 고급
 WHERE table_schema = 'jeremy_test'
   AND table_name = 'ata_mmt_tran';
     => 테이블의 컬럼정보 엄청 자세하게나옴..
+
+*show grants for 'jeremy'@'%';
+    => 특정 사용자 권한 조회
+
+*select * from information_schema.GLOBAL_STATUS
+where VARIABLE_NAME in ('Com_stmt_prepare','Com_stmt_execute','Prepared_stmt_count');
+    => preparedStatement 잘 사용하고있는지 확인할수있는 쿼리
+    => Com_stmt_prepare: Connection.prepareStatement("쿼리문") 호출한 횟수
+    => Com_stmt_execute: executeQuery,executeUpdate 호출한 횟수
+    => Prepared_stmt_count : preparedStatement 만들어진 갯수
+
+*JDBC 옵션 셋팅관련 설명굿
+-https://2ssue.github.io/programming/HikariCP-MySQL/
