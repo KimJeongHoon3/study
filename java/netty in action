@@ -119,7 +119,7 @@ netty in action
 
 -ChannelHandlerContext
     -하나의 Channel에서 ChannelHandler 마다 ChannelHandlerContext는 다 다른 객체..!
-    -ChannelHandler와 ChannelPipeline내의 다른 ChannelHandler 간의 상호작용을 관리함!
+    -ChannelHandler와 ChannelPipeline내의 다른 ChannelHandler 간의 "상호작용"을 관리함!
     -ChannelHandlerContext에서 바로 제공하는 메서드와 ChannelHandlerContext에서 채널이나 파이프라인을 불러와서 메서드를 호출하는데에는 차이가있다(둘이 상당히 유사함)
         -후자와같은경우는 전체 파이프라인을 통해 전파된다.. write를 호출했을때 outboundhandler가 현재 호출한 핸들러보다 뒤에 등록되었어도 outboundHandler를 탄다
         -전자와같은경우는 이벤트흐름이 자신이거나 다음이다.. 흐름이 짧다.. write를 호출했을때 outboundhandler가 현재 호출한 핸들러보다 뒤에 등록되어있으면 outboundhandler 타지않는다.

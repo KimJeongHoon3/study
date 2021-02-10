@@ -1,0 +1,446 @@
+- 쿼리작성
+  - MySQL연산자와 내장함수
+    - 리터럴 표기법
+      - SQL 표준에서 문자열은 '(홑따옴표) 사용
+      - MySQL에서는 "(쌍따옴표) 가능
+      - 문자열 값이 홑따옴표(혹은 쌍따옴표)가 포함되어잇을때는 홑따옴표(쌍따옴표)를 두번쓰거나 쌍따옴표(홑따옴표) 안에 넣어주면된다
+        - ex. where abc='test''test' , where abc="test'test"
+      - 숫자는 따옴표없이 사용하면됨
+        - 주의할점은 where 절에 타입이 맞지않는 숫자비교시 형변환이 자동으로 이루어짐(숫자타입으로)
+          - 예를들어, where number_col='10001' 에서 문자열 '10001'은 숫자로변환.
+          - 그러나, where string_col=10001 에서 string_col이 숫자타입으로 변환되기떄문에 해당 컬럼에 인덱스가 지정되어있다면 정상적으로 인덱스 타지않는다(인덱스 타기위해서 인덱스 컬럼에 어떠한 변화도 주어서는 안된다!)
+          - 그러니 최대한 타입을 맞춰주자!
+      - 날짜포맷의 문자열은 MySQL에서 자동으로 날짜타입(DATA or DATETIME)으로 변경해준다!
+      - BOOL(BOOLEAN) 타입은 TINYINT와 동일한 타입이다. 0(false), 1(true) 만 쓰인다!
+    - MySQL 연산자
+      - 동등 비교(=,<=>) 
+        - <=> 는 null을 하나의 값으로 인식해서처리한다.. 즉, null<=>null 이라면 1을 반환!
+          - 그냥 = 를 사용하면 null이 들어가있을때 무조건 null반환 (where 조건문에 null=(값없음) 이면 false 반환..)
+      - 부정비교(<>,!=)
+      - NOT 연산자(!)
+      - AND(&&) 와 OR(||) 연산자
+        - 가독성을 위해서 &&와 ||는 자제할것!
+      - 나누기와 나머지 연산자
+        - 29/9 : 일반적인 나누기(소수점까지표현)
+        - 29 MOD 9 or MOD(29,9) : 나눈 몫만 표현
+        - 29 % 9 : 나머지 표현
+      - REGEXP(=RLIKE)
+        - 정규식 사용하여 체크
+        - REGEXP 조건의 비교는 인덱스 레인지 스캔을 사용할수없으니, 최대한 범위조건을 사용하여 줄여놓고 체크조건으로 사용할것!
+      - LIKE
+        - col1 LIKE 'a%' : a라는 글자로 시작하면 다 찾음
+        - col1 LIKE 'a_' : a뒤에 아무글자 "한개" 있으면 찾음. a만 잇어도 안됨
+        - % or _ 를 문자열 내에서 찾고싶다면, ESCAPE절을 추가하면된다
+          - ex) SELECT 'a%' LIKE 'a/%' ESCAPE '/' => 결과 1
+          - ex) SELECT 'abc' LIKE 'a/%' ESCAPE '/' => 결과 0
+        - 인덱스 사용가능(LIKE 에서 뒤쪽에 % or _ 있어야함.. 앞쪽에있다면 인덱스풀스캔.. )
+          - 해시 인덱스에서는 불가  
+      - BETWEEN 연산자
+        - 연산자 " >= AND <= " 와 같음! 성능에 별차이없음
+        - 범위가 매우 크지않을때는 IN( , , ) 사용하는게좋음
+          - IN ( , , ) 은 동등비교를 AND로 나열한것과 같은효과임 
+      - IN 연산자
+        - IN에 상수를 사용하면 상당히 효율적!
+        - IN에 서브쿼리를 사용하게 될 경우는 비효율!
+          - 서브쿼리의 값이 먼저 실행되어 IN의 상수값으로 되는것이 아니라, 서브 쿼리의 외부가 먼저 실행되고 체크조건으로 수행되기때문에 느릴수있다..
+        - NOT IN은 인덱스 풀스캔탐.. (실행계획에 인덱스 레인지 스캔으로 표시될수도 있다함.. 하지만 이는 IN과 같은 성능을 내는것은아님..!)<br><br>
+    - MYSQL 내장함수  
+      - NULL값 비교 및 대체 
+        - IFNULL(a,b) : NULL이면 a반환, 아니면 b 반환
+        - ISNULL : NULL이면 1반환, 아니면 0 반환
+      - 현재시각조회
+        - SYSDATE() : 현재시작조회. SYSDATE는 하나의 SQL내에서도 계속 호출할때마다 달라짐. 즉, 상수가 아니기에 인덱스를 타지못한다!(인덱스 스캔할때 매번 비교되는 레코드마다 함수를 실행시킨다..)
+        - NOW() : 현재시각조회. NOW 하나의 SQL내에서 항상동일! 즉, 상수가 되므로 인덱스 탈수있다! NOW 써라!!!
+      - 날짜와 시간의 포맷
+        - DATE_FORMAT : 문자열로 변환
+          - %Y : 4자리 년도
+          - %m : 2자리 숫자 표시의 월(00~12)
+          - %d : 2자리 숫자 표시의 일자(00~31)
+          - %H : 2자리 숫자 표시의 시(00~23)
+          - %i : 2자리 숫자 표시의 분(00~59)
+          - %s : 2자리 숫자 표시의 초(00~59)
+        - STR_TO_DATE : 문자열 -> DATETIME으로 변환
+      - 날짜와 시간의 연산(자세한 내용은 p402 참고)
+        - DATE_ADD : DATE_ADD(NOW(), INTERVAL n [YEAR, MONTH, DAY, HOUR, MINUTE, SECOND...]) -- n은 숫자 
+        - DATE_SUB : ADD에 마이너스(-)를 사용하면되기때문에 굳이 안씀 
+      - 타임스템프 연산
+        - UNIX_TIMESTAMP() : '1970-01-01 00:00:00' 로부터 경과된 초의 수를 반환하는 함수 
+        - FROM_UNIXTIME : 타임스템프 값을 DATETIME 타입으로 변환해줌
+      - 문자열 처리 (RPAD,LPAD / RTRIM,LTRIM,TRIM)
+      - 문자열 결합
+        - CONCAT('a','b','c' ....)
+          - 숫자 전달하면 자동으로 문자열로 변환함  
+        - CONCAT_WS('구분자','a','b' ...)
+          - 문자열들을 '구분자'로 합쳐줌
+      - GROUP BY 문자열 결합 
+        - GROUP_CONCAT(인자)
+          - "인자"에 들어갈수잇는 종류
+            - 컬럼 : ,(comma)로 구분해서 한줄로 보여줌
+            - 컬럼 SEPARATOR '구분자' : '구분자'로 구분해서 한줄로 보여줌
+            - 컬럼 ORDER BY 정렬컬럼 [DESC | ASC] : 특정컬럼에 정렬도 가능
+            - DISTINCT 컬럼 ORDER BY 정렬컬럼 [DESC | ASC] : 중복값 제거후 정렬
+          - GROUP_CONCAT을 사용할때 값들을 연결하기 위해 제한적인 메모리 버퍼공간을 사용하는데, group_concat_max_len 시스템 변수로 크기를 조정할수있다(default : 1KB)
+      - 값의 비교와 대체
+        - CASE [컬럼] WHEN .. THEN .. [ELSE] .. END 
+          - 컬럼이있을 경우에는 동등비교
+          - 컬럼이 없을 경우에는 WHEN 다음에 조건 적으면됨
+          - 이를 활용하여 SELECT 절에 서브쿼리가 있을경우, 특정 조건일때만 서브쿼리 실행하도록 지정할수 잇음
+      - 타입의 변환 
+        - CAST( 값 AS 변환타입 )
+        - CONVERT ( 값, 변환타입 ) 
+        - CONVERT ( 값 USING 문자집합) : 해당 문자집합으로 값 변환
+      - 이진값과 16진수 문자열 변환
+        - HEX() : 사람이 읽을수 있는 16진수의 문자열로 변환
+        - UNHEX() : 16진수의 문자열을 읽어서 이진값(BINARY)으로 변환하는 함수(사람이 읽을수없는 바이너리값)
+      - 암호화 및 해시함수(MD5, SHA)
+        - 모두 비대칭형 암호화 알고리즘 (이 방식은 복호화가 불가능 하기 때문에, 비밀번호를 비교할때, 확인하기 위해 입력한 비밀번호도 단방향 암호화를 한 후, 비교하여 동일하면 true 를 아니라면 false 를 리턴하면 되겠다.)
+        - SHA() : SHA-1 암호화 알고리즘을 사용하여, 결과로 160비트(20바이트) 해시값을 반환 => 컬럼에 저장하기위해서는 CHAR(40)필요(1바이트를 16진수로 저장하기위해서는 두개의 공간을 차지하므로)
+        - MD5() : 메세지 다이제스트 알고리즘을 사용해 128비트(16바이트) 해시 값을 반환 => 컬럼에 저장하기위해서는 CHAR(32) 필요
+        - 이를 BINARY로 넣어주려면 UNHEX를 사용하면됨..
+      - 처리대기 (SLEEP)
+        - select sleep(10) from employees where emp_no between 1001 and 10010;
+        - 레코드하나 호출하면 10초를 sleep하기때문에 해당 쿼리 수행완료까지 토탈 100초 걸림
+        - 일부러 쿼리 실행을 오랜시간 유지해야할때 좋음
+      - IP 주소변환
+        - INET_ATON : 문자열 -> 정수형(UNSIGNED INTEGER)
+        - INET_NTOA : 정수형 -> 문자열
+        - 127.0.0.128 ~ 127.0.0.255 사이의 값도 검색가능
+      - VALUES()
+        - INSERT INTO ... ON DUPLICATE KEY UPDATE ... 문장에서만 사용가능
+        - INSERT 하려던 값을 UPDATE문장에서 참조하여 사용가능..
+          - 예를들면, 
+  ```java
+  INSERT INTO tab (col1, col2) 
+  SELECT tab1_col1, tab1_col2 from tab1 
+  ON DUPLICATE KEY 
+  UPDATE col2=col2+VALUES(col2); // 여기서 col2는 INSERT 하려는 col2를 참조한것! SELECT할때의 컬럼을 적는것이아니다!
+  ```
+      - COUNT()
+        - COUNT(*)에서 *은 모든 컬럼을 가져오는게 아닌 그냥 레코드 자체를 의미. 그래서 속도도 COUNT(*), COUNT(1), COUNT(PK) 다 같은 속도나옴
+        - COUNT(컬럼)을 사용할때 컬럼값에 NULL이 있는것은 갯수에 포함하지않는다! NULL의 갯수까지 셀거면 COUNT(*) 로 사용할것
+----
+
+- SELECT
+  - 각 절의 처리 순서
+  - > SELECT s.emp_no, COUNT(DISTINCT e.first_name) AS cnt <br>
+  FROM salaries s <br>
+    INNER JOIN employees e ON e.emp_no=s.emp_no <br>
+  WHERE s.emp_no IN (10001,10002) <br>
+  GROUP BY s.emp_no <br>
+  HAVING AVG(s.salary) > 1000 <br>
+  ORDER BY AVG(s.salary) <br>
+  LIMIT 10;
+    1. FROM 절(+ WHERE 절) => WHERE 적용 및 JOIN 실행됨..
+    2. GROUP BY 절
+    3. DISTINCT 절
+    4. HAVING 절
+    5. ORDER BY 절
+    6. LIMIT 절 
+    - 예외사항
+      - 드라이빙 테이블에서 정렬수행하고 드리븐 테이블과 join 실행되는경우
+      - FROM절에 서브쿼리로 인라인뷰를 만들어서 사용하는경우는 FROM절 안에서 수행되는 서브쿼리가 당연 먼저실행..!
+  ---
+  <br/>
+
+  - 인덱스 사용을 위한 기본규칙
+    - 인덱스 걸려잇는 컬럼 건들지말것!
+    - 문자타입과 숫자타입비교시 숫자타입으로 변경되니 주의할것!(여기서도 인덱스 컬럼이 문자타입이면 주의해야한다!)
+      - 언제나 타입은 잘 맞춰줄것!!
+    - WHERE절의 인덱스 사용
+      - 인덱스 컬럼 사용시, 앞선 인덱스 컬럼에 범위조건이 걸리고 이후 인덱스 컬럼에 동등비교 조건이 걸리면 뒤의 동등비교조건은 범위제한 조건으로 사용할수없고 단지 체크조건으로만 사용된다! 즉, 효율이 떨어진다!
+      - OR을 사용하고자하는 컬럼에 하나라도 인덱스가 안잡혀있다면 풀테이블 스캔 확률이 높다(풀테이블스캔 + 인덱스레인지스캔 보다는 아싸리 풀테이블스캔한번이 더 효율적이므로..)
+      - 주의사항
+        - NULL 비교
+          - WHERE to_date IS NULL; -- 인덱스 o (권장)
+          - WHERE ISNULL(to_date); -- 인덱스 o
+          - WHERE ISNULL(to_date)=1; -- 인덱스 x
+          - WHERE ISNULL(to_date)=true; -- 인덱스 x
+          - 위의 4문장 모두 결과는 같음
+        - 날짜비교
+          - DATE 타입과 DATETIME 타입을 비교할때도 자동적으로 변환이 일어나는데, 이는 인덱스에 영향미치지않는다
+          - DATETIME과 TIMESTAMP는 상호간에 호환이 안되니, 변경이 필요하다!
+            - FROM_UNIXTIME() : timestamp -> datetime
+            - UNIX_TIMESTAMP() : datetime -> timestamp
+    - GROUP BY 절의 인덱스 사용
+      - 범위제한 조건이나 체크조건과 같이 구분해서 생각할필요는없음
+      - GROUP BY 절에서 사용하는 순서와 인덱스 컬럼의 순서가 일치해야 인덱스를 탄다
+      - GROUP BY 절에서 인덱스 구성하는 컬럼중의 뒷쪽의 컬럼이 GROUP BY 절에 없더라도 앞의 컬럼이 있다면 인덱스 사용
+      - GROUP BY 절에서 하나라도 인덱스와 상관없는 컬럼이 나오면 인덱스 사용불가(인덱스가 아닌게 껴있으면 모든 데이터 불러와서 조합해야하므로 당연함)
+      - WHERE 조건절에 동등비교조건으로 일부 인덱스가 사용되었다면 GROUP BY절에서 생략가능
+        - ex. idx(col1,col2,col3,col4) 일때, WHERE COL1='상수' AND COL2='상수' GROUP BY COL3, COL4
+    - ORDER BY 절에서 인덱스 사용
+      - GROUP BY절과 인덱스 사용방식이 매우 유사
+      - 인덱스로 정의된 왼쪽부터의 컬럼의 순서와 일치해야함
+      - WHERE 조건시 사용된 인덱스와 ORDER BY에서 사용된 인덱스가 다를수는없음!(GROUP BY도 마찬가지!)
+      - WHERE절과 ORDER BY 절은 같이 사용할때 나타나는 종류
+        - WHERE절+ORDER BY 모두 인덱스 타는경우 : 가장성능이 좋음!
+        - WHERE절만 인덱스타는경우 : WHERE절에 인덱스를 타서 데이터를 가져오고 filesort(소트버퍼)를 사용. WHERE절에서 데이터가 많이 걸러지면 괜춘
+        - ORDER BY절만 인덱스 타는 경우 : ORDER BY 컬럼으로 인덱스를 태우고 데이터를가져와 WHERE 조건들을 하나씩 비교해서 필요없는것은 버리는 방법.. 아주 많은 레코드를 조회해서 정렬해야할때는 이런형태로 튜닝하기도한다함..
+        - 아래 쿼리는 인덱스 못타는 쿼리임(idx(COL1,COL2,COL3,COL4))
+          - WHERE COL1=10 ORDER BY COL3, COL4 (COL1=10 ORDER BY COL2,COL3은 당연히 인덱스탐!)
+          - WHERE COL1>10 ORDER BY COL2, COL3 (만약 ORDER BY COL1,COL2,COL3이면 인덱스탐)
+          - WHERE COL1 IN (1,2,3,4) ORDER BY COL2
+    - GROUP BY 절과 ORDER BY 절의 인덱스 사용(모두사용할때의 이야기..)
+      - 둘중 하나라도 인덱스 못타면 둘다 못탄다..!
+      - 사실 GROUP BY 실행시 인덱스로 수행하면 이미 정렬이 되어잇는 상태이기때문에 GROUP BY와 동일한 인덱스가 아니면 당연히 모든 데이터 불러와서 ORDER BY 를 사용해야하니깐 GROUP BY든 ORDER BY든 인덱스 못탄다.. 
+      - 그러나 WHERE 조건은 탈수있으면 타고 진행.. GROUP BY와 ORDER BY만 하나라도 못타면 다 못타는것이지, WHERE 조건은 탈수있음!
+    ---
+  - DISTINCT
+    - 집합함수랑 같이 사용x : 인덱스 안타면 임시테이블을 사용하나, 실행계획에 별도의 표시는 없음
+    - 집합함수랑 같이 사용o : 인덱스 안타면 임시테이블을 사용함, 집합함수 사용하는 만큼 임시테이블 사용 ex) SELECT COUNT(DISTINCT 컬럼), COUNT(DISTINCT 컬럼2) => 임시테이블(보통 유니크 인덱스를 사용하는..) 적어도 2개 사용 
+  ---
+  - LIMIT N
+    - 가장 마지막에 실행
+    - ORDER BY, GROUP BY 가 인덱스만 잘 탄다면 LIMIT은 매우 효과적인 움직임! (하지만 인덱스 못타면 모든 작업을 다 수행하고난뒤 LIMIT에 해당하는 갯수만 가져오기때문에 큰 의미 없을수있음,,)
+    - DISTINCT는 인덱스 못타도 풀테이블스캔하면서 임시테이블에서 LIMIT의 갯수를 다 채우면 바로 리턴 => 효율적!
+    - 정렬이나 그룹핑이 없는 상태에서 LIMIT을 사용하면 풀테이블스캔을해도 LIMIT의 건수만 채워지면 더이상 진행x => 빠름!
+    - LIMIT 0은 MySQL 옵티마이저는 쿼리를 실행하지않고 최적화만 실행하고 즉시 사용자에게 응답을 보냄! 커넥션 풀에서 커넥션의 유효성 체크할때 유용하다함..
+  ---
+  - JOIN 
+    - 옵티마이저는 JOIN시 드라이빙 테이블보다 드리븐 테이블을 더 신경쓴다. 왜냐하면 드리븐 테이블이 지속적으로 드라이빙테이블로부터 전달받은 값을 가지고 계속 찾는 작업이 진행되어야 하기 떄문이다. 즉, 드리븐 테이블을 계속 읽는 작업이 수행됨으로 드리븐 테이블의 비용이 덜 들수 있도록 실행계획을 세운다
+    - JOIN 되는 컬럼의 데이터 타입은 반드시 일치시켜라!
+      - INT는 SIGN인지 UNSIGN 인지 항상 구분해야함(INT, BIGINT, TINYINT 간에는 호환가능)
+      - CHAR, VARCHAR 간에도 호환가능
+      - DATE, DATETIME 간에도 호환가능
+      - 같은 타입이더라도 문자집합이나 콜레이션 다르면 인덱스 안탐(MySQL5.0이상이면 에러남)
+    - ANTI JOIN
+      - tab1, tab2가 있을때 tab1에 있는값이 tab2에도 잇는지 확인 하고 싶을때 사용
+      - left join(아웃터조인) + where tab2.컬럼 IS NULL (보통 tab2.컬럼은 조인조건으로 사용된 컬럼을 쓴다함)
+    - FULL OUTER
+      - MYSQL 에서는 제공하지않으나, 두 개의 쿼리 결과를 UNION이나 UNION ALL로 결합하면 동일한 효과를 볼수있다.
+      - 그러나, 이 둘 모두 내부적인 임시테이블을 사용하므로 결과가 버퍼링 되어야하기때문에 쿼리가 느리게 처리된다. 이에 대한 성능을 개선할수 있는것이 복제하는 테이블을 따로 두는것인데, 이를 copy_t나 뮤텍스 테이블이라한다
+      - <h2>**copy_t나 뮤텍스 테이블 찾아볼것!** </h2>
+    - 지연된 조인(Delayed Join -> 인라인뷰 활용하는것인듯..?)
+      - 조인 수행완료후 정렬이나 그룹핑을 해야한다면(인덱스 사용못하는 group by나 orderby), 그만큼 더 추가적으로 많은 데이터를 정렬하거나 그룹핑을 해야한다.(메모리를 더 먹거나 하는 비용발생..) 이를 해결하기위해 정렬이나 그룹핑을 먼저 수행하고 join을 수행하는것은 지연된 조인이라고 한다. 
+      - 또한 FROM 절에서 서브쿼리를 사용하여 join해야할 대상의 갯수를 줄이게 되는것도 지연된 조인의 큰 이득(이는 FROM절 안에 서브쿼리(인라인뷰)에서 distinct, group by, limt과 같이 많이 줄여줄수있는것과 함께 사용하는게 좋음)
+    - 조인버퍼 사용하면 정렬이 흐트러질수있다~
+      - 기존에 드라이빙 테이블로 사용되었던 레코드들이 버퍼에 저장되고(조인버퍼) 드리븐 테이블을 기준으로 다시 조인버퍼에 저장된 드라이빙 테이블을 읽어나가기때문에 기존의 드라이빙테이블로 정렬이 수행되지않는다!
+      --- 
+  - GROUP BY
+    - 특정 컬럼의 값으로 레코드를 그룹핑하고, 각 그룹별로 집계된 결과를 하나의 레코드로 조회할때 사용
+    - MySQL GROUP BY 주의사항 : GROUP BY가 사용된 그룹키가 아닌 컬럼을 집합함수로 감싸지않아도 에러안남(대신, 해당컬럼에 중간값이 나올지 가장 낮은값이 나올지.. 어떤 값이 나올지 알수없음..)
+    - GROUP BY .. ORDER BY NULL
+      - GROUP BY는 그룹핑과 정렬작업이 동시에 수행된다.. 그래서 정렬에 대한 작업때문에 GROUP BY가 느려지기도하는데, 이떄 정렬을 안하도록 하는것이 ORDER BY NULL! (실행계획에 using filesort 사라짐.. )
+    - GROUP BY col1 ASC col2 DESC
+      - 이렇게 정렬도 사용가능하나, 헷갈리니깐 ORDER BY를 사용할것!
+    - GROUP BY .. WITH ROLLUP
+      - 소계를 표시해줌.. GROUP BY의 대상컬럼이 여러개일지라도 모두 소계나옴
+      - LIMIT 사용할때 조심해야함.. WITH ROLLUP 수행후에 limit 적용됨
+    - 레코드를 컬럼으로 변환할때도 사용(CASE WHEN 사용하여) 
+    - --
+  - ORDER BY
+    - 테이블에서 레코드를 select 해올때 ORDER BY가 없다면 정렬을 100퍼센트 보장해주진 않는다.. 혹여나 정렬이 이미 수행되어있는 PK가 정렬기준이었거나, 인덱스를 조회했을때도 인덱스가 정렬조건이었다면 운좋게도 정렬이 보장될수도 있지만, 정렬된 데이터가 필수적으로 필요한것이라면 별도로 ORDER BY를 꼭 명시해줄것!(이미 정렬되어있으면 수행안하니 걱정말고 명시할것!)
+    - ORDER BY 상수값 
+      - ORDER BY절은 무시됨
+    - ORDER BY RAND()
+      - 랜덤하게 정렬을 수행하는것인데, 이를 사용하게되면 인덱스를 못탄다!(인덱스는 정해진 값을 순서대로 정렬해서 가지고 있기때문에 임의정렬은 인덱스 사용이 불가능! 이에 대한 해결책으로 별도 컬럼을 생성해두고 그 컬럼에 인덱스를 걸어서 정렬을 하면됨.. 해당 컬럼엔 아마 랜덤한 데이터가 들어가겟지..?)
+    - ORDER BY에서 NULL은 항상 최소의값으로 간주됨(즉, 오름차순에서는 제일 먼저보여짐)
+    - 정렬수행시 특정 컬럼은 오름차순, 다른 컬럼은 내림차순과 같이 혼합적으로 사용하고 싶을때는 어플리케이션단에서 정렬이 필요한 컬럼의 데이터만을 가져오고나서 해당 데이터로 다시 필요에 맞는 정렬을 수행하는 쿼리를 사용하여 조회하면 된다.. 하지만 이는 처음 정렬이 필요한 컬럼의 데이터가 너무 많아지면 오히려 더 느려질수도잇다(프로그램단에서 계속 루프를 돌아가면서 쿼리를 수행하여야하기때문에)
+  - 서브쿼리
+    - 상관서브쿼리 : 독립적으로 실행되지못하고 외부쿼리가 실행된 후 그 값이 전달되어야 서브쿼리가 실행가능한것.. 이는 체크조건으로만 사용되기때문에 그닥 효율적이지 못하다
+    - 독립서브쿼리 : 독립적으로 실행됨.. 외부쿼리보다 먼저 실행되어 상수로 처리되는경우가 대다수
+    - 서브쿼리 제약사항
+      - 서브쿼리를 IN 연산자와 함께 사용하면 효율적으로 처리못함(join으로 알아서 옵티마이저가 변형시켜주기도하는듯해서 조금은 개선된듯..?)
+      - FROM절에서 서브쿼리 사용할때 바깥에 정의된 테이블의 컬럼을 참조할수없음
+      - 서브쿼리 이용해 "하나의 테이블"에 대해 읽고쓰기를 동시에 할수없음(=> 임시테이블로 바꾸면가능은함.. 하지만 데드락 유발하기쉬우니 자제할것)
+    - SELECT 절에서는 스칼라서브쿼리(컬럼1, 레코드1)를 사용해야한다. 하지만 MySQL에서는 아무것도 반환하지않는쿼리에는 NULL을 뱉어준다
+    - WHERE 절에 IN 과 함께 사용된 서브쿼리
+      - MYSQL 5.6이상에서는 옵티마이저가 join으로 변경해서 쿼리실행
+    - WHERE 절에 NOT IN과 함께 사용된 서브쿼리
+      - 안티조인을 사용할것!(LEFT JOIN + tab2.col1 is null)
+    - FROM절에서 사용된 서브쿼리
+      - 지연된 쿼리가 아니라면 되도록 join으로 바꿀것!
+      - FROM절의 서브쿼리는 메모리(임시테이블)를 사용하기때문에 데이터가 적은경우에는 문제가되지않으나, 데이터가 많게되면 디스크에 저장을 해야하므로 상당히 느려질수있다!(혹여나 TEXT, BLOB같은게 있으면..)
+  - 집합연산
+    - UNION(UNION DISTINCT) : 모든 컬럼을 가지고 unique인덱스를 만들고 중복확인함.. 컬럼이 길이가 길거나 레코드 건수가 많으면 무지느려짐(비교해야하는 컬럼의 길이가 길어지면 더더더욱 느려지겟지..)
+    - UNION ALL : 중복확인 없이 바로 결합(되도록 중복 제거할수있는거면 제거하고 UNION대신 UNION ALL쓰는게 효과적)
+    - INTERSECT : 교집합(inner join과 동일하기때문에 inner join으로 쓸것! 그게훨빠름)
+    - 모두 임시테이블을 사용한다!
+    - *MINUS : MySQL에서 MINUS는 따로 지원되지않는다! 하지만 안티조인으로 사용하면 가능!
+  - LOCK IN SHARE MODE와 FOR UPDATE
+    - InnoDB는 기본적으로 SELECT한 데이터를 잠금을 하지않는데, 해당데이터를 조회하여 변경이 필요할때에 락을 걸어 다른 트랜잭션이 접근하지못하도록 해야할때가있는데, 그때 사용하게된다(FOR UPDATE를 사용하는것이 좋음)
+    - LOCK IN SHARE MODE 는 공유락을 사용
+    - FOR UPDATE는 배타락을 사용
+  - SELECT INTO .. OUTFILE 
+    - 쿼리의 결과를 파일로 저장 
+    - 주의사항
+      - MySQL서버가 기동중인 장비의 디스크로 저장
+      - MySQL 서버를 기동중인 운영체제의 계정이 쓰기 권한을 가지고 있어야함(저장할 디렉토리에도 권한이 있어야함)
+      - 기존에 동일한 파일 이름이있다면 덮어쓰지않고 에러뱉음
+    - 예제
+    - > SELECT emp_no, first_name, last_name <br> &emsp; INTO OUTFILE '/tmp/result.csv' <br> &emsp; FIELDS TERMINATED BY ',' <br> &emsp;&emsp; OPTIONALLY ENCLOSED BY '"' ESCAPED BY '"' -- 컬럼의 데이터를 쌍따옴표(")로 묶어주고, 데이터에 쌍따옴표가있으면 쌍따옴표(")로 ESCAPE처리해라! <br>&emsp; LINES TREMINATED BY ' \n' <br> FROM employees WHERE emp_no BETWEEN 10001 AND 10100; 
+    - --
+<br/>
+
+- INSERT
+  - AUTO_INCREMENT
+    - 하나의 테이블에서만 순차적으로 증가
+    - 여러테이블에서 동시에 사용할수있는 AUTO_INCREMENT도 있다함..
+    - AUTO_INCREMENT 컬럼에 사용자가 특정 숫자를 넣게된다면, AUTO_INCREMENT가 해당 숫자보다 작을때는 해당숫자에+1값으로 되고, AUTO_INCREMENT가 해당 숫자보다 클때는 암것도안함
+    - 초기값(auto_increment_offset)과 얼만큼씩 증가할것인지(auto_increment_increment)도 지정가능
+    - LAST_INSERT_ID() 함수
+      - "현재커넥션"에서 AUTO_INCREMENT의 가장 최근 증가값을 가져옴
+      - MAX()로 가져오면 다른 커넥션에서 증가시킨값을 가져올수도있으니 사용하면 안됨! 
+      - 해당함수는 결국 DB에 한번더 조회해야하기때문에, JDBC에서 "STATEMENT.getGeneratedKeys" 라는 함수를 호출해서 insert시 한번에 가져올수있다!!!(p499참고)
+    ---
+  - INSERT IGNORE
+    - PK나 UK 중복이 일어났을때 에러안뱉고 작업수행함..
+    - 컬럼의 수가 일치하지않을때는 에러내뱉는다..
+    - 값이 변형되어 저장이 되는경우가 있는데, NOT NULL 컬럼에 NULL을 저장하려고하면, NULL 대신 빈 문자열("")이나 0을 저장한다..
+  - REPLACE
+    - 중복되면 값이 대치가 된다
+    - 기존 데이터를 지우고 새로운 데이터를 insert하는 방식이다
+    - PK와 UK가 있을때, 다른 레코드지만 PK도 중복이고 UK도 중복이라면 두개가 지워진다
+    - 지워지고 insert되는방식이기때문에 지워지기전의 컬럼을 사용해야한다면 duplicate key update 문장을 사용해야한다
+  - INSERT INTO ... ON DUPLICATE KEY UPDATE
+    - 중복된 레코드를 만나면 특정 컬럼을 update친다!
+    - INSERT 하려는 데이터의 참조도 가능한데, 문서 위쪽에 MySQL내장함수의 VALUES() 부분을 참고할것
+  - INSERT ... SELECT ...
+    - 특정 테이블로부터 레코드를 읽어서 그 결과를 INSERT!
+    - SELECT한 테이블의 데이터를 동일한 테이블에 INSERT는 불가!
+  - LOAD DATA(LOCAL) INFILE ...
+    - SELECT INTO OUTFILE ... 쿼리에 대응하는 적재기능 쿼리
+    - CSV 혹은 일정구분자로 되어잇는 파일에서 값을 읽어서 바로저장함 
+    - mysqlimport 유틸도 동일한 방식으로 수행되며, 옵션으로 --use-threads 옵션을 사용해서 병렬로 처리도가능
+    - 그냥 INSERT문장으로 레코드를 저장하는것보다 20배 빠르다고 메뉴얼에 소개
+    - 데이터 파일의 값과 테이블 컬럼의 갯수가 동일한경우 아래와같이..(IGNORE은 INSERT IGNORE와 같음,, REPLACE또한 가능 )
+    - > LOAD DATA INFILE '/tmp/employees.csv' <br> IGNORE INTO TABLE employees <br> FIELDS <br> &emsp; TERMINATED BY ',' <br> &emsp; OPTIONALLY ENCLOSED BY '"' ESCAPED BY '"' <br> LINES <br> &emsp; TEMINATED BY '\n' <br> &emsp; STARTING BY '' <br> (emp_no, birth_date, first_name, last_name, gender, hire_date);
+    - 데이터 파일의 값의 개수가 테이블의 컬럼 수보다 적은경우
+      - "SET 남는컬럼 = 값" 을 하단에 추가하면됨
+    - 데이터 파일의 값의 개수가 테이블의 컬럼 수보다 많은 경우
+      - 세션변수에 임의로 담아놓으면됨
+      - (emp_no, @emp_tel_no, birth_date, first_name, last_name, gender, hire_date);
+    - 데이터 파일의 값을 연산해서 테이블의 컬럼에 저장하려는 경우
+      - 세션변수+set사용
+      - (emp_no, birth_date, first_name, @middle_name, @last_name, gender, hire_date) set last_name=concat(@middle_name, ' ', @last_name);
+    - 데이터 파일이 MySQL서버가 아닌 다른 컴퓨터에 있을경우
+      - LOAD DATA LOCAL INFILE '파일위치(url도 가능)' ~
+        - URL 사용을 위해서는 JDBC 커넥션 생성할때 allowUrlInLocalInfile 옵션을 true로 셋팅해놔야함
+      - 속도 개선을 위해서는 autocommit을 false로 해서 처리한뒤, commit을 하는게 좋음
+        - > SET autocommit=0; <br> LOAD DATA ... <br> COMMIT; <br> SET autocommit=1;
+      - 유니크 인덱스체크도 안하도록 해줄것(SET unique_checks=0; 당연 LOAD DATA 완료후 다시 unique_checks=1로 변경해야함!)
+      - foreign key도 체크안하도록 해줄것!(SET foreign_key_checks=0;)
+      - 문자집합도 확인해야함!
+        - 데이터 파일의 문자집합 확인
+        - 클라이언트의 문자집합 확인 (show variables like '%char%')
+        - LOAD DATA 명령에서 문자집합을 셋팅할수도있으며, 
+          - > LOAD DATA INFILE ~ IGNORE INTO TABLE 테이블명 CHARATER SET 'euckr' ~~
+        - 커넥션이나 클라이언트의 문자집합을 변경해도된다
+          - > mysql> SET NAMES 'utf8';
+  ---
+  <br>
+
+- update
+  - UPDATE ... ORDER BY ... LIMIT n
+    - ex)상위 10명에게 10퍼센트 인상
+      - > UPDATE salaried <br> SET salary=salary*1.1 <br> ORDER BY salary DESC LIMIT 10;
+    - ex) RANK 주기
+      - > SET @ranking:=0 <br><br> UPDATE salaries <br> SET ranking=(@ranking:=@ranking+1)<br> ORDER BY salary DESC; 
+  - JOIN UPDATE
+    - 조인된 테이블 중에서 특정 테이블의 컬럼값을 이용해 다른 테이블의 컬럼에 업데이트 해야할때 사용
+    - 양쪽테이블에 공통으로 존재하는 레코드만 찾아서 업데이트하는 용도로도 사용 
+    - 컬럼이 변경되는 테이블에는 배타락, 조인되는 모든 테이블에 대해서는 공유락
+    - JOIN UPDATE 많이 사용하면 데드락 걸릴확률높아짐..! 주의할것!
+    - JOIN UPDATE 문장에서는 GROUP BY나 ORDER BY 사용불가!!!! -> 서브쿼리 사용해서 파생테이블로 만든뒤에는 가능
+    - STRAIGHT_JOIN 또한 사용가능
+  ---
+  <br>
+
+- DELETE
+  - DELETE ... ORDER BY ... LIMIT n
+    - UPDATE와 동일하게 동작
+  - JOIN DELETE
+    - DELETE t1,t2... FROM tab1 t1, tab2 t2 ... WHERE ~~~
+    - 이 또한 STRAIGHT_JOIN 사용가능
+  ---
+<br>
+
+- 스키마 조작
+  - 데이터베이스
+    - CREATE DATABASE [IF NOT EXISTS] DB명; -- character_set_server 변수에 저장되어있는 문자집합과 콜레이션 사용
+    - ALTER DATABASE DB명 CHARACTER SET=euckr;
+      - ALTER DATABASE DB명 CHARACTER SET=euckr COLLATE=euckr_korean_ci;
+    - MySQL 에서 테이블 스페이스는 아싸리 하나만 사용하거나, 테이블별로 테이블스페이스를 구성할수있다..!(데이터베이스 단위별로x)
+  - 테이블
+    - 테이블 구조 조회
+      - SHOW CREATE TABLE 테이블명; -- 컬럼목록, 인덱스, 현재까지 사용된 AUTO_INCREMENT, 외래키정보 등 모두 보여줌
+      - DESC 테이블명; -- 간단하게 나옴 
+    - 테이블 구조 변경
+      - ALTER TABLE 테이블명 CHARATER SET 'euckr'; -- 이렇게 테이블단위로 문자집합을 변경가능하나, 기존에 있는 데이터들의 문자셋이 변경되는것이 아닌 추가되는 레코드부터 적용이된다.. 해당 컬럼의 문자셋을 변경해야한다면 "컬럼단위"로 변경을 해야한다..! 보통은 테이블단위는 안쓰인다함
+      - ALTER TABLE 테이블명 ENGINE=myisam; -- 엔진변경.. 테이블의 모든 레코드를 복사하는 작업이 일어난다! 동일한 ENGINE으로 변경해도 그렇다..!
+        - 동일한 엔진으로 변경하는 작업은 테이블 데이터를 리빌드(최적화) 하는 작업에 사용된다. 레코드의 삭제가 많았다면 이를 사용하게되는데, 최적화 작업은 "OPTIMIZE 테이블명"을 사용한다.
+          - *테이블 최적화 : 기존 테이블에서 레코드를 한건씩 새로운 테이블에 복사함으로써 테이블의 레코드를 컴팩트하게 만들어주는것!
+    - RENAME TABLE
+      - 테이블의 이름을 변경하는 명령
+      - 통계 테이블의 이름 변경하는데 매우 유용함
+        - > RENAME TABLE tab TO tab_20210101, temp_tab TO tab; -- temp_tab은 직전에 만듦.. 이런식으로 중간에 유실없이 변경가능. ***하지만 innodb사용하는 엔진은 좀더 찾아봐야함.. 서버 부하가 높을때는 사용하지않는게 좋다함..***
+      - 다른 데이터베이스로 이동해야할때도 사용(다른 디렉토리로 옮기는것으로 보면됨,, 테이블이름만 변경하는것은 데이터파일의 이름이 변경되는것!)
+    - 테이블의 상태조회
+      - SHOW TABLE STATUS LIKE '테이블명';
+      - 어떤 스토리지엔진을 사용하는지, ROW갯수, 인덱스길이, 문자집합 등에 대한 정보들 확인가능
+    - 테이블구조 및 레코드 복사(좋은듯)
+      - > CREATE TABLE temp_employees LIKE employees; <br> INSERT INTO temp_emplyees SELECT * FROM employees;
+    - 테이블 생성하면서 레코드 복사
+      - > CREATE TABLE 테이블명(<br>a int,<br>b varchar(10)<bt>)ENGINE=INNODB<br>AS<BR>SELECT a,b FROM employees LIMIT 10;
+      - 컬럼이름을 기준으로 찾아들어가기때문에 생성한 테이블의 컬럼과 SELECT한 컬럼의 이름이 같아야함! 다르면 데이터 안들어감!
+  - 컬럼
+    - 컬럼추가시 테이블의 데이터를 새로운 테이블로 복사하는 작업.. 레코드건수가 많아질수록 느려진다(컬럼 삭제도 동일)
+    - 타입변환이나 NULL여부 변경은 테이블의 데이터를 복사하면서 구조를 변경하는것이기때문에 느리다!  
+    - MySQL의 InnoDB나 MyISAM 스토리지 엔진을 사용하는 테이븛에서 컬럼을 추가,변경,삭제 작업은 모두 임시테이블로 복사하면서 처리된다!
+      - 어느정도 진행됐는지 확인을 위해서는 " SHOW GLOBAL STATUS LIKE '%Handler% " 로 확인가능
+  
+  - 인덱스 변경
+    - 인덱스 추가
+      - ALTER TABLE 테이블명 ADD [PRIMARY KEY | UNIQUE INDEX | INDEX ] 인덱스명 (컬럼1,컬럼2 ...);
+      - MySQL 5.1 이상부터 InnoDB에서 인덱스를 추가할때는 데이터를 복사하는 작업은 따로 없고, 인덱스만 생성하는 형태로 개선이 되서 빠르다. 그러나 PK를 추가할때는 데이터 복사가 이루어진다.(아마 데이터페이지에 변경이필요하니까..?)
+      - 컬럼 길이가 너무 길면 앞부분만 사용하는 프리픽스인덱스(prefix index)를 사용한다 (인덱스길이가 765바이트 넘을때!)
+    - 인덱스 조회
+      - SHOW INDEX FROM 테이블명;
+    - 인덱스 삭제  
+      - ALTER TABLE 테이블명 DROP PRIMARY KEY;
+      - ALTER TABLE 테이블명 DROP INDEX 인덱스명;
+    - 컬럼 및 인덱스 변경을 모아서 실행 가능
+      - > ALTER TABLE employees <br> &emsp; DROP INDEX ix_firstname, <br> &emsp; ADD INDEX ix_new_firstname (first_name), <br> &emsp; ADD COLUMN emp_telno VARCHAR(15);
+      - 가능하다면 스키마 변경은 테이블단위로 모아서 실행할것!
+    - 프로세스 조회
+      - SHOW PROCESSLIST;
+      - 서버에 접속한 사용자, 어떤 쿼리실행중인지 등에 대한 PROCESS의 많은 정보들이있음   
+    - 프로세스 강제 종료
+      - KILL QUERY id값 : 커넥션의 해당 쿼리만 강제종료
+      - KILL id값 : 커넥션의 해당쿼리 종료 및 커넥션 강제종료 (이는 커넥션에서 다른 트랜잭션이 진행되고 있었다면 문제가 일어날수있기 때문에 kill query를 먼저 실행해보는게 좋음!!)
+    - 시스템변수 조회 및 변경
+      - SHOW VARIABLES [like ''] -- 세션(현재커넥션)시스템변수조회
+      - SHOW GLOBAL VARIABLES [like ''] -- 글로벌 시스템변수조회
+      - SET 변수명 = 값; -- 세션(현재커넥션) 시스템변수 변경 (동적으로 변경할수있는 변수에 한함)
+      - SET GLOBAL 변수명 = 값; -- 글로벌 시스템변수 변경 (동적으로 변경할수있는 변수에 한함)
+    - 경고나 에러조회
+      - SHOW warnings;
+      - SHOW errors; 
+    - 권한조회
+      - SHOW PRIVILEGES; -- 사용자에게 부여할수있는 권한목록
+      - SHOW GRANT FOR 'jeremy_test'@'%'; -- 'jeremy_test'@'%' 이 계정에 대한 권한 정보나옴
+    ---
+
+  - SQL 힌트
+    - SQL은 어떤 데이터를 가져올지 조회하는언어이지, 어떻게 가져올지는 MySQL의 옵티마이저가 수행한다. 이 MySQL 옵티마이저에게 특정한 키워드를 날려서 어떻게 데이터를 읽는것이 좋다고 알려주는게 있는데 이를 "SQL힌트" 라고한다.
+    - STRAIGHT_JOIN
+      - 옵티마이저 힌트이면서 조인키워드이기도함
+      - 조인의 순서가 고정되어 join의 왼쪽이 드라이빙테이블, 오른쪽이 드리븐 테이블이된다
+      - 임시테이블(인라인뷰 또는 파생테이블)과 일반테이블의 조인시 임시테이블을 꼭 먼저 읽도록해야할때 쓰면좋음(아마 옵티마이저가 보통은 비용을 잘 계산해서 임시테이블꺼를 읽긴할텐데 혹시 모르니..!) 
+    - USE INDEX
+      - 테이블명 USE INDEX (인덱스이름)
+      - 해당 인덱스 사용하도록 권장
+    - FORCE INDEX
+      - USE INDEX보다 더 강하게 옵티마이저에게 권하는것
+      - 크게 의미없고, 만약 옵티마이저가 USE INDEX도 무시했다면 FORCE INDEX도 무시한다함..
+    - IGNORE INDEX
+      - 특정인덱스 사용못하도록.. 보통 풀테이블스캔하려고할때 사용함
+    - SQL_NO_CACHE
+      - 캐시를 사용하지 않겠다라는 의미가 아니라, 캐시에 저장하지않겠다는의미!
+      - 만약 캐시에 이미 저장되어있었다면, 해당 힌트를써도 캐시 가져옴..
+    ---
+
+  - 쿼리성능 테스트  
+    - query_cache_type이 0이면 상관없으나, 그렇지않으면 SQL_NO_CACHE 힌트를 사용하여 테스트할것!
+    - 버퍼풀은 인덱스 페이지뿐아니라 데이터 페이지도 올라간다(InnoDB) 그리고 쓰기작업을 위한 버퍼링도 함께 버퍼풀에 올라간다. 이를 초기화해서 성능을 검사할 필요는 없다. 서비스 운영중일때도 버퍼풀에 올라가 있는것들이 있기때문에 처음 쿼리 날렸을때를 기준으로 성능을 측정하는것이아니라, 6~7번정도 날린것으로 성능측정을 하면된다
+    - ***프로파일링도 가능한데, 이에대한 내용은 p560참고할것***

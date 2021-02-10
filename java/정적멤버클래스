@@ -1,0 +1,11 @@
+inner class vs inner static class(정적 멤버 클래스가 맞는표현)
+
+inner static class가 static이 붙었다고해서 오직 하나의 인스턴스만 갖는다는것이 아니다. inner클래스라고해도 클래스는 껍데기일뿐 실제로 인스턴스를 만들어야 동작을 하기때문에 new outerClass.innerStaticClass() 를 호출하면 호출할때마다 다른 객체가 나타나게된다.
+
+이보다 더 중요한것은 그냥 inner클래스는 외부참조를 하는것이고, inner static class는 외부참조를 하지않는다는것이다.
+외부참조를한다는것은 outer class의 변수나 메소드등을 사용할수잇는것인데, 이것이 문제가되는것은 외부참조가 되어잇으면 가비지컬렉터가 외부참조가 되어있기때문에 지우지 않는다는것이다.
+
+
+
+https://siyoon210.tistory.com/141
+

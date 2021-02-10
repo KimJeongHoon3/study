@@ -16,7 +16,7 @@ Netty 정리
 
 -부트스트랩
     -역할 : 네티로 작성한 네트워크 애플리케이션의 동작방식과 환경을 설정하는 도우미 클래스
-    -설정 : 크게 이벤트 루프, 채널의 전송모드(블로킹,논블로킹,epoll) ,채널 파이프라인(핸들러!)으로 나뉨
+    -설정 : 크게 이벤트 루프, 채널의 전송모드(블로킹,논블로킹(selector..??),epoll,kqueue 등) ,채널 파이프라인(핸들러!)으로 나뉨
     *이벤트 루프 : 소켓채널에서 발생하는 이벤트를 처리하는 스레드 모델에 대한 구현이 담겨있음..
     
 
@@ -26,7 +26,7 @@ Netty 정리
         (reactor 패턴을 이용했다함.. - http://i5on9i.blogspot.com/2013/11/reactor-pattern.html)
 
         *bootStrap은 데이터 처리하는 스레드만 있으면되기때문에, group에 하나의 이벤트루프만 전달받는다!(serverSocketChannel, socketChannel을 둘다가지고 있기때문에 ServerBootStrap은 두개! socketChannel만 가지고있기때문에 bootstrap은 한개!)
-            -nioEventLoopGroup에 전달해주는 스레드갯수는 eventLoop의 갯수를 의미..??????
+            -nioEventLoopGroup에 전달해주는 스레드갯수는 eventLoop의 갯수를 의미..?????? => 그런듯
 
         -ServerBootStrap의 handler는 ServerSocketChannel의 이벤트 핸들러를 정의하고(로그 남기는 핸들러와같은..), childHandler는 socketChannel에 대한 이벤트 핸들러(데이터 송수신 이벤트~)를 정의한다!
 
@@ -227,3 +227,31 @@ Channel에 데이터 읽기를 요청하는것!
 
 왜 갑작스레 session이 끊킨후 WriteAndFlush 하고나면 콜백에 성공이라고 뜰가..
 	=> native socekt에 데이터 넣어주는것으로 역할끝,, 이후 실제로 잘갔는지는 신경안쓰기때문..
+
+
+
+netty 스케줄러 동작방식 (ctx.channel().eventloop().schedule() 또는 IdleHandler 등 => 전자는 어떤것을 수행할지 지정할수있고, 후자는 userEventTriggered 실행하는것뿐)
+1)schedule을 통해서 스케줄러 큐에 이벤트를 적재 (prioirity큐에 ScheduledFutureTask 객체를 넣음)
+2)eventloop에서 이벤트들을 처리하기 위해 task큐 를 실행시키는데, 이를 실행시키기전에 스케줄러 큐에 들어있는 객체들을 가져와 task큐에 적재
+3)ScheduledFutureTask로 등록된 시간과 현재시간을 비교하여 스케줄러 실행할때인지 확인
+    -스케줄러가 실행할때라면 스케줄러 실행(idlehandler같은경우는 지속적으로 실행이되므로 스케줄러 실행 직전에 다시 1번 작업 수행)
+    -스케줄러가 실행할때가 아니라면 기존에 실행해야할 시간에 현재시간을 빼서(당연히 더 줄어들겠지..) 다시 스케줄러 큐에 이벤트 적재. 즉, 5분뒤에 실행되어야할것인데, 아직 1분이 남았다면 스케줄러에 다시 1분뒤에 실행해야할것으로 변경해서 집어넣는것!
+
+=> 이런 구조에서 Sleep 같은것도 주지않으며 이벤트를 지속적으로 갱신해줌으로써 제 시간에 스케줄러가 실행될수있도록 해줌! 스케줄 갯수만큼 스레드생성x
+
+netty에서 콜백 돌아가는방식(ctx.write 혹은 ctx.writeAndFlush 에 콜백)
+=> write를 하면 outboundbuffer라는 곳에 콜백(promise)에 관한 정보들을 차곡차곡 쌓다가(객체.next로 쌓임) wirteAndFlush혹은 flush를 하면 outboundbuffer에 저장되어있는 Promise 들이 호출된다.. 그래서 처음 write한거부터 promise에 등록한 channelFutureListener(future)들이 순차적으로 호출됨.. 그렇기에 같은 스레드를 타게된다.. 즉, 동일한 이벤트 루프임
+(connect를 시도하면 새로운 스레드에서 실행되는것뿐.. 콜백도 다 동일한 스레드에서 실행됨.. )
+
+
+*netty 로그 참고사항
+poolName + '-' + poolId.incrementAndGet() + '-' + nextId.incrementAndGet();
+Where poolName is the class, poolId is a global counter, and nextId is per pool.
+
+So nioEventLoopGroup-2-2 and nioEventLoopGroup-2-3 are the 2nd and 3rd thread from the 2nd pool, and nioEventLoopGroup-5-2 is the 2nd thread from some other pool.
+
+
+
+
+*netty 4.x 한글번역
+https://rahs.tistory.com/200

@@ -643,7 +643,7 @@ SQL 고급
 *show full columns from 테이블명
     => 테이블의 컬럼정보 자세하게나옴
 
-*SELECT * FROM information_schema.`COLUMNS` C
+*SELECT * FROM information_schema.COLUMNS
 WHERE table_schema = 'jeremy_test'
   AND table_name = 'ata_mmt_tran';
     => 테이블의 컬럼정보 엄청 자세하게나옴..
@@ -660,3 +660,21 @@ where VARIABLE_NAME in ('Com_stmt_prepare','Com_stmt_execute','Prepared_stmt_cou
 
 *JDBC 옵션 셋팅관련 설명굿
 -https://2ssue.github.io/programming/HikariCP-MySQL/
+
+*show variables like 'char%'
+결과는 아래와 같음..
+    character_set_client = utf8mb4
+    character_set_connection = utf8mb4
+    character_set_database = utf8
+    character_set_filesystem = binary
+    character_set_results = utf8mb4
+    character_set_server = utf8
+    character_set_system = utf8
+    character_sets_dir = /usr/share/mysql/charsets/
+    
+    client, connection, results 는 client의 지정한 charset에 따라 다름
+
+*timezone 확인 셋팅
+    select @@global.time_zone, @@session.time_zone; -- 만약 아무것도 안만졌으면 SYSTEM 이라고 써있음
+    set global time_zone='Asia/Seoul';
+    set time_zone ='Asia/Seoul';
