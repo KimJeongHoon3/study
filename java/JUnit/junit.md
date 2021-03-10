@@ -18,6 +18,8 @@
         - 기본 구현체는 ReplaceUnderscores (언더바를 공백으로 변경시켜줌)
       - @DisplayName
         - 어떤 테스트인지 테스트 이름을 보다 쉽게 표현할수 있음. 한글가능
+        - Intellij에서 실행안될때
+          - http://jmlim.github.io/intellij/2020/03/02/intellij-junit5-display-name-did-not-show-issue/
       - 참고
         - https://junit.org/junit5/docs/current/user-guide/#writing-tests-display-names
     - @Assertion
@@ -170,4 +172,29 @@
 
   - Mock 객체 확인
     - Mock 객체가 어떻게 사용됐는지 확인가능
-      - 
+      - 특정 메소드 얼마나 호출되었는지
+        - https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#exact_verification
+      - 어떤 순수대로 호출되었는지
+        - https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#in_order_verification
+      - 특정 시점이후 아무일 일어나지않았는지
+
+  - Mockito BDD 스타일 API
+    - BDD(Behavior Driven Development): 어플리케이션이 어떻게 "행동"해야 하는지에 대한 공통된 이해를 구성하는 방법.. 
+    - 행동에 대한 스펙
+      - title
+      - narrative
+      - 주어진 기준
+        - given : 주어진 상황
+          - > given(memberService.findById(1L)).willReturn(Optional.of(member));<br>
+              given(studyRepository.save(study)).willReturn(study);
+        - when : 실제적인 행동
+          - > service.doSomething(param1,param2);
+        - then : 결과
+          - > then(memberService).should(times(1)).notify(study);<br>
+              then(memberService).shouldHaveNoMoreInteractions();
+        - => 이들 모두는 BddMockito 라는 클래스를 통해서 BDD 스타일의 API를 사용하는것임!
+        - 참고
+          - https://javadoc.io/static/org.mockito/mockito-core/3.2.0/org/mockito/BDDMockito.html
+          -	https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#BDD_behavior_verification
+        
+
