@@ -2,3 +2,16 @@ javac명령어 사용시 유의사항
 
 정리굿
 https://suzxc2468.tistory.com/193
+
+
+
+javac -d [컴파일된 파일들 위치] -cp [클래스패스 위치] [JAVA Main이 있는 소스 풀경로]
+
+java -cp [클래스패스 위치] [JAVA Main이 있는 클래스(.class)의 풀경로(패키지는 슬래쉬말고 .(dot)으로, .class 생략)]
+
+-cp 에는 외부 jar파일들도 불러올수있는데, 그런 파일들을 불러오기 위해서는 다음과 같이 하면됨
+   ex) lib폴더 안에 많은 jar파일들이 있다면, " -cp ./lib/*;[Main 실행시킬 클래스패스위치] " 이런식으로 해주면됨
+      -"*"은 jar파일에서만 한하고, .class들의 위치들을 알려주기위해서는 . (그냥 "."는 default인듯함.)
+      -";"는 클래스패스위치들을 여러개 이어나갈때 사용
+      
+참고 : [Trouble Shooting] CLI를 이용하여 외부 라이브러리를 포함한 Java파일 Compile 및 실행하기(Classpath) - https://ssoco.tistory.com/m/22
