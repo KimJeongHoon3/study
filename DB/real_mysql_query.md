@@ -352,6 +352,11 @@
   - JOIN DELETE
     - DELETE t1,t2... FROM tab1 t1, tab2 t2 ... WHERE ~~~
     - 이 또한 STRAIGHT_JOIN 사용가능
+    - > DELETE T1, T2
+<br>FROM T1
+<br>INNER JOIN T2 ON T1.key = T2.key
+<br>WHERE condition;
+      - Notice that you put table names T1 and T2 between the DELETE and FROM keywords. If you omit T1 table, the DELETE statement only deletes rows in T2 table. Similarly, if you omitT2 table, the DELETE statement will delete only rows in T1 table.
   ---
 <br>
 

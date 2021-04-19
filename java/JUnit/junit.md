@@ -160,7 +160,7 @@
       member.setEmail("hihi@gmail.com");<br>
       when(service.findById("hi")).thenReturn(member); //stubbing <br>
       - => 이렇게 되면 service.findById("hi") 를 호출하면 member객체를 리턴해준다는것!
-    - argumentMatcher를 통해 특정 매개변수만을 받는게 아닌, 범용적으로 사용할수있도록 만들수있음
+    - argumentMatcher를 통해 특정 매개변수만을 받는게 아닌, 범용적으로 사용할수 있도록 만들수있음
       - 참고사이트 : https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#3
     - Mockito.when ~~ do
     - stubbing에 동일한 메소드를 여러번 호출할때 각각 다르게 행동하도록 조작가능
@@ -174,7 +174,7 @@
     - Mock 객체가 어떻게 사용됐는지 확인가능
       - 특정 메소드 얼마나 호출되었는지
         - https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#exact_verification
-      - 어떤 순수대로 호출되었는지
+      - 어떤 순서대로 호출되었는지
         - https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#in_order_verification
       - 특정 시점이후 아무일 일어나지않았는지
 
