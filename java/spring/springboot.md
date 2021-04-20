@@ -140,31 +140,47 @@ SpringApplication 2부
       4. classpath:/
 
 외부설정 2부
-	- @ConfigurationProperties
-		- 여러 프로퍼티를 묶어서 읽어올수있음
-		- application.properties와 같은 설정파일에서 prefix를 동일하게 맞추고 해당 @ConfigurationProperties(prefix)로 만든뒤 해당 클래스의 변수에 바인딩가능
-		- 스프링부트에서는 @Component만 추가로 적어주면 해당 객체를 가져와서 사용가능
-		- 바인딩은 상당히 융통성 있게 이루어짐
-		  - prefix.aa-bb
-		  - prefix.aa_bb
-		  - prefix.aaBb
-		  - prefix.AABB
+  - @ConfigurationProperties
+    - 여러 프로퍼티를 묶어서 읽어올수있음
+    - application.properties와 같은 설정파일에서 prefix를 동일하게 맞추고 해당
+  - @ConfigurationProperties(prefix)로 만든뒤 해당 클래스의 변수에 바인딩가능
+    - 스프링부트에서는 @Component만 추가로 적어주면 해당 객체를 가져와서 사용가능
+    - 바인딩은 상당히 융통성 있게 이루어짐
+      - prefix.aa-bb
+      - prefix.aa_bb
+      - prefix.aaBb
+      - prefix.AABB
+    - 만약 JavaBean 내부에 별도의 정적멤버클래스를 가지게되면, 해당 클래스 이름을 사용하면됨
+      - 예를들어, inner static class 이름이 sta 라고한다면 prefix.sta.aa-bb 로 한 depth 추가하면된다
+    - 스프링부트에서 실행되는 app의 프로젝트 외부에 있는 것들을 "@ConfigurationPropertiesScan" 를 통해 가져와서 읽을수있음..
+      - >@SpringBootApplication<br>
+        @ConfigurationPropertiesScan({ "com.example.app", "org.acme.another" })<br>
+        public class MyApplication {<br>
+        }
+    - map으로 저장하기 위해서는 아래와 같이 사용하면됨
+      - >acme.map.[/key1]=value1 <br>
+        acme.map.[/key2]=value2 <br>
+        acme.map./key3=value3 <br>
+      - "[]" 이것을 사용하면 /(슬래쉬) 도 함께 key값으로 들어가지만, [] 이게 없는 /key3는 /이게 제거된 key3가 key값으로 들어감.. 
+        - If the key is not surrounded by [], any characters that are not alpha-numeric, - or . are removed.
+    - Data Size나 periods도 suffix만 잘 넣어주면 알아서 converting 됨
+    - 
 	- 프로퍼티 값 검증가능
-		- @Validated
-		- @NotNull, @Size ...
+      - @Validated
+      - @NotNull, @Size ...
 	- @Value
-		- SpEL은 사용할수있으나, 위의 기능을 사용할수없다..!
+      - SpEL은 사용할수있으나, 위의 기능을 사용할수없다..!
 		
 프로파일
-	- @Profile("prod") 와 같이 사용
-	  - @Configuration 와 함께!
-	  - @Component 와 함께!
-	- 어떤 프로파일을 활성화 할것인지는 spring.profiles.active=[] 여기에 지정
-	- spring.profiles.active=prod 로 주게되면, application.properties보다 applcation-prod.properties가 더 우선됨(당연 @Profile("prod")로 된것도 실행..)
-	- 기존 프로파일에서 추가하고싶은게 있다면 spring.profiles.include=[] 를 사용! spring.profiles.include=abc 라고 지정하면, application-abc.properties도 함께 읽어옴
-	- application과 같은 이름을 변경하고싶으면 spring.config.name=[] 으로 지정가능
-	- 위치같은것도 당연 변경가능
-		- https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-external-config-files-profile-specific
+  - @Profile("prod") 와 같이 사용
+    - @Configuration 와 함께!
+    - @Component 와 함께!
+  - 어떤 프로파일을 활성화 할것인지는 spring.profiles.active=[] 여기에 지정
+  - spring.profiles.active=prod 로 주게되면, application.properties보다 applcation-prod.properties가 더 우선됨(당연 @Profile("prod")로 된것도 실행..)
+  - 기존 프로파일에서 추가하고싶은게 있다면 spring.profiles.include=[] 를 사용! spring.profiles.include=abc 라고 지정하면, application-abc.properties도 함께 읽어옴
+  - application과 같은 이름을 변경하고싶으면 spring.config.name=[] 으로 지정가능
+  - 위치같은것도 당연 변경가능
+    - https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-external-config-files-profile-specific
 ---
 
 - 스프링 기타 이모저모

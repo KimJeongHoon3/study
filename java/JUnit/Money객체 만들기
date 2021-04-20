@@ -1,0 +1,23 @@
+Money객체 만들기
+
+5$ + 10Franc = 10$ (2:1 일경우)
+5$ + 5$ = 10$ o
+5$ * 2 = 10$ o
+5CHF * 2 = 10CHF o
+equals o
+공용 equals o
+공용 plus o
+공용 times o
+Dollar/Franc 중복 o
+통화 o
+
+10CHF -> 5$ (2:1적용) o
+
+통화 더하기 o
+
+
+
+
+
+
+
