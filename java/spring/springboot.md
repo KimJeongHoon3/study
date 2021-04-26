@@ -181,6 +181,91 @@ SpringApplication 2부
   - application과 같은 이름을 변경하고싶으면 spring.config.name=[] 으로 지정가능
   - 위치같은것도 당연 변경가능
     - https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-external-config-files-profile-specific
+	
+테스트
+```JAVA
+/**
+ * Mock을 상당히 쉽게 사용할수 있는 방법
+ * 서블릿컨테이너를 띄운 상태는 아님! 서블릿을 MOCKING한것!
+ * */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@AutoConfigureMockMvc
+class TestControllerTest {
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void testHello() throws Exception {
+        mockMvc.perform(get("/hello"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("hello JH"))
+                .andDo(print());
+    }
+}
+
+/**
+ * 실제 서블릿 컨테이너를 띄운 상태(포트 지정도 가능)
+ * 현재 Spring컨테이너에있는 모든 빈들을 주입가능(@SpringBootTest 때문에 가능)
+ * 컨트롤러 테스트할때 엮여있는 service를 mock으로 셋팅하여 딱 컨트롤러만 테스트하도록 할수있음 => @MockBean
+ * webclient가 사용하기에 매우 직관적이고 좋음 
+ * */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class TestControllerTest {
+    @Autowired
+    TestRestTemplate testRestTemplate;
+
+    @MockBean
+    TestService testService;
+
+    @Autowired
+    WebTestClient webTestClient;
+
+    @Test
+    public void testHelloWithRestTemplate() throws Exception {
+        given(testService.getName()).willReturn("jeonghun");
+
+        String result=testRestTemplate.getForObject("/hello",String.class);
+        assertEquals(result,"hello jeonghun");
+        
+    }
+
+    @Test
+    public void testHelloWithWebClient(){
+        given(testService.getName()).willReturn("jeonghun");
+        webTestClient.get()
+                .uri("/hello")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("hello jeonghun");
+    }
+}
+
+/**
+ * WebMvc의 Controller쪽 관련 테스트하도록 도와주는 어노테이션이 @WebMvcTest
+ * 딱 지정한 Controller class만 테스트가능(Controller 관련 어노테이션으로 등록되어있어야함)
+ * 연관된 Service는 모두 Mock으로 셋팅ㅎ애줘야함
+ * MockMvc로 테스트가능
+ * 모든 Bean들이 주입되지않기때문에 빠르게 테스트가능!(@Spring
+ * */
+@WebMvcTest(TestController.class)
+class TestControllerTest {
+    @MockBean
+    TestService testService;
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void testHello() throws Exception {
+        given(testService.getName()).willReturn("jeonghun");
+
+        mockMvc.perform(get("/hello"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("hello jeonghun"))
+                .andDo(print());
+    }
+}
+```
 ---
 
 - 스프링 기타 이모저모
@@ -221,4 +306,6 @@ SpringApplication 2부
   - @RequestParam
     - Get방식과 같은 url에서 ?뒤에 보내는 데이터를 받을때 사용하는 어노테이션 
 
-      
+  - @ControllerAdvice (좀더 찾아보고 정리할것!)
+	- 예외처리할때 사용한다함.. 
+	- https://jeong-pro.tistory.com/195
