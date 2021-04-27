@@ -178,6 +178,14 @@ SpringApplication 2부
   - 어떤 프로파일을 활성화 할것인지는 spring.profiles.active=[] 여기에 지정
   - spring.profiles.active=prod 로 주게되면, application.properties보다 applcation-prod.properties가 더 우선됨(당연 @Profile("prod")로 된것도 실행..)
   - 기존 프로파일에서 추가하고싶은게 있다면 spring.profiles.include=[] 를 사용! spring.profiles.include=abc 라고 지정하면, application-abc.properties도 함께 읽어옴
+    - 스프링부트 2.4부터는 변경
+    - 이를 사용하기위해서는 "spring.config.import=application-testdb.properties" 이런식으로 가져올수있음
+    - 또한, active를 지정하여 group으로 가져올수도있음
+      - >spring.profiles.active=test<br>
+         spring.profiles.group.test=testdb
+        - 이렇게 되면 application-testdb.properties 인거 불러오는것뿐아니라, @Profile("test") 로 지정한 @Configuration도 사용가능..
+        - 커맨드나 VM option으로 spring.profiles.active=test 라고 사용하면, application-test.properties 를 사용하게되는데, 해당 프로퍼티 안에서 spring.profiles.group.test=testdb,testdb2와 같이 group 사용불가..(이거는 왜 안되는지 좀더 찾아봐야할듯..)
+
   - application과 같은 이름을 변경하고싶으면 spring.config.name=[] 으로 지정가능
   - 위치같은것도 당연 변경가능
     - https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-external-config-files-profile-specific
