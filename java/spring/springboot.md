@@ -293,11 +293,13 @@ class TestControllerTest {
   - @RestController
     - 사용자 요청에 Data를 응답
     - @Controller + @ResponseBody
-       -@ResponseBody 를 통해서 사용자에게 json과같은 데이터를 return 해줄수있음
-    - 데이터 반환을 위한 HttpMessageConverter 가 동작.. 변환해야 하는 데이터에 따라 사용되는 Converter는 달라짐!
-       - 문자열 : StringHttpMessageConverter
-       - 객체 : MappingJackson2HttpMessageConverter
-       - Spring은 클라이언트의 HTTP Accept 헤더와 서버의 컨트롤러 반환 타입 정보 둘을 조합해 적합한 HttpMessageConverter를 선택하여 이를 처리합니다.
+      - @ResponseBody 를 통해서 사용자에게 json과같은 데이터를 return 해줄수있음
+        - 메소드에 @ResponseBody 로 어노테이션이 되어 있다면 메소드에서 리턴되는 값은 View 를 통해서 출력되지 않고 HTTP Response Body 에 직접 쓰여지게 됩니다. 이때 쓰여지기 전에 리턴되는 데이터 타입에 따라 MessageConverter 에서 변환이 이뤄진 후 쓰여지게 됩니다.
+        - MessageConverter 를 통해서 객체도 변환된다!~
+        - 데이터 반환을 위한 HttpMessageConverter 가 동작.. 변환해야 하는 데이터에 따라 사용되는 Converter는 달라짐!
+           - 문자열 : StringHttpMessageConverter
+           - 객체 : MappingJackson2HttpMessageConverter
+           - Spring은 클라이언트의 HTTP Accept 헤더와 서버의 컨트롤러 반환 타입 정보 둘을 조합해 적합한 HttpMessageConverter를 선택하여 이를 처리합니다.
 
   - @Controller
     - 사용자 요청에 HTML 파일을 응답

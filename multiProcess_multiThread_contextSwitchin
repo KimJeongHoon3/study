@@ -41,7 +41,7 @@ multiThread
         -동기화문제(스레드 안전을 유의하여 코딩)
 
 
-
+스레드와 프로세스 이해하기쉽게 정리 : https://kingofbackend.tistory.com/119
 
 contextSwitching
     -왜 필요한가?
