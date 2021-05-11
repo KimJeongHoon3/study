@@ -273,6 +273,76 @@ class TestControllerTest {
                 .andDo(print());
     }
 }
+
+
+/**
+    JSON 테스트하기 매우좋음
+*/
+@RunWith(SpringRunner.class) //스프링부트 2.1부터는 이거 안씀 (junit5로 넘어가면서 ExtendsWith(SpringExtention.class)이거 사용),, Spring
+@JsonTest
+public class ArticleJsonTest {
+    @Autowired
+    private JacksonTester<Article> json;
+
+    @Test
+    public void testSerialize() throws IOException {
+        Article article = new Article(
+                1,
+                "kwseo",
+                "good",
+                "good article",
+                Timestamp.valueOf((LocalDateTime.now())));
+
+        // assertThat(json.write(article)).isEqualToJson("expected.json");  직접 파일과 비교
+        assertThat(json.write(article)).hasJsonPathStringValue("@.author");
+        assertThat(json.write(article))
+                .extractingJsonPathStringValue("@.title")
+                .isEqualTo("good");
+    }
+
+    @Test
+    public void testDeserialize() throws IOException {
+        Article article = new Article(
+                1,
+                "kwseo",
+                "good",
+                "good article",
+                new Timestamp(1499655600000L));
+        String jsonString = "{\"id\": 1, \"author\": \"kwseo\", \"title\": \"good\", \"content\": \"good article\", \"createdDate\": 1499655600000}";
+
+        assertThat(json.parse(jsonString)).isEqualTo(article);
+        assertThat(json.parseObject(jsonString).getAuthor()).isEqualTo("kwseo");
+    }
+}
+
+/**
+    특정 클래스만 테스트하기 좋음
+*/
+@SpringBootTest(classes = {StayGolfOrderServiceImpl.class, StayGolfApiServiceConfiguration.class})
+@EnableConfigurationProperties(StayGolfConfiguration.class)
+public class StayGolfOrderServiceImplTest {
+
+}
+
+// 정리시 추가로 참고한 사이트 : https://happyer16.tistory.com/m/entry/Spring-Boot-Test-및-심화
+
+/*
+
+@RunWith(Class<? extends Runner>) 관련하여 정리 굿! : https://4whomtbts.tistory.com/128
+
+Runner 란?
+JUnit Runner는 JUnit의 추상 Runner class를 상속한 클래스이고. 테스트 클래스들을 실행하는 역할을 한다.
+그래서, 실제로 테스트 할 클래스는 제공받은 Runner에게 던져져서, 러너에서 실행시키게 되는 것이다.
+여기서 꽤 재밌는 사실이 있는데, 대부분의 IDE는 JUnit Test 결과를 표출해주는데 JUnit Runner에서 구현하는
+Descriabable의 getDescription() 메소드에서 내보내는(export) 정보를 이용해서 테스트 결과를 보여준다고 한다.
+결론적으로, Runner의 역할은 테스트 실행 프로세스를 계획하고 실행시키는 것이다.
+
+
+=> @RunWith(SpringRunner.class)는 가벼움(일부 Spring 기능만을 사용 및 주입)
+    - @Autowird, @Mockbean 등에 해당하는것만 application context에 주입 
+=> @SpringBootTest는 ApplicationContext를 모두 적재하기에 시간이 오래걸림(당연히 유닛 테스트에 사용하면 안 됨)
+*/ 
+
 ```
 ---
 

@@ -197,6 +197,16 @@ Git cli
 
 -git help 명령어
 
+-git cherry-pick <커밋id> [커밋id] [커밋id]
+    - 여러개 cherry-pick 가능
+
+-git cherry-pick --abort
+    - cherry-pick 충돌시 중단
+
+-git cherry-pick --continue
+    - cherry-pick 충돌시 소스수정하고 계속 진행하도록 해주는 명령어
+
+Cherry-pick 관련 참고 : https://cselabnotes.com/kr/2021/03/31/git-%EB%AA%85%EB%A0%B9%EC%96%B4-git-cherry-pick/
 
 
 ******Git 용어정리 *******
