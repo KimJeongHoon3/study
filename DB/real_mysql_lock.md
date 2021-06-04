@@ -173,6 +173,7 @@ innodb_locks : 어떤 잠금이 있는지 있는 테이블
 ---
 - x-lock(배타잠금) : 내가 쓰는동안 어느 누구도 못건들게(당연 그냥 select은 가능.. 락이랑 상관없으니깐.. 공유락 배타락 접근 불가)
 - s-lock(공유잠금) : 내가 읽는 동안 데이터 변경 못하도록(읽는것은 가능)
+- INTENTION LOCK : 테이블 레벨의 락. 특정 로우에 S-lock 혹은 X-lock 걸기전에 테이블에 걸어주는 락.. (s-lock걸기전에는 Intention shared lock, x-lock 걸기전에는 Intention exclusive lock). insert intention lock 과는 다르다!
 ---
 
 ---
@@ -231,6 +232,13 @@ innodb_locks : 어떤 잠금이 있는지 있는 테이블
   * 저장 프로시저의 begin end와 트랜잭션(begin)이랑은 별개의 개념이다..
   * 저장 프로시저안에서 트랜잭션을 사용해야한다면 tranaction start를 사용해라!
   * innodb_lock_wait_timeout 이라는 MySQL의 시스템 설정 변수에 지정된 시간(default 50초) 동안 레코드 잠금을 기다렸는데, 획득하지 못할때 에러를 발생시킨다.. 이는 레코드 레벨의 잠금에서만 사용되며, 테이블 레벨의 잠금을 기다릴때는 적용되지 않는다. 즉, ALTER TABLE 명령으로 테이블의 구조를 변경하는 작업은 아무리 오랫동안실행되도 기다린다..
+  * 데드락 관련 로그 내용 
+    - transaction : 트랜잭션에 대한 정보를 보여준다.
+    - waiting for this lock to be granted : 트랜잭션이 실행하기 위해 lock을 걸어야 하는 데이터에 대한 정보, 즉 row에 대한 정보를 보여준다.
+    - holds the lock(s) : 현재 잡고 있는 lock에 대한 정보를 보여준다.
+    - [출처] mysql-innodb에서 데드락 정보 확인하기|작성자 하나자바
+
+
   
 BEGIN and BEGIN WORK are supported as aliases of START TRANSACTION for initiating a transaction. START TRANSACTION is standard SQL syntax, is the recommended way to start an ad-hoc transaction, and permits modifiers that BEGIN does not.
 
