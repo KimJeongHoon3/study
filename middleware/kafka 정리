@@ -137,7 +137,9 @@ https://soon-devblog.tistory.com/19
 -batch listener : Spring Kafka Batch Listener - https://brunch.co.kr/@springboot/322
     =>list 형식으로 가져와서 병렬처리가 가능하기에 이를 활용하면 속도를 극대화할수있음..
     =>이게 겁나빠르긴한데.. seek을 하는부분이 애매.. topic을 하나만 가져온다면 상관없겠지만.. topic 여러개 있을때는 poll로 땡겨받은 모든 topic의 record 대해 seek을 해야함... 개별적으로하기가 난해.. ack도그렇고..
-    
+    =>어노테이션 기반으로 만들때에도 batch listener 사용하기위해서는 ConcurrentKafkaListenerContainerFactory 등록필요
+    ( 등록방법 : https://www.programmersought.com/article/33853616801/ )
+    공식 ref : https://docs.spring.io/spring-kafka/docs/2.6.8/reference/html/#manual-assignment
 
 -Spring Kafka Retry - https://gunju-ko.github.io/kafka/spring-kafka/2018/04/16/Spring-Kafka-Retry.html
 

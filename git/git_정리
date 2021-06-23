@@ -111,6 +111,9 @@ Git cli
 -git clone <저장소주소> [저장할 폴더명]
     -저장할 폴더명 지정안하면 복제한 프로젝트 이름과 같은 폴더로 알아서 생성됨
 
+-git clone -b {branch_name} --single-branch {저장소 URL}
+    -특정 브랜치만 clone
+
 -git branch 
     -브랜치 목록확인
 
@@ -129,12 +132,27 @@ Git cli
 -git branch -r
     -원격저장소에 있는 브랜치 확인
 
+-git branch -a
+    -로컬,원격 모든 저장소의 branch 볼수있음
+
+-git remote update
+    -원격에 있는 브랜치 찾지못하면, update한번해줄것!
+
 -git checkout <브랜치이름>
     -특정 브랜치로 checkout
     -브랜치이름대신에 커밋Id도 사용가능하나 비추
+    -원격브랜치이름도 가능 ex) origin/refactoring
+        -이를 사용하면 브랜치따로 만들어줘야함
+
+-git checkout -t <원격저장소의브랜치>
+    -이렇게 원격저장소에있는 브랜치를 가져오면 로컬에 동일한 이름의 branch로 생성한다
+
+-git checkout -b <생성할 브랜치이름> <원격저장소 브랜치이름>
+    -원격저장소에있는 브랜치를, 지정한 브랜치이름으로 로컬에 가져온다    
 
 -git checkout -b <브랜치이름> <커밋id>
     -특정 커밋에 브랜치 생성 + 체크아웃
+
 
 -git merge <대상브랜치>
     -대상브랜치 머지
@@ -153,12 +171,18 @@ Git cli
 -git branch -d <브랜치이름>
     -브랜치삭제
     -HEAD 브랜치 아니여야하고, 병합이 되지않은 브랜치는 삭제못함(강제로 상제하기위해서는 -d 대신 -D 사용)
+    -로컬에 잇는 브렌치만 삭제됨
+
+    -"git push <별칭> --delete <브랜치명>" 을 사용하여야 원격브렌치 삭제가능 (ex. git push origin --delete refactoring/callback)
+        
+
 
 -git reset --hard <커밋id>
     -"<커밋id>"에 HEAD~숫자 혹은 HEAD^숫자 도 가능
         - HEAD~ 은 헤드의 부모커밋(바로 상위의 커밋) 이고, HEAD~2 는 할아버지커밋(HEAD로 부터 두계단 위)을 이야기한다 
     -작업한 내용들은 다 사라지고 딱 리셋된 커밋만 남아있게됨
     -헤드만 움직이는것이 아니라, 브랜치가 가리키고있는 커밋이 특정시점으로 이동하는 개념인듯함 
+    -"git reset --hard origin/remote-branch" 와 같은 원격지의 브랜치로도 reset 가능
 
 -git tag -a -m <간단한 메세지> <태그이름> [브랜치 또는 체크섬]
     - "-a" 옵션은 주석있는(annotated) 태그를 생성. 브랜치 이름 생략하면 HEAD에 태그생성
@@ -167,6 +191,8 @@ Git cli
 -git pull
     -git fetch + git merge
 
+git pull origin <branch name> 
+    -origin의 특정브랜치 pull
 
 -git stash
     -현재 작업을 stash 영역에 저장해두고 branch를 head로 리셋(git reset –hard)
@@ -208,6 +234,7 @@ Git cli
 
 Cherry-pick 관련 참고 : https://cselabnotes.com/kr/2021/03/31/git-%EB%AA%85%EB%A0%B9%EC%96%B4-git-cherry-pick/
 
+https://cjh5414.github.io/get-git-remote-branch/
 
 ******Git 용어정리 *******
 워킹트리 : 작업폴더에서 .git폴더를 뺀것.. 즉, 일반적인 작업이 일어나는곳!
