@@ -180,6 +180,7 @@
           - WHERE COL1=10 ORDER BY COL3, COL4 (COL1=10 ORDER BY COL2,COL3은 당연히 인덱스탐!)
           - WHERE COL1>10 ORDER BY COL2, COL3 (만약 ORDER BY COL1,COL2,COL3이면 인덱스탐)
           - WHERE COL1 IN (1,2,3,4) ORDER BY COL2
+            - "WHERE COL1=1 and COL1=2 and COL1=3 and COL1=4 ORDER BY COL2" 와 같을텐데, 이는 어쨋든 COL2 기준으로 다시 정렬을 해야할테니 인덱스 못타는게 맞을듯함(동등비교 한개만 있으면 탈수있음)
     - GROUP BY 절과 ORDER BY 절의 인덱스 사용(모두사용할때의 이야기..)
       - 둘중 하나라도 인덱스 못타면 둘다 못탄다..!
       - 사실 GROUP BY 실행시 인덱스로 수행하면 이미 정렬이 되어잇는 상태이기때문에 GROUP BY와 동일한 인덱스가 아니면 당연히 모든 데이터 불러와서 ORDER BY 를 사용해야하니깐 GROUP BY든 ORDER BY든 인덱스 못탄다.. 
@@ -249,8 +250,9 @@
     - WHERE 절에 NOT IN과 함께 사용된 서브쿼리
       - 안티조인을 사용할것!(LEFT JOIN + tab2.col1 is null)
     - FROM절에서 사용된 서브쿼리
-      - 지연된 쿼리가 아니라면 되도록 join으로 바꿀것!
+      - 지연된 join 쿼리가 아니라면 되도록 join으로 바꿀것!
       - FROM절의 서브쿼리는 메모리(임시테이블)를 사용하기때문에 데이터가 적은경우에는 문제가되지않으나, 데이터가 많게되면 디스크에 저장을 해야하므로 상당히 느려질수있다!(혹여나 TEXT, BLOB같은게 있으면..)
+        - 긍까 되도록 데이터도 필요한것만 가져올것!
   - 집합연산
     - UNION(UNION DISTINCT) : 모든 컬럼을 가지고 unique인덱스를 만들고 중복확인함.. 컬럼이 길이가 길거나 레코드 건수가 많으면 무지느려짐(비교해야하는 컬럼의 길이가 길어지면 더더더욱 느려지겟지..)
     - UNION ALL : 중복확인 없이 바로 결합(되도록 중복 제거할수있는거면 제거하고 UNION대신 UNION ALL쓰는게 효과적)
@@ -287,6 +289,7 @@
     - PK나 UK 중복이 일어났을때 에러안뱉고 작업수행함..
     - 컬럼의 수가 일치하지않을때는 에러내뱉는다..
     - 값이 변형되어 저장이 되는경우가 있는데, NOT NULL 컬럼에 NULL을 저장하려고하면, NULL 대신 빈 문자열("")이나 0을 저장한다..
+    - 저장하려는 데이터가 지정된 컬럼의 길이보다 길 경우는 잘려서 들어감
   - REPLACE
     - 중복되면 값이 대치가 된다
     - 기존 데이터를 지우고 새로운 데이터를 insert하는 방식이다
@@ -389,9 +392,9 @@
       - > CREATE TABLE 테이블명(<br>a int,<br>b varchar(10)<bt>)ENGINE=INNODB<br>AS<BR>SELECT a,b FROM employees LIMIT 10;
       - 컬럼이름을 기준으로 찾아들어가기때문에 생성한 테이블의 컬럼과 SELECT한 컬럼의 이름이 같아야함! 다르면 데이터 안들어감!
   - 컬럼
-    - 컬럼추가시 테이블의 데이터를 새로운 테이블로 복사하는 작업.. 레코드건수가 많아질수록 느려진다(컬럼 삭제도 동일)
-    - 타입변환이나 NULL여부 변경은 테이블의 데이터를 복사하면서 구조를 변경하는것이기때문에 느리다!  
-    - MySQL의 InnoDB나 MyISAM 스토리지 엔진을 사용하는 테이븛에서 컬럼을 추가,변경,삭제 작업은 모두 임시테이블로 복사하면서 처리된다!
+    - ***컬럼추가***시 테이블의 데이터를 새로운 테이블로 복사하는 작업.. 레코드건수가 많아질수록 느려진다(컬럼 삭제도 동일)
+    - ***타입변환***이나 ***NULL여부 변경***은 테이블의 데이터를 복사하면서 구조를 변경하는것이기때문에 느리다!  
+    - MySQL의 InnoDB나 MyISAM 스토리지 엔진을 사용하는 테이븛에서 컬럼을 ***추가,변경,삭제*** 작업은 모두 임시테이블로 복사하면서 처리된다!
       - 어느정도 진행됐는지 확인을 위해서는 " SHOW GLOBAL STATUS LIKE '%Handler% " 로 확인가능
   
   - 인덱스 변경
@@ -435,6 +438,7 @@
     - USE INDEX
       - 테이블명 USE INDEX (인덱스이름)
       - 해당 인덱스 사용하도록 권장
+      - PK는 PRIMARY 라고 적으면됨
     - FORCE INDEX
       - USE INDEX보다 더 강하게 옵티마이저에게 권하는것
       - 크게 의미없고, 만약 옵티마이저가 USE INDEX도 무시했다면 FORCE INDEX도 무시한다함..
@@ -447,5 +451,19 @@
 
   - 쿼리성능 테스트  
     - query_cache_type이 0이면 상관없으나, 그렇지않으면 SQL_NO_CACHE 힌트를 사용하여 테스트할것!
+      - 버퍼풀이랑은 다른개념! 쿼리 캐시는 쿼리와 그에 맞는 값들을 가지고있고, 만약 캐시에 저장되어있는 쿼리라면 버퍼풀까지 가지않고 바로 값을 리턴해줌. 버퍼풀은 인덱스 페이지뿐 아니라 데이터 페이지도 가지고 있기때문에, 당연히 디스크에서 데이터를 가져오는것보다 성능이 월등히 좋기떄문에 사용한다!(이 버퍼풀 까지 가지않도록 그 앞단에 쿼리캐시가 있는듯함..)
+      - Buffer pool vs query cache
+        - For query cache, you got it spot on. Its based on the raw text of the query mapping to the exact query results. It has major scaling problems which is why MySQL-8.0 removed it.    
+        innodb buffer pool, is a storage of the low level data and index pages of the database. It ensures that all the recently used data is off disk and able to be queried without resorting to the much slower (by comparison to ram) storage.    
+        So buffer pools serve all queries on the same data, while query caches only serve a particular query (at a large scaleability cost).
+        - 참고사이트 : https://stackoverflow.com/questions/61333318/what-is-the-difference-between-mysql-query-cache-and-buffer-pool 
+        - 쿼리 캐시 관련 내용 
+          - 동일한 쿼리내용에 대해서 결과 데이터를 저장해놓고 반환
+          - 그러나, 해당 테이블에 변화가일어나면 쿼리 캐시를 비우는 작업이 일어나게되고, 쿼리캐시는 모든 세션이 공유되기때문에 비우는 동안에 글로벌 락이 걸림. 그로인해 접근하는 다른 세션의 쿼리는 대기..
+          - 그렇기때문에 자주 변경이 일어나는 테이블은 비추.. 자주변경이 없는 테이블에서는 추천
+          - 쿼리캐시 관련 참고사이트
+            - https://jupiny.com/2021/01/10/mysql-query-cache-disadvantage/
+            - http://jason-heo.github.io/mysql/2014/08/19/reset-query-cache.html#:~:text=Query%20Cache%20%ED%81%B4%20%EB%95%8C%EC%9D%98%20%EB%8B%A8%EC%A0%90&text=Global%20Lock%20%EB%AC%B8%EC%A0%9C%EB%A1%9C%201,%ED%81%B0%20%EA%B2%BD%EC%9A%B0%20%EB%8D%94%20%EC%98%A4%EB%9E%98%20%EA%B1%B8%EB%A6%B0%EB%8B%A4.
+      - 8점대 버전에서는 없어짐
     - 버퍼풀은 인덱스 페이지뿐아니라 데이터 페이지도 올라간다(InnoDB) 그리고 쓰기작업을 위한 버퍼링도 함께 버퍼풀에 올라간다. 이를 초기화해서 성능을 검사할 필요는 없다. 서비스 운영중일때도 버퍼풀에 올라가 있는것들이 있기때문에 처음 쿼리 날렸을때를 기준으로 성능을 측정하는것이아니라, 6~7번정도 날린것으로 성능측정을 하면된다
     - ***프로파일링도 가능한데, 이에대한 내용은 p560참고할것***
