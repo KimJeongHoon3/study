@@ -48,3 +48,12 @@ show variables like '%time%'
 
 
 https://pkgonan.github.io/2018/04/HikariCP-test-while-idle
+
+
+
+maxLifeTime, minimumIdle, maximumPoolSize 관련 내용 정리 굿 : https://javabom.tistory.com/101
+Hikari cp dead lock 관련 내용정리 매우 굿 : https://techblog.woowahan.com/2663/
+
+HikariCP는 어떤 타이밍에 Connection Validation Check를 수행할까?
+첫째, 커넥션을 DB에서 새로 맺을 때
+둘째, 커넥션 풀에서 커넥션을 가져올때
