@@ -138,6 +138,8 @@ SpringApplication 2부
       2. file:./
       3. classpath:/config/
       4. classpath:/
+  - 만약 config이름 application말고 다른거로 바꾸고싶으면..
+    - --spring.config.name=myproject
 
 외부설정 2부
   - @ConfigurationProperties

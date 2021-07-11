@@ -16,7 +16,9 @@ public class FrontController extends HttpServlet {
 		 controllerUrls.put("/memberDelete.do", new MemberDeleteController()); 
 	}
 	public void service(HttpServletRequest request, HttpServletResponse response) {
-		 String uri = request.getRequestURI(); Controller subController = controllerUrls.get(uri); subController.execute(request, response); 
+		 String uri = request.getRequestURI(); 
+		 Controller subController = controllerUrls.get(uri);
+		 subController.execute(request, response); 
 	} 
 }
 
