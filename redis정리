@@ -23,3 +23,7 @@ https://ssoco.tistory.com/19
 
 "Redis ERR Client sent Auth, But no password is set" 해결책
 => https://blusky10.tistory.com/276
+
+-여러키 한번에 삭제
+   - xargs 리눅스명령어 사용
+   - 참고사이트 : https://johnmarc.tistory.com/125

@@ -4,6 +4,7 @@ CORS
         -Cross-Origin Resource Sharing 의 줄임말로, origin(protocol+host+port)이 다를때 Resource를 공유해주는 정책이다
         -예를들어 front와 같은 서버의 resource를 가져올때는 origin이 같기때문에 문제가 생기지않지만, front에서 자신의 도메인과다른 api를 호출하여 데이터를 뿌려준다하면 문제가 발생할수있다(브라우저 입장에서 origin이 다르기때문..)
         -웹이라는 오픈스페이스 환경에서 다른 출처에 있는 리소스를 가져와서 사용하는 일은 굉장히 흔한 일이라 무작정 막을 수도 없는 노릇이니 몇 가지 예외 조항을 두고 이 조항에 해당하는 리소스 요청은 출처가 다르더라도 허용하기로하였고 CORS정책을 지킨 리소스 요청이 해당 문제를 해결할수있게되는것이다
+		-원칙적으로는 동일한 origin이 아니면 브라우저가 막도록 되어있지만(보안 등 기타이유로) 다 막을수 없으니 CORS정책에 맞으면 origin이 달라도 허용해주자는것!
 -서버는 CORS를 위반하더라도 정상적으로 응답을 해주고, 응답의 파기 여부는 브라우저가 결정한다                
 
 -CORS 작동방법
@@ -11,7 +12,7 @@ CORS
         ex)Origin: https://evan-moon.github.io
     -이후 서버가 이 요청에 대한 응답을 할 때 응답 헤더의 Access-Control-Allow-Origin이라는 값에 “이 리소스를 접근하는 것이 허용된 출처”를 내려주고, 이후 응답을 받은 브라우저는 자신이 보냈던 요청의 Origin과 서버가 보내준 응답의 Access-Control-Allow-Origin을 비교해본 후 이 응답이 유효한 응답인지 아닌지를 결정한다.
     -그러나 CORS가 동작하는 방식은 한가지가 아니라 세가지의 시나리오에 따라 변경된다함..
-        -PreflightRequest
+        -PreflightRequest (가장 일반적으로 사용됨)
             -예비 요청을 Preflight라고 부르는 것이며, 이 예비 요청에는 HTTP 메소드 중 OPTIONS 메소드가 사용된다.
                 -예비 요청의 역할은 본 요청을 보내기 전에 브라우저 스스로 이 요청을 보내는 것이 안전한지 확인하는 것이다.
             작동방법
@@ -24,9 +25,14 @@ CORS
                 1)요청의 메소드는 GET, HEAD, POST 중 하나여야 한다.
                 2)Accept, Accept-Language, Content-Language, Content-Type, DPR, Downlink, Save-Data, Viewport-Width, Width를 제외한 헤더를 사용하면 안된다.
                 3)만약 Content-Type를 사용하는 경우에는 application/x-www-form-urlencoded, multipart/form-data, text/plain만 허용된다.
-
+	    -이런 현상이 나타나기 쉽지않음
         -Credentialed Request
-
+	    - 보안 강화하고 싶을때 사용
+	    - credentials 옵션은 3가지를 사용가능
+		-same-origin(기본값) : 같은 origin간 요청에만 인증정보 담음
+		-include : 모든 요청에 인증정보담음
+		-omit : 모든 요청에 인증정보 담지않음
+		- => 만약 인증정보를 담게되면 브라우저는 더 깐깐하게 체크.. 예를들어, include를 사용하였을경우, Access-Control-Allow-Origin는 *을 넘겨주면 브라우저에서 안띄워줌.. 명시적인 URL이 적혀있어야함
 
 내용출처(무지설명굿) : https://evan-moon.github.io/2020/05/21/about-cors/
 
