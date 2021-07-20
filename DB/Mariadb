@@ -236,6 +236,11 @@ Mariadb
                     -rowid-ordered scan, key-ordered scan
                         -어느정도 인덱스를 통해서 읽다가 PK로 정렬해서 데이터를 가져오는것..
                             -클러스터 인덱스는 리프페이지가 데이터페이지므로 범위조건 검색에 PK로 검색하면 데이터페이지 왔다갔다하는 비용을 상당히 줄일수있으니 개이득
+		    -Select tables optimized away
+			-완전 최적화된 쿼리.. 이보다 빠를순없다..
+			-Max나 Min값이 인덱스를 탔을때 나타나거나 count(*)와 같이 바로 갯수만 세면 되는것들..
+			-MySQL 공식 문서 내용 : The query contained only aggregate functions (MIN(), MAX()) that were all resolved using an index, or COUNT(*) for MyISAM, and no GROUP BY clause. The optimizer determined that only one row should be returned.
+			-이거 관련해서 상당히 자세하게 분석해놓음 : https://blog.naver.com/PostView.nhn?blogId=pjt3591oo&logNo=221030483713
 
     -explain extended
         -filtered 컬럼추가

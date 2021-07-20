@@ -237,7 +237,7 @@ innodb_locks : 어떤 잠금이 있는지 있는 테이블
     - waiting for this lock to be granted : 트랜잭션이 실행하기 위해 lock을 걸어야 하는 데이터에 대한 정보, 즉 row에 대한 정보를 보여준다.
     - holds the lock(s) : 현재 잡고 있는 lock에 대한 정보를 보여준다.
     - [출처] mysql-innodb에서 데드락 정보 확인하기|작성자 하나자바
-
+    - [상세로그분석](https://www.percona.com/blog/2014/10/28/how-to-deal-with-mysql-deadlocks/)
 
   
 BEGIN and BEGIN WORK are supported as aliases of START TRANSACTION for initiating a transaction. START TRANSACTION is standard SQL syntax, is the recommended way to start an ad-hoc transaction, and permits modifiers that BEGIN does not.
