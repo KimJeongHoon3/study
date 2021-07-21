@@ -133,7 +133,15 @@ https://leeyh0216.github.io/2020-05-03/kafka_producer
 KafkaProducer의 send를 호출하게 되면 ProducerRecord를 KafkaProducer의 내부 Buffer에 저장해놓은 후, 어느정도 메시지가 모이게 되면 여러 개의 메시지를 한번에 보내고 Callback을 호출한다.
 accumulator라는놈이 메세지를 쌓아주게되면, sender가 RecordAccumulator 로부터 fetch(가져오다..) 하여 broker로 전송한다...    
 
+-중복 전송 (참고사이트 : https://sjh836.tistory.com/186)
+   -브로커 응답이 늦게와서, 재시도하는 경우, 중복으로 메세지가 전송될 수 있음 (ex. timeout)
+   -enable.idempotence 옵션으로 중복전송 가능성을 낮출 수 있음
+   -max.in.flight.requests.per.connection 옵션 : 하나의 커넥션에서 전송할 수 있는 최대 전송중인 메세지 수
+      -이 값이 1보다 크다면, 재시도 시점에 메세지 순서가 뒤바뀔수 있음
+      -전송 순서가 중요하다면, 이 값을 1로 해야함
 
+
+출처: https://sjh836.tistory.com/186 [빨간색코딩]
 
 --------------------
 
