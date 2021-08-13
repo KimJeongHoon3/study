@@ -100,7 +100,7 @@ chapter05 - TCP 기반 서버/클라이언트 2
 	-상대 소켓과의 연결종료시 이뤄지는 동작
 		-상호간의 FIN메세지를 주고받고 종료가됨
 		-four way handshaking : 4단계의 과정으로 이루어짐
-			ex) A,B 모두 ESTABLISHED 상태
+			ex) A,B 모두 ESTABLISHED 상태 -> 이거 다시 정리해야할듯!?
 				A(FIN_WAIT_1) -> B : FIN - SEQ 5000, ACK -
 				A(FIN_WAIT_2) <- B(CLOSE_WAIT) : ACK - SEQ 7500, ACK 5001
 				A(TIMEWAIT~~) <- B(LAST_ACK) : FIN - SEQ 7501, ACK 5001 (B가 응답한뒤에 FIN 메세지또한 보낸다)
