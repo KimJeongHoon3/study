@@ -55,6 +55,8 @@
           - 힙(heap)이라는 자료구조의 형태로저장
             - 힙은 이진트리의 한 종류. 
             - 순서를 가진다는것은, 크기를 비교할수잇는 방법을 제공해야한다는뜻!
+            - [힙 자료구조 정리굿](https://gmlwjd9405.github.io/2018/05/10/data-structure-heap.html)
+              - 데이터 추가되면 맨 마지막 인덱스에 데이터 추가하고 해당 인덱스를 2로 나눠가면서(즉, 부모 노드와 비교해가면서) 노드의 값을 비교하여 swap해나가는 방식..
           - [우선순위큐 내용정리굿](https://coding-factory.tistory.com/603)
         - Deque(Double-Ended Queue)
           - Queue의 변형으로, 양쪽 끝에 추가/삭제가 가능
