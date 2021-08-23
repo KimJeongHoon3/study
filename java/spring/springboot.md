@@ -352,10 +352,18 @@ Descriabable의 getDescription() 메소드에서 내보내는(export) 정보를 
     - 로거: 실제 로깅의 구현체(logback,jul, log4j)
 - 스프링부트는 결국 로그백을 사용하여 로깅함.. 의존성 확인해보면 결국 로그백으로 가도록 되어있음.. (어뎁터패턴을 사용한듯..?)
 
-
-
 ---
 
+- 스프링 웹 MVC
+  - @Configuration에서 @EnableWebMvc 를 선언하면 스프링부트가 제공해주는 자동설정이 안됨.. 확장하고 싶으면 @Configuration에 WebMvcConfigurer를 구현해라..
+  - HttpMessageConverters
+  - ContentNegotiatingViewResolver
+    - 요청의 Accept 헤더에 따라 ViewResolver가 달라짐
+    - Accept가 없다면 쿼리스트링으로 format=pdf 과 같이 넣어주면된다
+    - 자세한 동작방법은 "토비의 스프링2.md"에서 확인
+    - accpet헤더에 XML로 요청하면, ContentNegitatingViewResolver가 XML뷰리졸버를 사용해서 xml형식으로 응답해준다!
+    - 스프링부트를 사용하면, ContentNegotiatingViewResolver가 사용할 뷰리졸버들은 자동설정에 의해서 셋팅이된다
+      - HttpMessageConvertersAutoConfiguration 에서 확인가능
 - 스프링 기타 이모저모
   - @Configuration 와 @Component로 bean등록하는 차이점
     - @Configuration 으로 bean을 등록하면 CGLIB가 사용되어(프록시) 메소드 호출은 1회만 일어나도록 바이트 코드가 수정된다.. 즉, @Configuration 안의 메소드를 어디서 호출해도 오직 한번만 호출되는것! 그래서 보통 함수로 bean 등록을 하고 해당 메소드를 또 호출하여 생성자로 넘겨주는것이 가능!
