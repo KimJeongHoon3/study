@@ -149,6 +149,7 @@
 
   - Mock 객체 Stubbing
     - stubbing이란 Mock객체에 행동을 집어넣어주는것
+      - 기대 행위를 작성하는것을 Stub
     - Mock 객체의 default 행동
       - Null 리턴 (Optional 타입은 Optional.empty 리턴)
       - Primitive 타입은 기본 Primitive 값
@@ -199,3 +200,16 @@
           - Mockito 여러 기능 설명 굿(@Spy, @InjectMocks ..) : https://sun-22.tistory.com/94
           - Mockito 내용정리 굿 : https://jdm.kr/blog/222
 
+- Junit or Mockito 사용관련 참고사항
+  - SPY
+    - 특정 메소드만 mocking 가능
+    ```java
+      will(invocation -> messageResponse).given(uplusSender).doSend(any()); //messageResponse가 uplusSender.doSend 호출시 전달받을 값.. 이를 사용하기위해서는 @Spy로 uplusSender를 만들어야함
+    ```
+  - @SpyBean 사용시 유의사항
+    - @SpyBean이 Interface일 경우에는 해당 Interface를 구현하는 실제 구현체가 꼭 스프링 컨텍스트에 등록되어 있어야 합니다.
+  - @MockBean으로는 @InjectMocks 으로는 주입안되는 이유
+    - @InjectMocks는 Mockito에 의해서 클래스가 초기화될때 해당 클래스안에서 정의된 mock객체를 찾아서 의존성을 해결합니다. 즉, @InjectMocks는 @Mock으로 스프링 컨텍스트에 등록된 mock 객체는 찾을 수 없습니다.
+    - 하지만 @MockBean은 mock 객체를 스프링 컨텍스트에 등록하는 것이기 때문에 당연히 @InjectMocks가 찾을 수 없게 됩니다. @MockBean은 @Autowired처럼 스프링이 제공하는 의존성 해결방법으로만 mock객체를 찾을 수 있게 됩니다.
+  - 참고사이트 
+    - [mockito관련 기본적인 설명 매우 굿.. 적용한것도 잘나와잇음](https://cobbybb.tistory.com/16)
