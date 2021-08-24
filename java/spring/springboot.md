@@ -364,6 +364,32 @@ Descriabable의 getDescription() 메소드에서 내보내는(export) 정보를 
     - accpet헤더에 XML로 요청하면, ContentNegitatingViewResolver가 XML뷰리졸버를 사용해서 xml형식으로 응답해준다!
     - 스프링부트를 사용하면, ContentNegotiatingViewResolver가 사용할 뷰리졸버들은 자동설정에 의해서 셋팅이된다
       - HttpMessageConvertersAutoConfiguration 에서 확인가능
+  - 정적 리소스 지원
+    - 정적 리소스 매핑 : /**
+      - 기본 리소스 위치
+        - classpath:/static
+        - classpath:/public
+        - classpath:/resources/
+        - classpath:/META-INF/resources
+      - spring.mvc.static-path-pattern: url 주소 변경가능(굳이 쓸까?)
+        - ex) spring.mvc.static-path-pattern=/static/**  (localhost:8080/static/hello.html 로 요청해야함. 물론 서버의 hello.html의 위치는 그대로)
+      - WebMvcConfigurer 의 addResourceHandlers 를 사용해서 기존 스프링부트가 제공해주는 위치에 추가해줄수있음
+        - ResoureLocations를 추가할때 반드시 "/" 로 끝내야함!
+    - 웹JAR
+    - 템플릿엔진
+      - 스프링부트가 지원하는거
+        - FreeMarker
+        - Groovy
+        - Thymeleaf
+          - 의존성추가필요
+          - 이를 등록하게되면, 기본적으로 MockMvc로 테스트진행할때 jsp를 돌려준다면 body에 view가 랜더링된 데이터를 볼수없는데(jsp는 서블릿에서 랜더링을 해준다함.. MockMvc는 가짜이기때문에, 실제 서블릿에서 랜더링한거까지알수없음) Thymeleaf는 서블릿과 독립적으로 실행되기때문에, MockMvc에서 랜더링된 뷰도 body에서 볼수있다
+          - Thymeleaf 사용하기
+            - https://www.thymeleaf.org/
+            - https://www.thymeleaf.org/doc/articles/standarddialect5minutes.html
+            - 의존성 추가: spring-boot-starter-thymeleaf
+            - 템플릿 파일 위치: /src/main/resources/template/
+            - 예제: https://github.com/thymeleaf/thymeleafexamples-stsm/blob/3.0-master/src/main/webapp/WEB-INF/templates/seedstartermng.html
+        - Mustache
 - 스프링 기타 이모저모
   - @Configuration 와 @Component로 bean등록하는 차이점
     - @Configuration 으로 bean을 등록하면 CGLIB가 사용되어(프록시) 메소드 호출은 1회만 일어나도록 바이트 코드가 수정된다.. 즉, @Configuration 안의 메소드를 어디서 호출해도 오직 한번만 호출되는것! 그래서 보통 함수로 bean 등록을 하고 해당 메소드를 또 호출하여 생성자로 넘겨주는것이 가능!
