@@ -390,6 +390,15 @@ Descriabable의 getDescription() 메소드에서 내보내는(export) 정보를 
             - 템플릿 파일 위치: /src/main/resources/template/
             - 예제: https://github.com/thymeleaf/thymeleafexamples-stsm/blob/3.0-master/src/main/webapp/WEB-INF/templates/seedstartermng.html
         - Mustache
+    - ExceptionHandler
+      - 스프링부트에는 기본적으로 에러 핸들러는 등록되어있음
+        - BasicErrorController
+      - 브라우저에서 404응답시 보여지는 페이지.. 커맨드에서 curl로 요청하면 json으로 넘겨받음
+      - @MVC에서 예외처리방법
+        - @ControllerAdvice : 여러 컨트롤러에서 일괄적으로 에러 핸들링해줌(타입레벨)
+        - @ExceptionHandler : 해당 컨트롤러 클래스내에서 발생하는 에러 핸들링해줌(메소드레벨)
+        - resources/static/error 안에, 5xx.html(이렇게해주면 500번대는 모두가능), 404.html 을 작성만들면 알아서 매칭시켜줌.. 여기서 못찾으면 스프링부트에서 제공해주는 디폴트 에러페이지로..
+        - ErrorViewResolver를 통해서 세부 커스텀 가능(Model사용가능)
 - 스프링 기타 이모저모
   - @Configuration 와 @Component로 bean등록하는 차이점
     - @Configuration 으로 bean을 등록하면 CGLIB가 사용되어(프록시) 메소드 호출은 1회만 일어나도록 바이트 코드가 수정된다.. 즉, @Configuration 안의 메소드를 어디서 호출해도 오직 한번만 호출되는것! 그래서 보통 함수로 bean 등록을 하고 해당 메소드를 또 호출하여 생성자로 넘겨주는것이 가능!
@@ -433,3 +442,6 @@ Descriabable의 getDescription() 메소드에서 내보내는(export) 정보를 
   - @ControllerAdvice (좀더 찾아보고 정리할것!)
 	- 예외처리할때 사용한다함.. 
 	- https://jeong-pro.tistory.com/195
+	- ${server.error.path:${error.path:/error}} 의 의미
+  	- server.error.path 가 있으면 server.error.path의 값을 사용하고, 없으면 error.path를 사용. error.path가 없으면 /error을 사용하라
+  	
