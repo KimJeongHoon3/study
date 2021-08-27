@@ -395,7 +395,7 @@ kafka에서 send 하고 callback함수에서 다시 send하면 timeoutexception�
 
 /kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic streams-pipe-output --formatter kafka.tools.DefaultMessageFormatter --property print.key=true --property print.value=true --property print.value=true --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer
 
-
+./kafka-console-producer.sh --topic NBGMS_MT_RESULT_REALTIME --broker-list 172.16.0.56:9092,172.16.0.56:9093,172.16.0.56:9094 
 
 -kafka 실행시 아래와 같은 clusterID 매칭안된다는 에러날때..
 ERROR Fatal error during KafkaServer startup. Prepare to shutdown (kafka.server.KafkaServer) kafka.common.InconsistentClusterIdException: The Cluster ID Reu8ClK3TTywPiNLIQIm1w doesn't match stored clusterId Some(BaPSk1bCSsKFxQQ4717R6Q) in meta.properties. The broker is trying to join the wrong cluster. Configured zookeeper.connect may be wrong. at

@@ -211,5 +211,84 @@
   - @MockBean으로는 @InjectMocks 으로는 주입안되는 이유
     - @InjectMocks는 Mockito에 의해서 클래스가 초기화될때 해당 클래스안에서 정의된 mock객체를 찾아서 의존성을 해결합니다. 즉, @InjectMocks는 @Mock으로 스프링 컨텍스트에 등록된 mock 객체는 찾을 수 없습니다.
     - 하지만 @MockBean은 mock 객체를 스프링 컨텍스트에 등록하는 것이기 때문에 당연히 @InjectMocks가 찾을 수 없게 됩니다. @MockBean은 @Autowired처럼 스프링이 제공하는 의존성 해결방법으로만 mock객체를 찾을 수 있게 됩니다.
+  - strictness level이 Lenient가 아니라면, 특정 메소드에 객체를 given으로 사용되었다면, 해당 객체는  
+  - 특정 조건에서 에러를 내고 싶다면, 특정 조건에 exception을 발생시키는것뿐아니라, 그 나머지 조건에 대해서도 given을 해줘야한다!(strictness level이 lenient이 아닐경우!) <span style="color:yellow"> 추후에 좀더 찾아보기 </span>
+    - ex
+    ```java
+      @Test
+      void 동보_동기_중간에_에러발생_비지니스로직_lenient적용안해도되는테스트() throws Exception {
+          mockWebServerStart();
+          changeMessageRequestTransferForBroadcast(false);
+          will(invocation -> messageResponse).given(uplusSender).doSend(argThat(argument -> !argument.getTo().equals("01012345678"))); // (1)
+          willThrow(new RuntimeException("임의 에러")).given(uplusSender).doSend(argThat(argument -> argument.getTo().equals("01012345678")));  //(2)
+
+          mockWebServer.enqueue(getMockResponse(HttpStatus.OK.value(), gson.toJson(uplusMessageResponseBody)));
+          mockWebServer.enqueue(getMockResponse(HttpStatus.OK.value(), gson.toJson(uplusMessageResponseBody)));
+
+          uplusSender.send(messageRequestTransfer);
+
+          then(uplusSender).should(times(3)).doSend(any());  // (3)
+          then(kafkaProducer).should(times(2)).sendMessageResponseToKafka(eq(messageResponse),any());
+          then(kafkaProducer).should(times(1)).sendErrorToKafka(messageRequestTransfer.getClientMsgKey(),2,SERVER_RES_CODE_INTERNAL_ERROR);
+
+          mockWebServerTeardown();
+      }
+
+      /*
+        strictness level이 strict일 경우에는, (1)이 없다면, (2)에서 willThrow 조건을 넣어주었을때 그 외의 경우(총 3건 던지니 나머지 2건에 대하여)에 대한 given은 주어져 잇는 상태가 아니기때문에, stub관련하여 에러가 발생함(lenient로 변경하라느니..) 
+        즉, given을 사용하는 메서드에 특정 조건을 넣어서 진행하고싶다면, 그 외의 조건에 대한 값도 given으로 넣어주어야 strictlevel이 strict일때 에러가 떨어지지않음
+        굳이 그렇게하기 귀찮다면, strictness level을 lenient로 변경해주어야함!(여기서 (1)없애고 싶다면 lenient 로 변경하면됨)
+
+        아래는 해당 에러에 대한 내용(PotentialStubbingProblem api)
+        PotentialStubbingProblem improves productivity by failing the test early when the user misconfigures mock's stubbing.
+        PotentialStubbingProblem exception is a part of "strict stubbing" Mockito API intended to drive cleaner tests and better productivity with Mockito mocks. For more information see Strictness.
+        PotentialStubbingProblem is thrown when mocked method is stubbed with some argument in test but then invoked with different argument in the code. This scenario is called "stubbing argument mismatch".
+        Example:
+          //test method:
+          given(mock.getSomething(100)).willReturn(something);
+          
+          //code under test:
+          Something something = mock.getSomething(50); // <-- stubbing argument mismatch
+          
+        The stubbing argument mismatch typically indicates:
+        1. Mistake, typo or misunderstanding in the test code, the argument(s) used when declaring stubbing are different by mistake
+        2. Mistake, typo or misunderstanding in the code under test, the argument(s) used when invoking stubbed method are different by mistake
+        3. Intentional use of stubbed method with different argument, either in the test (more stubbing) or in code under test
+        User mistake (use case 1 and 2) make up 95% of the stubbing argument mismatch cases. PotentialStubbingProblem improves productivity in those scenarios by failing early with clean message pointing out the incorrect stubbing or incorrect invocation of stubbed method. In remaining 5% of the cases (use case 3) PotentialStubbingProblem can give false negative signal indicating non-existing problem. The exception message contains information how to opt-out from the feature. Mockito optimizes for enhanced productivity of 95% of the cases while offering opt-out for remaining 5%. False negative signal for edge cases is a trade-off for general improvement of productivity.
+        What to do if you fall into use case 3 (false negative signal)? You have 2 options:
+        1. Do you see this exception because you're stubbing the same method multiple times in the same test? In that case, please use org.mockito.BDDMockito.willReturn(Object) or Mockito.doReturn(Object) family of methods for stubbing. Convenient stubbing via Mockito.when(Object) has its drawbacks: the framework cannot distinguish between actual invocation on mock (real code) and the stubbing declaration (test code). Hence the need to use org.mockito.BDDMockito.willReturn(Object) or Mockito.doReturn(Object) for certain edge cases. It is a well known limitation of Mockito API and another example how Mockito optimizes its clean API for 95% of the cases while still supporting edge cases.
+        2. Reduce the strictness level per stubbing, per mock or per test - see Mockito.lenient()
+        3. To opt-out in Mockito 2.x, simply remove the strict stubbing setting in the test class.
+        Mockito team is very eager to hear feedback about "strict stubbing" feature, let us know by commenting on GitHub issue 769 . Strict stubbing is an attempt to improve testability and productivity with Mockito. Tell us what you think!
+
+      */
+    ```
+    - 참고로 when(BDD에서는 given)으로 같은 메소드를 여러번쓰게되면, mock이 reset된다함.. (근데 위의 예시에서보면, will을 사용했을떄는 괜찮음 will을 쓰면 덮지않음)
+    - [lenient 관련 참고하기 좋은 사이트](https://stackoverflow.com/questions/52139619/simulation-of-service-using-mockito-2-leads-to-stubbing-error)
+  - @Captor
+    ```java
+      @Captor
+      ArgumentCaptor<Integer> integerArgumentCaptor;
+
+      @Test
+      void capture() throws Exception {
+          MockitoAnnotations.initMocks(this);
+
+          final List<String> mockedList = mock(List.class);
+          when(mockedList.get(1)).thenReturn("A");
+          when(mockedList.get(2)).thenReturn("B");
+          when(mockedList.get(3)).thenReturn("C");
+
+          assertThat(mockedList.get(1)).isEqualTo("A");
+          assertThat(mockedList.get(3)).isEqualTo("C");
+          assertThat(mockedList.get(2)).isEqualTo("B");
+
+          verify(mockedList, times(3)).get(integerArgumentCaptor.capture());
+
+          final List<Integer> allValues = integerArgumentCaptor.getAllValues(); //이렇게 가져올수있음 
+          assertThat(allValues).isEqualTo(Arrays.asList(1, 3, 2));
+      }
+    ```
   - 참고사이트 
     - [mockito관련 기본적인 설명 매우 굿.. 적용한것도 잘나와잇음](https://cobbybb.tistory.com/16)
+    - [mockito 특징에 대한 공식사이트 한글번역](https://code.google.com/archive/p/mockito/wikis/MockitoFeaturesInKorean.wiki)
