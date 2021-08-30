@@ -399,6 +399,12 @@ Descriabable의 getDescription() 메소드에서 내보내는(export) 정보를 
         - @ExceptionHandler : 해당 컨트롤러 클래스내에서 발생하는 에러 핸들링해줌(메소드레벨)
         - resources/static/error 안에, 5xx.html(이렇게해주면 500번대는 모두가능), 404.html 을 작성만들면 알아서 매칭시켜줌.. 여기서 못찾으면 스프링부트에서 제공해주는 디폴트 에러페이지로..
         - ErrorViewResolver를 통해서 세부 커스텀 가능(Model사용가능)
+    - CORS
+      - Cross Origin Resource Sharing.. origin 다른거 허용해주는거
+        - origin 은 scheme, host, port로 구성되는데, 브라우저가 요청하여 javascript와 같은 페이지를 보여주었을때 해당 페이지를 요청한 주소와 다른 주소로 요청하게 발생
+      - 타입레벨 또는 메소드레벨에 @CrossOrigin을 선언해줄수있고, @Configuratino으로 빼서 관리할수도있음
+        - @Configuration은 WebMvcConfigurer 에서 cors 구현해주면됨
+      - preflight와 같이 Options 함수를 사용하여 예비요청을 할때, 계속해서 예비요청을 하면 비효율적이므로 캐시를 사용함
 - 스프링 기타 이모저모
   - @Configuration 와 @Component로 bean등록하는 차이점
     - @Configuration 으로 bean을 등록하면 CGLIB가 사용되어(프록시) 메소드 호출은 1회만 일어나도록 바이트 코드가 수정된다.. 즉, @Configuration 안의 메소드를 어디서 호출해도 오직 한번만 호출되는것! 그래서 보통 함수로 bean 등록을 하고 해당 메소드를 또 호출하여 생성자로 넘겨주는것이 가능!

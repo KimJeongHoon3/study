@@ -69,7 +69,7 @@ CORS
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
             response.addHeader("Access-Control-Allow-Origin", "*");
             response.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT");
-            response.addHeader("Access-Control-Max-Age", "3600");
+            response.addHeader("Access-Control-Max-Age", "3600"); //동일한 브라우저에서 계속해서 요청시마다 PreflightRequest(예비요청)를 하면 비효율적이므로 캐시사용.
             response.addHeader("Access-Control-Allow-Headers", "Authorization");
             response.addHeader("Access-Control-Allow-Headers", "Content-Type, bt-token");
 
