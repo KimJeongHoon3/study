@@ -109,7 +109,8 @@ kafka-consumer-groups --bootstrap-server 172.16.0.55:9092,172.16.0.55:9094,172.1
 -max_poll_record_config를 1(한개 데이터씩 가져온다..는 룰!)로 안놓으면 데이터 하나씩 처리하면서 다음꺼 기다려야할때 불가능.. 이전에 poll로 계속 데이터를 땡겨오는데 여러개를 땡겨오니깐 seek가 정상작동을안함.. 이미 seek해야할 record값은 넘어가있음..
 
 -ConcurrentMessageListenerContainer 는 topic을 한번에 여러개받을수있는데, 만약 seek을 재조정하는 topic이 있다면 다른 topic으로 찾는다..
-
+    - 기본적으로 consumer는 스레드에 안전하지않고, 스레드하나로 가져오기때문에, 여러 스레드에서 동시다발적으로 데이터를 consuming하기위해서 사용
+    - 사용이유 : https://newbedev.com/when-to-use-concurrentkafkalistenercontainerfactory
 -Rebalancing 시간 줄이는 방법 : https://stackoverflow.com/questions/46131065/kafka-consumer-rebalancing-takes-too-long
 
 -어노테이션으로 만들때 seek이랑 ack 모두 할수있는 방법
@@ -418,3 +419,5 @@ https://godekdls.github.io/Apache%20Kafka/apis/
 
 -kafka 아주 간단하게 정리되어있음(면접볼때 한번쭉 읽어보면 좋을듯?)
 https://sjh836.tistory.com/186
+
+-springboot에서 kafka 사용하는방법 잘 나와있음 : https://reflectoring.io/spring-boot-kafka/
