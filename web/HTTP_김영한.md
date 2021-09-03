@@ -132,6 +132,9 @@ HTTP_김영한
           - 웹 브라우저로 사이트를 요청하면 수많은 자원들(like 자바스크립트,css,이미지 등)이 다운
             - 이는 현재 HTTP 지속연결(Persistent connections)로 문제해결
           - HTTP/2, HTTP/3에서 많은 최적화이루어짐
+        - Keep alive를 통해 지속적으로 연결끊고 다시 맺는것을 보완가능.. 즉, 일정시간동안에는 close하지않는다
+          - 하지만, 이는 유지하는만큼 연결이 늘어나서 새로운 사용자를 받지 못할수도있음..
+          - [keep alive 간단하게 정리](https://kamang-it.tistory.com/entry/Web%EC%84%9C%EB%B2%84%EC%99%80%EC%9D%98-%EC%97%B0%EA%B2%B0%EC%9D%84-%EA%B3%84%EC%86%8D-Keep-Alive)
     - HTTP 메시지
       - ![](http_message_structure_image.png)
       - 시작라인
