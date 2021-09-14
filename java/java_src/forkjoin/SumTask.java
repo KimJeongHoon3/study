@@ -11,6 +11,7 @@ public class SumTask extends RecursiveTask<Long> {
         this.to = to;
     }
 
+    
     @Override
     protected Long compute() {
         System.out.println("sumtask : "+from+","+to+" | "+Thread.currentThread().getName());
@@ -20,12 +21,12 @@ public class SumTask extends RecursiveTask<Long> {
         }
 
         long half=(from+to)/2;
-        SumTask leftSum=new SumTask(from,half);
+        SumTask leftSum=new SumTask(from,half);     //나누는 작업 (fork)
         SumTask rightSum=new SumTask(half+1,to);
 
         leftSum.fork();
 
-        return rightSum.compute()+leftSum.join();
+        return rightSum.compute()+leftSum.join(); //합치는작업 (join)
     }
 
     private Long sum() {
