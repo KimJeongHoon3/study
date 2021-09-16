@@ -64,7 +64,7 @@
           - 이를 사용하면, 큐뿐만아니라 스택으로도 사용가능하다
     - List 주의사항
       - 제거가 필요하면, 반대로 읽으면서 지울것!
-        - 향상된 for문을 사용하면서, for문 안에서 remove를 하면, list 요소의 갯수가 줄어들었기때문에 계속 for문을 돌리면 indexOutOfBoundsException 이 나타남
+        - 향상된 for문을 사용하면서, for문 안에서 remove를 하면, list 요소의 갯수가 줄어들었기때문에 계속 for문을 돌리면 indexOutOfBoundsException(인덱스로 지울경우) 이 나타남
         - 기존 for문(변수 사용)을 사용하면, 마지막 요소가 remove되는거면 괜찮지만, 그 외의 요소가 지워졌을떄는 정상적으로 remove가 되지않을수있음!
           - 예를들어, 4개의 요소중 3번째 요소가 지워졌다면(i=2), 다음 루프에서 i=3이 되고 list.size()는 3으로 변했기때문에 4번째 요소를 정상적으로 읽지않고 루프를 나가게된다   
         ```java
@@ -73,6 +73,35 @@
                     list.remove(i); 
                 }
             }
+
+            //추가 예제.. 아래4개를 잘 구분할것!
+
+            List<String> list= new ArrayList<>(Arrays.asList("hi","hello","hello"));
+
+            for(int i=0;i<list.size();i++){ //이렇게 만들면 3번째 요소는 그냥 지나감
+                String str=list.get(i);
+                if(str.equals("hello")){
+                    list.remove(i);
+                }
+            }
+
+            for(Iterator<String> iterator = list.iterator(); iterator.hasNext();){ //정상적으로 삭제됨
+                String str=iterator.next();
+                if(str.equals("hello")){
+                    iterator.remove();
+                }
+            }
+
+            list.removeIf(str->str.equals("hi")); //위의꺼 한줄로 줄인것.. java8
+
+            for(String s:list){         //ConcurrentModificationException 에러발생.. list의 숫자가 갑자기 변했기때문에 발생.. (근데 조건에 hello로 넣어서 지우면 에러발생안함.. 물론 정상적으로 마지막 데이터는 삭제가안되어있음..)
+                if(s.equals("hi")){
+                    list.remove(s);
+                }
+            }
+
+            
+
         ```
         - 뿐만아니라, list내부적으로 중간에서 지우게되면, 다시 복제하고 합쳐져야하므로 비용이많이들게됨(물론 이것은 arrayList에 한함)
   - Iterator, ListIterator, Enumeration

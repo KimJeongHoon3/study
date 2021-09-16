@@ -132,3 +132,6 @@ https://invincure.tistory.com/entry/Iterator-%EC%97%90-%EB%8C%80%ED%95%B4%EC%84%
         -결국 이 둘 모두 빈 공간을 채우는 개념으로 접근한다면, arrayList와 같은경우는 배열이 기반이기때문에 검색은 빠르나 생성과 삭제시 배열을 다시 생성하고 복사해줘야하기때문에 비용이 많이든다
         -반면, linkedList와 같은경우에는 앞뒤노드만 신경쓰기때문에, 생성과 삭제시 최대2개(앞뒤노드)만 신경쓰면 되기때문에 비용이 적게드나, 검색은 맨 앞부터 하나하나씩 찾아가기때문에(처음 노드부터 계속 next node, next node ...) arrayList보다 느리다..
         -linkedList도 인덱스로 데이터를 찾아달라고 하지만, 이는 그냥 loop로 next 또는 prev를 얼마나 해서 찾을것인가와 같은 내용이다..
+
+    - 결국 ArrayList와 LinkedList의 차이와 같은듯함!
+    -정리 굿 : https://velog.io/@adam2/Array%EC%99%80-List%EA%B7%B8%EB%A6%AC%EA%B3%A0-Java-List
