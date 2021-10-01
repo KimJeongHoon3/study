@@ -142,10 +142,203 @@ toby_reactive_stream 유투브 강의정리
     - 이에 대한 구현에 조건이 있음.(정해진 스펙에 맞추어야함)
       - ex. subscriber가 onSubscribe 호출되어서 subscription으로 request를 처음보내게 되었을때, 이 request 호출을 별도의 스레드로 만들면안된다!(Subscription의 request안에서는 상관없음!) 등등의 스펙이있음
     
+    | Iterable | Observable (duality 상대성) |
+    |--|--|
+    | pull | Push |
+    | 멀티스레드 구성에 별로.. | 멀티스레드 구성하기좋음 |
+
+    - Observable 단점
+      1. Event에 끝이없다!! 완료의 개념이없음!
+      2. Error 처리가 어렵다 (전파가 되어도.. 어디서 잡을거냐..)
+    - Observable의 개선으로 pub-sub 모델 등장
+      - publisher <-- Observable
+        - publisher는 subscriber로부터 요구에따라 일련의 연속적인 요소들을 제공해주는놈이다
+      - subscriber <-- Observer
+      - subscription : publisher와 subscriber에서 중간다리역할을 해줌.. Subscription을 통해서 데이터를 요청하면, 해당 데이터만큼 push를 해줌.
+        - Observer와 매우 유사하지만, 한 없이 push하는것이아닌 Subscription을 통해서 subscriber가 데이터를 요청하기때문에, pub과 sub의 속도차이가 난다면 이를 통해서 조절가능(back pressure라고함)
+        - subscription은 request라는 함수를 통해서 위의 작업이 이루어지는데, 리턴으 void다. 즉, iterable처럼 데이터를 pull하는 방식이아니라는것! push를 얼만큼 하냐에 대한 이야기임
+
+      - `onSubscribe onNext* (onError | onComplete)`
+        - 시작은 onSubscrbie로 반드시 호출해야하며, onNext는 여러번 호출가능하고, OnError나 OnComplete는 옵션인데 둘중에 하나만 선택가능하다 라는 뜻
+
+- 토비의 봄 TV 6회 스프링 리액티브 프로그래밍 (2) - Operators
+  - 변화를 주거나 변신을 시키는게 Operator의 역할 (원본 source를 최종 sub에게 전달하는 과정에서 데이터의 변형이나 가공이 가능하도록 해주는놈)
+    - 데이터를 변형해주는 대리자 역할임
+  - flux 맛보기
+    
+  ```java
+    public class ReactorEx {
+        public static void main(String[] args) throws InterruptedException {
+            Flux.<Integer>create(e->{
+                e.next(1);
+                e.next(2);
+                e.next(3);
+                e.next(4);
+                e.complete();
+            })
+            .log()
+            .map(s->s*10)
+            .log()
+            .reduce(1,(a,b)->a+b)
+            .log()
+            .subscribe(integer -> System.out.println(integer),Throwable::printStackTrace);
+
+        }
+    }
+    
+    /**
+    
+    11:38:31.030 [main] INFO reactor.Flux.Create.1 - onSubscribe(FluxCreate.BufferAsyncSink)     // 이 pub의 source를 발행하기위해서 해당 Pub의 sub.onSubscrbe 호출 (여기서 sub은 map)
+    11:38:31.032 [main] INFO reactor.Flux.Map.2 - onSubscribe(FluxMap.MapSubscriber)             // 이 pub의 source를 발행하기위해서 해당 Pub의 sub.onSubscrbe 호출 (여기서 sub은 reduce)
+    11:38:31.032 [main] INFO reactor.Mono.ReduceSeed.3 - | onSubscribe([Fuseable] MonoReduceSeed.ReduceSeedSubscriber) // 
+    11:38:31.032 [main] INFO reactor.Mono.ReduceSeed.3 - | request(unbounded)                   // subscriber가 pub(여기서는 map)의 subscription의 request를 호출하여 데이터 요청시작
+    11:38:31.032 [main] INFO reactor.Flux.Map.2 - request(unbounded)                            // subscriber가 pub(여기서는 flux.create~)의 subscription의 request를 호출하여 데이터 요청시작
+    11:38:31.032 [main] INFO reactor.Flux.Create.1 - request(unbounded)                         // subscriber가 pub(여기서는 emitter?)의 subscription의 request를 호출하여 데이터 요청시작
+    11:38:31.034 [main] INFO reactor.Flux.Create.1 - onNext(1)
+    11:38:31.034 [main] INFO reactor.Flux.Map.2 - onNext(10)
+    11:38:31.034 [main] INFO reactor.Flux.Create.1 - onNext(2)                                  // 근본 source의 데이터 하나 다 소비했으니 다음꺼
+    11:38:31.034 [main] INFO reactor.Flux.Map.2 - onNext(20)
+    11:38:31.034 [main] INFO reactor.Flux.Create.1 - onNext(3)
+    11:38:31.034 [main] INFO reactor.Flux.Map.2 - onNext(30)
+    11:38:31.034 [main] INFO reactor.Flux.Create.1 - onNext(4)
+    11:38:31.034 [main] INFO reactor.Flux.Map.2 - onNext(40)
+    11:38:31.035 [main] INFO reactor.Flux.Create.1 - onComplete()                               // 근본 source의 데이터 모두 다 소비했으니 complete
+    11:38:31.035 [main] INFO reactor.Flux.Map.2 - onComplete()
+    11:38:31.035 [main] INFO reactor.Mono.ReduceSeed.3 - | onNext(101)                          // reduce는 특성상 데이터를 저장하여 보내주므로 앞의 sub이 complete 되어야 onNext로 발행.. 그리고 바로 끝
+    101
+    11:38:31.035 [main] INFO reactor.Mono.ReduceSeed.3 - | onComplete()
+    
+    */
+    
+  ```
+  - 기타 팁
+    - 제네릭으로 바꾸고싶을때는 구체적인 타입을 넣어서(물론 타입을 하나로만 하는것은 의미없겟지) 테스트해본뒤, 제네릭으로 변경하라!
+    
+- 토비의 봄 TV 7회 스프링 리액티브 프로그래밍 (3) - Schedulers
+  - 보통 pub-sub에서 이벤트 발생하여 처리하였을때, 하나의 스레드만을 사용하여 직렬적으로 처리하진않는다!
+  - 이를 위해서 reactor에서 별도의 스레드에서 처리할수있도록 scheduler를 제공해줌
+    - subscribeOn
+      - Typically used for slow publisher e.g., blocking IO, fast consumer(s) scenarios.
+    - publishOn
+      - Typically used for fast publisher, slow consumer(s) scenarios.
+      - 그리고 publishOn에서 consumer를 더 빠르게하겠다고 여러 스레드를 써서 event의 순서를 뒤바꾸면안된다! (규칙임)
+
+  - 기타 팁
+    - JVM은 유저 스레드가 모두 죽어있으면, 데몬스레드가 살아있더라도 애플리케이션 종료를 강행한다. 그러나, 유저스레드가 하나라도있으면 죽지않는다(당연 데몬스레드도 죽지않것지)
+    - Flux의 interval은 데몬스레드로 동작
+    - 스프링에서 ThreadFactory 잘 활용하기 좋도록 만들어놓은것이 CustomizableThreadFactory.. 내가 원하는부분만 변경하면됨
+    - ExecutorService의 shutdown은 우아한종료가능
+      - shutdownNow는 강제로 interrupt 발생시킴..
+
+- 토비의 봄 TV 8회 스프링 리액티브 프로그래밍 (4) - 자바와 스프링의 비동기 기술
+  - 자바의 비동기작업
+    - Future
+      - FutureTask
+      - ListenableFuture
+        - spring에서 제공
+        - 결과가 완료된다면 ListenableFuture에 등록된 callback으로 넘겨주어 success 또는 fail에 대한 작업실행 (Future의 get과 같이 호출해서 결과를 기다릴필요가없음)
+        - FutureTask를 상속받아서 작업완료 후 호출해주는 후크 메서드인 done메서드를 오버라이딩해서 등록한 callback을 상황에 맞게 호출해주도록 구현되어있음
+    - Callback
+  - 비동기 서블릿 (서블릿3.1)
+    - ![noraml_async](normal_async.png)
+    - client가 NIO Connector에게 요청
+    - NIO Connector는 서블릿 스레드에게 요청을 전달
+    - 서블릿 스레드 풀에서 사용가능한 서블릿 스레드(ex. 톰캣쓰면 보통 로그에 http-nio-8080-exec-1 이런식으로..)를 가져와서 서블릿 스레드가 작업 스레드에게 전달(여기서 작업스레드는 비지니스로직이라고 생각하면됨). 전달하자마자 서블릿스레드는 할거다했기때문에 다시 서블릿 스레드풀에 반환
+    - 작업스레드가 자신의 일을 완료해서 결과를 서블릿 스레드에게 전달
+      - 여기서 서블릿 스레드는 다시 스레드풀에서 놀고있는 서블릿 스레드를 가져온것
+    - 서블릿스레드는 적절한 뷰를 만들어서 NIO Connector에게 전달. 이때 서블릿 스레드는 자신의 일을 다 마쳤으면 다시 서블릿 스레드풀로 반환됨 
+    - NIO Connector는 client에게 응답
+    ```java
+      @GetMapping("/callable")
+      public Callable<String> callable(){
+          log.info("callable");
+          return ()->{  // 리턴은 Callable로 하게되면, 스프링에서 Callable의 body를 작업스레드풀에서 진행시키고, 서블릿또한 비동기를 사용하게된다
+              log.info("async");
+              Thread.sleep(2000);
+              return "Hello";
+          };
+      }
+
+      // 결과 로그
+      2021-10-01 14:22:43.464  INFO 82929 --- [nio-8080-exec-1] c.s.r.ReactivePrgrammingApplication      : callable  //nio-8080-exec-1 이 서블릿 스레드
+      2021-10-01 14:22:43.469  INFO 82929 --- [         task-1] c.s.r.ReactivePrgrammingApplication      : async     //task-1이 작업스레드
+      2021-10-01 14:23:26.664  INFO 82929 --- [nio-8080-exec-4] c.s.r.ReactivePrgrammingApplication      : callable  //다시 요청했더니 서블릿스레드는 새로운 스레드로 받아옴(스레드풀에서 받아오겠지)
+      2021-10-01 14:23:26.664  INFO 82929 --- [         task-2] c.s.r.ReactivePrgrammingApplication      : async
+
+      // => 이런식으로 서블릿 스레드가 서블릿 스레드풀에서 반납하고 사용하는것을 반복하게되면, 결국 서블릿 스레드 하나만 가지고도 수많은 요청을 받을수있다!
+      //    그러나 delay되는 작업이 많다면 작업스레드가 뒤에서 별도 스레드를 만들면서 수행을 하게된다(이 또한 적절한 스레드 풀이 필요하겠지)
+      //    즉, 만약 위의 코드에서 작업스레드풀의 크기가 100개이고, 서블릿스레드풀 크기는 1개일때, 클라이언트가 동시에 100번의 요청을 날리게되면 2초뒤에 모든 응답을 받으나 작업스레드는 100개 모두 사용하게된다(당연 서블릿스레드는 한개만 가지고 처리되었음.. 여기서는 이게핵심! 서블릿스레드 풀에 하나의 스레드를 가지고도 요청을 빠르게 처리할수있다라는것!)
+    ```
+    
+    
+
+    - 스프링 비동기 기술
+      - DeferredResult <span style="color:yellow">아직 정확하게 언제쓸수있을지 각이 안옴..</span>
+        - client요청시 DeferredResult를 반환하면 DeferredResult에 결과를 셋팅하지않는이상 client에게 응답을 주지않는다
+        - 이때, 스레드가 block되는 개념이 아니라, DeferredResult에 결과 셋팅하는 이벤트 발생하면 client에게 응답을 주는 프로세스가 진행되는것이다.. 즉 워커스레드를 점유하고있거나 하지않음
+        - 이를 활용해서 특정 이벤트가 발생할때까지 기다렸다가 발생했을때 응답을 받을수있도록 하는 간단한 채팅도 구현가능하다
+          - 메세지를 받기위한 요청을 보내고, 다른 누군가 메세지 쓸것을 기다렸다가 누군가가 쓰게되엇을때(이벤트발생) 응답을 받는것
+        
+        ```java
+          Queue<DeferredResult<String>> results=new ConcurrentLinkedQueue<>();
+
+          @GetMapping("/dr")
+          public DeferredResult<String> dr(){
+              log.info("dr");
+              DeferredResult<String> dr=new DeferredResult<>();
+              results.add(dr);
+              return dr; //block되는구간은 하나도없지만, 아직 Result를 셋팅하지않았기때문에 사용자는 응답을 받지못한상황 
+          }
+
+          @GetMapping("/dr/size")
+          public String drCount(){
+              return String.valueOf(results.size());
+          }
+
+          @GetMapping("/dr/event")
+          public String drEvent(String msg){ 
+              for(DeferredResult<String> dr:results){
+                  dr.setResult("Hello "+ msg); //Result를 셋팅하게되었을때 이벤트 발생.. 즉 "/dr"로 요청한 사용자에게 이때 응답함
+                  results.remove(dr);
+              }
+
+              return "Ok";
+          }
+        ```
+        - ![deferredResult](deferredResult.png)
+      - ResponseBodyEmitter
+        - Http의 스트림방식 표준에 따라서 만든거라함
+        ```java
+          @GetMapping("/emitter")
+          public ResponseBodyEmitter emitter(){
+              ResponseBodyEmitter emitter = new ResponseBodyEmitter();
+
+              Executors.newSingleThreadExecutor().submit(()->{
+                  try{
+                      for(int i=0;i<=50;i++){
+                          emitter.send("<p>Stream "+ i +"</p>");
+                          Thread.sleep(100);
+                      }
+                  }catch(Exception e){}
+              });
+
+              return emitter;
+          }
+        ```
+  - 기타 팁
+    - InterruptedException은 작업을 수행하지말고 종료하라는 시그날임.. 
+    
+    - thread block 되면 cpu 많이먹음
+      - block 상태일때 cpu가 해당 스레드를 대기상태로전환해서 다른 스레드를 진행시킨다.. 이를 컨텍스트 스위칭이라고함 block 되는순간, 그리고 다시 run 시작하는순간 이렇게 두번 컨텍스트스위칭이 일어남.. 
 
 
-
+- 토비의 봄 TV 9회 스프링 리액티브 프로그래밍 (5) - 비동기 RestTemplate과 비동기 MVC/Servlet
+  - 기타 팁
+    - CyclicBarrier 를 사용하면 스레드들을 동기화할수있다
+      - CyclicBarrier를 생성할때 특정 숫자를 지정하고, await메서드를 호출하게되면, 지정한숫자만큼 스레드가 오기까지 모든 스레드는 대기상태가된다. 이를 가지고 좀 더 일괄적인 작업시작 즉, 모두 동시에 스레드들을 시작할수있도록 해줄수있다(테스트의 오차들을 좀더 잡아줄수있음)
 
 - 기타 이모저모
   - 제네릭에서 와일드카드(?) 를 쓰는경우는 언제?
     - 구체적으로 T와 같은 선언이 없이, 와일드카드를 쓰겠다는것은 해당 메소드내부에서는 구체적으로 타입관련한 조작이 없을것임을 의미한다! 즉, 그냥 제네릭의 구체적인 타입없이도 동작을 수행하는거라면 와일드카드로 
+
+- subscribeOn와 publishOn차이..

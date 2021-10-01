@@ -1,4 +1,4 @@
-SL4J_정리
+SLF4J_정리
 - [sl4j logger 사용방법](http://dveamer.github.io/backend/HowToUseSlf4j.html)
   - 되도록 "{}"를 잘 활용하라! 
     - log.info("hi {}","hello") 이렇게 남기면, "hi {}" 라는 문자열은 생성되지만, "hello"는 해당 info 레벨일떄만 생성된다
