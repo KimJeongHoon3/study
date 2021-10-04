@@ -333,9 +333,19 @@ toby_reactive_stream 유투브 강의정리
 
 
 - 토비의 봄 TV 9회 스프링 리액티브 프로그래밍 (5) - 비동기 RestTemplate과 비동기 MVC/Servlet
+
+  - AsyncRestTemplate
+    - 비동기로 작업을 진행은하나, 내부적으로 스레드를 요청하나씩 계속 만든다...(기본값..)
+      - Netty를 AsyncRestTemplate에 사용하면, 스레드 한개(엄밀하게는 지정한 스레드풀의 크기로)로 비동기 가능 (NIO)
+    - ListenableFuture가 리턴타입이기때문에 asynRestTemplate을 사용하여 api를 요청한 결과값을 Controller에서 응답으로 전달해주면, 스프링에서 알아서 결과를 처리하여 응답해준다.. 
+      - 그러나, 결과에 대한 가공이 필요하다면, ListenableFuture와 더불어 DeferredResult를 사용해야한다!
+        - 컨트롤러에는 DeferredResult를 응답값으로 넘겨주어서, ListenableFuture에 callback을 통해 데이터를 가공한뒤에 DeferredResult에 가공한 데이터를 넘겨주는 방식으로 사용할수있다!
+        - 근데 콜백을 사용해서 계속 그 결과에 대해 api요청을 순차적으로 수행해야한다면 콜백헬(hell)을 경험하게된다...
   - 기타 팁
     - CyclicBarrier 를 사용하면 스레드들을 동기화할수있다
       - CyclicBarrier를 생성할때 특정 숫자를 지정하고, await메서드를 호출하게되면, 지정한숫자만큼 스레드가 오기까지 모든 스레드는 대기상태가된다. 이를 가지고 좀 더 일괄적인 작업시작 즉, 모두 동시에 스레드들을 시작할수있도록 해줄수있다(테스트의 오차들을 좀더 잡아줄수있음)
+    - JDBC는 기본적으로 IO.. 이를 비동기로 사용하기위해서는 적절한 스레드풀을 지정해서 여러 스레드를 사용하는수밖에 없다..
+      - 그러나 몽고DB나 기타 NoSQL은 스레드를 계속 생성할 필요없이 비동기로 모두 제공해준다!(Redis, Kafka 등등)
 
 - 기타 이모저모
   - 제네릭에서 와일드카드(?) 를 쓰는경우는 언제?
