@@ -202,3 +202,18 @@ webclient
 - [webclient 동기식으로 사용하는 방법](https://darkstart.tistory.com/258)
 - [테스트 예시](https://akageun.github.io/2019/06/23/spring-webflux-tip-2.html)
 - 위 내용보다 추가적인 사용방법알고싶으면, reference찾아볼것
+
+- webclient 주의할점(메모리누수): https://gipyeonglee.tistory.com/256
+  - NOTE: When using a ClientResponse through the WebClient exchange() method, you have to make sure that the body is consumed or released by using one of the following methods:
+
+body(BodyExtractor)
+bodyToMono(Class) or bodyToMono(ParameterizedTypeReference)
+bodyToFlux(Class) or bodyToFlux(ParameterizedTypeReference)
+toEntity(Class) or toEntity(ParameterizedTypeReference)
+toEntityList(Class) or toEntityList(ParameterizedTypeReference)
+toBodilessEntity()
+releaseBody()
+You can also use bodyToMono(Void.class) if no response content is expected. However keep in mind the connection will be closed, instead of being placed back in the pool, if any content does arrive. This is in contrast to releaseBody() which does consume the full body and releases any content received.
+
+  - 출처 : https://stackoverflow.com/questions/60304827/spring-webclient-how-to-handle-error-scenarios
+ 	

@@ -334,21 +334,53 @@ toby_reactive_stream 유투브 강의정리
 
 - 토비의 봄 TV 9회 스프링 리액티브 프로그래밍 (5) - 비동기 RestTemplate과 비동기 MVC/Servlet
 
-  - AsyncRestTemplate
+  - AsyncRestTemplate (이는 deprecated됨.. webclient를 사용할것은 권함)
     - 비동기로 작업을 진행은하나, 내부적으로 스레드를 요청하나씩 계속 만든다...(기본값..)
       - Netty를 AsyncRestTemplate에 사용하면, 스레드 한개(엄밀하게는 지정한 스레드풀의 크기로)로 비동기 가능 (NIO)
     - ListenableFuture가 리턴타입이기때문에 asynRestTemplate을 사용하여 api를 요청한 결과값을 Controller에서 응답으로 전달해주면, 스프링에서 알아서 결과를 처리하여 응답해준다.. 
       - 그러나, 결과에 대한 가공이 필요하다면, ListenableFuture와 더불어 DeferredResult를 사용해야한다!
         - 컨트롤러에는 DeferredResult를 응답값으로 넘겨주어서, ListenableFuture에 callback을 통해 데이터를 가공한뒤에 DeferredResult에 가공한 데이터를 넘겨주는 방식으로 사용할수있다!
         - 근데 콜백을 사용해서 계속 그 결과에 대해 api요청을 순차적으로 수행해야한다면 콜백헬(hell)을 경험하게된다...
+          - => 이에 대한 해결책이 CompletableFuture
+    - *이런 비동기작업을 쓰는 이유는 IO와 같은 스레드를 block시켜 대기하는 로직들은 CPU를 사용하지않고 그냥 멍때리고있는것인데, 그로 인해 놀고있는 자원들이 생기게됨.. 그것을 NIO 기술을 통해서 스레드를 block하는것이 아닌, 이벤트방식으로 필요할때만 전달받을수 있도록 할수있는데, 그것을 비동기 로직을 통하여 스레드를 block하여 놀고있도록 하지않을수있다.. 만약 응답 이벤트를 기다리고있다면 스레드는 반납하고 이벤트 발생하면 그때 다시 스레드가 실행된다!
   - 기타 팁
     - CyclicBarrier 를 사용하면 스레드들을 동기화할수있다
       - CyclicBarrier를 생성할때 특정 숫자를 지정하고, await메서드를 호출하게되면, 지정한숫자만큼 스레드가 오기까지 모든 스레드는 대기상태가된다. 이를 가지고 좀 더 일괄적인 작업시작 즉, 모두 동시에 스레드들을 시작할수있도록 해줄수있다(테스트의 오차들을 좀더 잡아줄수있음)
     - JDBC는 기본적으로 IO.. 이를 비동기로 사용하기위해서는 적절한 스레드풀을 지정해서 여러 스레드를 사용하는수밖에 없다..
       - 그러나 몽고DB나 기타 NoSQL은 스레드를 계속 생성할 필요없이 비동기로 모두 제공해준다!(Redis, Kafka 등등)
+    - 임시 테스트를 위해 spring boot 활용하여 서버 하나 더 띄우는 방법
+    ```java
+      @SpringBootApplication
+      public class RemoteService {
+          @RestController
+          static class MyController{
+              @GetMapping("/remote/service")
+              String remote(String data) throws InterruptedException {
+                  Thread.sleep(2000);
+                  return data +" | remote";
+              }
+          }
+
+          public static void main(String[] args) {
+              System.setProperty("server.port","8899"); //여기에 셋팅해주어서 기존 올려놓은 어플리케이션과 포트 충돌일어나지않도록 해줄수있음
+              System.setProperty("server.tomcat.threads.max","100");
+              SpringApplication.run(RemoteService.class, args);
+          }
+      }
+    ```
+
+- 토비의 봄 TV 10회 스프링 리액티브 프로그래밍 (6) - AsyncRestTemplate의 콜백 헬과 중복 작업 문제
+  - 기타 팁
+    - 제네릭을 사용할때는 클래스 레벨에 선언한 제네릭인지, 메서드 레벨에서 추가로 선언이 필요한 제네릭인지 잘 구분을 해야한다
+    - 아무리봐도 타입만 바꿔서 재사용하면 되는거면 제네릭!
+
+- 토비의 봄 TV 11회 스프링 리액티브 프로그래밍 (7) - CompletableFuture
+  - 비동기기술 : 자원의 효율적 사용! MSA에서는 API요청의 결과값들을 조합하여 응답을 처리하는경우가 많은데, 이럴때 매우 강력함!
+  - 기타 팁
+    - 리엑티브인데, 함수형스타일이 아니면 API호출의 결과들을 조합해야할때 콜백헬이 나타난다..
+
 
 - 기타 이모저모
   - 제네릭에서 와일드카드(?) 를 쓰는경우는 언제?
     - 구체적으로 T와 같은 선언이 없이, 와일드카드를 쓰겠다는것은 해당 메소드내부에서는 구체적으로 타입관련한 조작이 없을것임을 의미한다! 즉, 그냥 제네릭의 구체적인 타입없이도 동작을 수행하는거라면 와일드카드로 
-
 - subscribeOn와 publishOn차이..
