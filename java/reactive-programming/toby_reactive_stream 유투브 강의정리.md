@@ -376,10 +376,118 @@ toby_reactive_stream 유투브 강의정리
 
 - 토비의 봄 TV 11회 스프링 리액티브 프로그래밍 (7) - CompletableFuture
   - 비동기기술 : 자원의 효율적 사용! MSA에서는 API요청의 결과값들을 조합하여 응답을 처리하는경우가 많은데, 이럴때 매우 강력함!
+  - CompletableFuture : 이름에서도 알수있듯이 비동기작업을 완료하는 작업을 수행가능
+    - 비동기작업의 결과를 담고있는것이지, 비동기작업 자체는 아님..
+    - 예외처리?
+      1. 예외일어나면 끝까지 계속넘김
+      2. 의미있는값으로 변환해서 넘김
+    - CompletionStage : 하나의 비동기 작업 수행하고, 완료햇을때 여기에 의존적인 또다른 작업을 할수있또록 해주는 인터페이스(그런 메소드들을 제공해줌 ex. thenXXX)
+      - 결과에 의존할수도있고, 각각 비동기작업하고 합치는것 등 모두 가능
+      - <span style="color:yellow">요기 인터페이스가 거의 핵심이니, 인터페이스에 정의된 내용들 잘 살펴볼것 </span>
+    ```java
+      CompletableFuture.supplyAsync(()->{
+                    log.info("runAsync");
+                    if(1==1) throw new RuntimeException();
+                    return 1;
+                })
+                .exceptionally(e->5) //바로 위에서 에러발생하면 5로 바꿔줌
+                .thenCompose(s1-> { //flatmap과 유사..
+                    log.info("thenApply1 {}",s1);
+                    return CompletableFuture.completedFuture(s1+1);
+                })
+                .thenApply(s2-> { //map과 유사
+                    log.info("thenApply2 {}",s2);
+                    return s2*3;
+                })
+                .exceptionally(e -> -10 ) //에러나면 -10으로 변경시켜줌.. 만약 thenApply1에서 에러났으면 thneApply2는 넘어가고 여기서 예외를 -10으로 변경해준
+                .thenAccept(s3-> {
+                    log.info("thenAccept {}",s3);
+                });
+    ```
+  - 스프링에서는 ListenableFuture를 CompletableFuture로 변환해서 사용하는게좋음
+    ```java
+      @GetMapping("/async3/rest")
+      public DeferredResult<String> rest(int idx){
+        DeferredResult dr=new DeferredResult(new Long("100000"));
+
+        toCF(asyncRestTemplate.getForEntity("http://localhost:8899/remote/service?data={data}", String.class, idx))
+                .thenCompose(s -> toCF(asyncRestTemplate.getForEntity("http://localhost:8899/remote/service2?data={data}", String.class,s.getBody())))
+                .thenApplyAsync(s -> myService4_sync.work(s.getBody()),es) 
+                //기존에 시간이 오래걸릴거같아서 서비스단에서 @Async를 사용하여 비동기로 만들어놓았던것들을 동기로 처리할수있음!(비동기 수행은 CompletableFuture를 사용하는것!) 그리고 필요에따라 적절한 스레드 풀도 유동적으로 지정할수있으니 좋음! 비동기 처리하는 곳을 컨트롤러에서 관리할수있겠네~
+                //AsyncRestTemplate에서 NioEventLoopGroup을 1로 설정하였던것이 요청뿐아니라 결국 응답처리도 여기서 지정한 스레드 만큼 쓰는것이니깐, 요청뿐아니라 응답받은값을 처리하는데 지연되는 부분이있다면 별도 스레드로 처리할수있도록 해주아야함(여기서는 thenAsync로 서비스로직 처리)
+                .thenAccept(s -> dr.setResult(s))
+                .exceptionally(e -> { //completablefuture에서 exceptionally로 에러를 잡아주지않으면 CompletableFuture에서 값을 가져오려고 하지않는 이상 아무런 동작을 하지않는다.. 그렇기때문에, DeferredResult에 타임아웃만 떨어져버린다.. 이 타임아웃 에러가 떨어졌을때, 예외핸들러로 전달이 되어서 처리가됨..
+                    dr.setErrorResult(e.getMessage());
+                    return null;
+                });
+
+          return dr;
+      }
+
+
+      private <T> CompletableFuture<T> toCF(ListenableFuture<T> listenableFuture) {
+        CompletableFuture<T> completableFuture=new CompletableFuture();
+        listenableFuture.addCallback(s -> completableFuture.complete(s), e-> completableFuture.completeExceptionally(e));
+        return completableFuture;
+      }
+    ```
   - 기타 팁
-    - 리엑티브인데, 함수형스타일이 아니면 API호출의 결과들을 조합해야할때 콜백헬이 나타난다..
+    - 리엑티브인데, 함수형스타일이 아니면 API호출의 결과들을 조합해야할때 콜백헬이 나타난다.. => 이에 대한 대안으로 함수형스타일로 만들어진게 CompletableFuture
 
+- 토비의 봄 TV 12회 스프링 리액티브 프로그래밍 (8) - WebFlux
+  - Mono, Flux 를 사용해야한다!
+    - Flux : event driven 으로 이벤트 발생시 "여러개"의 데이터들을 받아서 처리하기위해 사용 (1:10:00 좀더 참고)
+    - Mono : Mono는 "하나" 라는 뜻. 기존의 전통적인 DB나 API에서 결과 하나 가져오는것에 리엑티브 스타일에서 굳이 여러개로 만들지않게 대응하기위해서 Mono를 사용
+  - Mono 또한 하나의 컨테이너이다.. 즉, 데이터를 가지고있고, 이러한 데이터를 잘 활용할수있도록 도와주는 컨테이너!
+    - 대표적인 컨테이너의 예시는 List, Optional 등등 있음.. List 또한 데이터의 크기를 보거나, 데이터를 넣는거 등등 할수있도록 해주는 컨테이너
+  - 기본적으로 웹플럭스를 사용하도록 셋팅하면 netty로 실행됨(서블릿 사용안함)
+    - 서블릿을 사용하는것은 톰켓이랑 제티..
+  - WebFlux 사용시 주의할점
+    - 구독을 어딘가에서 진행해야만 발행되어 로직이 수행된다! 그냥 발행만 있다면 아무것도 하지않는다!(webclient 사용시 주의..)
+      - 스프링에서는 controller에서 publisher를 리턴해주면 알아서 subscribe함 
+    - low level의 코드가 드러나지않는게 엄청난 장점이지만, 그만큼 내부적으로 어떻게 돌아가는지 이해가 안되면 문제의 원인 찾기가 어려우므로 로그를 찍으면서 흐름을 반드시 잘 파악할것!
+  ```java
+    @GetMapping("/webflux/rest")
+    public Mono<String> rest(int idx){ //spring은 Mono로 전달해주면, 이를 알아서 subscribe함..
 
+        return webClient.get().uri("http://localhost:8899/remote/service?data={data}",idx)
+                //여기를 처음 호출하는 놈은 톰켓(만약 netty서버라면 netty 스레드.. 스프링 내부적으로 구독을 진행하니깐)
+                //webclient는 netty를 기반으로 동작하기때문에, 이제 요청을 위한 채널이 등록되고 eventLoop에 등록되므로 netty의 스레드 사용
+                .exchangeToMono(clientResponse -> {
+                    if(clientResponse.statusCode()==HttpStatus.OK ){
+                        return clientResponse.bodyToMono(String.class);
+                    }else{
+                        return Mono.error(new RuntimeException("에러 | "+idx)); //이 에러는 에러1, 에러2, 에러3 을 거쳐서 Exception Handler 로 넘어가게됨.. Exception Handler에서는 doOnError의 스레드가 아니라 톰켓의 스레드이다..( "normal_async.png" 참고 )
+                    }
+
+                })
+                .doOnNext(s -> log.info("1번요청 : "+s)) //여기서는 응답한 값을 볼수잇는데, 이때의 스레드는 요청할때와 같은 스레드일거임(netty의 채널은 eventloop에 등록되는데, 이 eventLoop는 항상 동일한 스레드로 처리됨.. 그래서 데이터 전송시 사용한 스레드와, 데이터 받았을때의 스레드는 동일.. 그리고 이로 인하여 모든 이벤트의 순서를 보장한다.. )
+                .doOnError( e -> log.info("에러1 "+e.getMessage()))
+                .flatMap(res -> webClient.get().uri("http://localhost:8899/remote/service2?data={data}",res).exchangeToMono(clientResponse -> clientResponse.bodyToMono(String.class)))
+                .doOnNext(s -> log.info("2번요청 : "+s)) // 여기는 remote/service 에 전송했던 스레드와는 다를수있지만, service2를 요청한 스레드와는 같을거임
+                .doOnError( e -> log.info("에러2 "+e.getMessage()))
+                .flatMap(res -> Mono.fromCompletionStage(myService5_completableFuture.work(res))) //여기서 block이 있다면 당연 스레드 하나를 점유하게되는거기때문에 요청이 eventLoop(디폴트는 Runtime.getRuntime().availableProcessors()*2) 갯수를 초과하게된다면 전체적인 서비스는 현저히 느려진다.. 그래서 비동기 사용! 스프링의 디폴트 스레드풀 사용
+                .doOnNext(s -> log.info("3번 비동기 메서드 : "+s))
+                .doOnError( e -> log.info("에러3 "+e.getMessage()));
+
+        /*
+         - 여기서 map을 사용하지않고 flatMap을 사용할수밖에 없는이유!
+           - map을 사용하면 이렇게 된다
+            Mono<ClientResponse> exchange = webClient.get().uri("aa", "data").exchange();
+            Mono<Mono<String>> map = exchange.map(clientResponse -> clientResponse.bodyToMono(String.class));
+            bodyToMono(String.class)를 호출하게되면 Mono<String> 이 리턴타입이다.. 그렇기때문에 여기서와 같이 map안에서 사용하게되면, Mono<Mono<String>>이 되어버린다.. 그렇기때문에 flatMap을 사용해야했다!!! (flatMap은 리턴해준거를 평면화하기때문에 다시 Mono<String>을 리턴할때 이와 동일하게 Mono<String>으로 만들어주기때문에!!)
+            *함수가 컨테이너를 감싸서(ex. Mono<XX>, Flux<XX>, List<XX>..등) 리턴한다면 flatMap을 통해서 평면화시켜라!!
+
+         - 비동기 메서드가 CompletableFuture를 반환할때, Mono로 계속 연결하기위해서는 Mono.fromCompletionStage() 를 사용하라! CompletableFuture는 CompletionStage를 구현하고있기때문에 가능!
+
+        */
+
+    }
+
+  ```
+
+- 토비의 봄 TV 13회 스프링 리액티브 프로그래밍 (9) - Mono의 동작방식과 block
+  - 
 - 기타 이모저모
   - 제네릭에서 와일드카드(?) 를 쓰는경우는 언제?
     - 구체적으로 T와 같은 선언이 없이, 와일드카드를 쓰겠다는것은 해당 메소드내부에서는 구체적으로 타입관련한 조작이 없을것임을 의미한다! 즉, 그냥 제네릭의 구체적인 타입없이도 동작을 수행하는거라면 와일드카드로 
