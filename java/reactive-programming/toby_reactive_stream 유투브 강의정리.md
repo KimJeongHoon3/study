@@ -487,8 +487,113 @@ toby_reactive_stream 유투브 강의정리
   ```
 
 - 토비의 봄 TV 13회 스프링 리액티브 프로그래밍 (9) - Mono의 동작방식과 block
-  - 
+  - `Mono.just` 사용시 주의할점
+    - Mono.just 인자로 있는 generateHello 메서드는 subscribe하고나서 실행되는 부분이아니다! Mono가 만들어질때 이미 실행이 된다!! 결과값이 Mono에 들어가있는것이고 그것을 subscribe할때 활용하는것이다!
+      - Mono.fromSupplier 에서 넘겨주는 콜백은 구독시에 Mono에 데이터를 넣어서 가져오는것!
+  - block
+    -  Mono에 담긴 결과값을 가져오고 싶을때는 block() 메소드를 사용하면된다
+    - block을 호출하면 내부적으로 구독을 하여서 결과를 꺼내올수있다..
+    - Mono의 결과값을 이렇게 꺼내온다면, 구독을 해서 결과를 가져올때까지 block 되기때문에 block이라는 이름을 사용한것!
+    - 그러나, 가능한한 block은 사용하지말자!
+  - 기타 팁
+    - log 또한 publisher 임
+      ```java
+        Mono<String> m=Mono.just(generateHello()).log(); // log 또한 Operator 즉, 또하나의 pub..  Publisher -> Publisher(Operator) -> Publisher(Operator) ... -> Subscriber
+      ```
+    - Publisher는 하나지만, Subscriber는 여러개가될수있다! 즉, 스트림과 달리 한번 소비했으면 끝이아니라, 구독하는대로 계속 소비할수있다!
+    - publishing 하는 소스 타입은 두가지
+      - hot
+        - 실시간으로 일어나는 이벤트들이 hot (구독한 때부터 데이터를 전달받게됨)
+        - 구독한 시기에 따라 pub의 데이터는 다를수있음!
+      - cold
+        - 언제 구독을 하던지간에 pub의 데이터를 동일하게 가져옴
+
+- 토비의 봄 TV 14회 스프링 리액티브 프로그래밍 (10) - Flux
+  - 데이터가 여러개일때 (컬렉션과같은..) 리엑티브 스타일로 사용한다면 Flux를 사용!
+    - Mono에도 `Mono<List<String>>` 이런식으로 사용할수도있는데, `Flux<String>` 과 유사하게 사용될수있다.. 
+      - 여기서 유사하게라고 이야기한것은, 컨트롤러에서 위의 두개가 리턴타입일때 결국 같은값을 클라이언트는 받게되지만, Mono와 Flux안에 데이터를 핸들링 하는데 있어서 분명한 차이가 있따..
+        - Mono는 하나의 데이터만 처리하기에 List와 같은 컬렉션이 들어가있으면, 컬렉션 내부요소를 핸들링하기에 어려움이있으나(Mono는 한건의 데이터 처리), Flux는 그런 여러 데이터를 핸들링하는데 최적화 되어있다!(여기서 핸들링은 Operator를 사용해서 핸들링하는거로 이해하면됨) 
+  - Http Stream을 이용할때도 Flux를 사용해야함!
+    - Http Stream 은 클라이언트가 응답받을때 한번에 데이터를 받는게아니라, 데이터 단위로 끊어서 하나씩 받는것을 이야기함.. 즉, 데이터 여러개가 시간의 간격을 두고 전달을 받게되는데, 그때 사용(서버는 응답헤더에 stream 관련 응답을 명시해주어야함! - spring에서는 produce에 MediaType을 지정할것!) 
+
+  - 확인해볼것
+    - 49분
+      - Stream.generate 는 내부적으로 데이터를 알아서 계속 만들어내는것같은데, 로그를보니 Flux로 구독할때 미리 만들어놓은것을 소비하는게아니다.. 확인해볼것
+
+- *추가 - [스프링캠프 2017 spring web flux](https://www.youtube.com/watch?v=2E_1yb8iLKk)
+  - WebFlux
+    - 개발방식
+      - 기존의 @MVC 방식과 유사
+      - 새로운 함수형 모델
+        - 서블릿 API에서 탈피!
+        - ServerRequest, ServerResponse 사용 (~~~HttpServletRequest. HttpServletResponse~~~ )
+    - 지원 웹 서버 / 컨테이너
+      - Servlet 3.1+ (톰캣, 제티 ..)
+      - Netty (서블릿과 상관 x)
+      - Undertow (서블릿과 상관 x)
+    - 스프링이 웹 요청을 처리하는 방식
+      - 요청매핑 
+        - 어떤 컨트롤러(핸들러)로 요청을 전달할지 매핑 
+        - @RequestMapping
+        - **RouterFunction (webflux)**
+      - 요청바인딩
+        - 해당 컨트롤러의 메서드에 클라이언트가 요청한 데이터를 바인딩
+        - url path, body 데이터, 헤더 등등
+        - **HadnlerFunction (webflux)**
+      - 핸들러실행
+        - **HadnlerFunction (webflux)**
+      - 핸들러 결과처리(응답생성)
+        - **HadnlerFunction (webflux)**
+    - HandlerFunction
+      - 함수형 스타일의 웹 핸들러(컨트롤러 메서드와 같음)
+      - 웹 요청을 받아 웹 응답을 돌려주는 함수
+    - RouterFucntion
+      - 요청 매핑해줌
+      - RouterFunction의 and(), andRoute() 등으로 하나의 @Bean에 n개의 RouterFunction을 선언할수있음
+      - 타입레벨 - 메소드레벨의 @RequestMapping 처럼 공통의 조건을 정의하는것 가능
+        - RouterFunction.nest()
+        - 여러개 만드는방법.. 36분 참고
+    - webflux 함수형 스타일의 장점
+      - 모든 웹 요청 처리 작업을 명시적인 코드로 작성
+        - 메소드 시그니처 관례와 타입체크가 불가능한 애노테이션에 의존하는 @MVC 스타일보다 명확
+        - 정확한 타입 체크 가능 (함수형)
+      - 함수 조합을 통한 편리한 구성, 추상화에 유리
+      - 테스트 작성의 편리함
+        - 핸들러 로직은 물론이고 요청 매핑과 리턴값 처리까지 단위테스트로 작성가능
+    - webflux 함수형 스타일의 단점
+      - 함수형 스타일의 코드 작성이 편하지않으면 코드 작성과 이해모두 어려움
+    - 리턴할때 Mono나 Flux로 감싸서 리턴해주기만하면, 거의 모든게 기존 @MVC 사용방법과 동일하나, @RequestBody 바인딩은좀 다름
+      - @RequestBody 바인딩타입
+        - `T`
+        - `Mono<T>`
+        - `Flux<T>`
+        - webflux 쓸거면 Mono나 Flux로 받아서 사용하는게좋음
+      - @ResponseBody 리턴값 타입
+        - `T`
+        - `Mono<T>`
+        - `Flux<T>`
+        - `Flux<ServerSideEvent>` // Http stream 으로 리턴하고싶을때는 ServerSideEvent로 감싸서 리턴!
+        - `void`
+        - `Mono<Void>`
+    - WebFlux의 장점을 극대화하려면 블록킹IO를 제거해야가능하다!
+      - 개선할 블록킹IO
+        - 데이터 액세스 리포지토리
+          - CompletableFuture로 리턴타입을 주고 @Async하면 별도 스레드에서 처리하고, 리턴받은 CompletableFuture를 Mono.fromCompletionStage로 감싸서 컨트롤러에서 리턴해주면된다
+          - 아마 지금쯤 jdbc는 비동기 나왔을듯..? 찾아보자
+          - MongoDB, Cassandra, Redis 등은 ReactiveCrudRepository를 확장하여 완전한 webflux를 활용하여 비동기 방식으로 사용가능!
+        - HTTP API 호출
+        - 기타 네트워크를 이용하는 서비스
+      - WebFlux + ( 리엑티브 리포지토리 | 리엑티브 원격 API 호출 | 리액티브 지원외부서비스 | @Async 블록킹 IO )
+      - Flux나 Mono에서 데이터 꺼내오기위해서는 block이 필요한데, 그런로직 노노!
+    
+    - 기타팁
+      - 처음 개발할때 타입하나씩 볼수있도록 체이닝을 사용하지말고 개발해볼것!@!@!@!@!@!
+      - webflux는 시스템 외부에서 발생하는 이벤트에도 유용하게 사용가능
+      - 클라이언트로부터 이벤트형식으로 받을때도 사용가능
 - 기타 이모저모
   - 제네릭에서 와일드카드(?) 를 쓰는경우는 언제?
     - 구체적으로 T와 같은 선언이 없이, 와일드카드를 쓰겠다는것은 해당 메소드내부에서는 구체적으로 타입관련한 조작이 없을것임을 의미한다! 즉, 그냥 제네릭의 구체적인 타입없이도 동작을 수행하는거라면 와일드카드로 
 - subscribeOn와 publishOn차이..
+
+
+- 
