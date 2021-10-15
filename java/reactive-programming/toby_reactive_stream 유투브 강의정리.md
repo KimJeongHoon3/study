@@ -218,10 +218,12 @@ toby_reactive_stream 유투브 강의정리
   - 보통 pub-sub에서 이벤트 발생하여 처리하였을때, 하나의 스레드만을 사용하여 직렬적으로 처리하진않는다!
   - 이를 위해서 reactor에서 별도의 스레드에서 처리할수있도록 scheduler를 제공해줌
     - subscribeOn
-      - Typically used for slow publisher e.g., blocking IO, fast consumer(s) scenarios.
+      - Typically used for slow publisher e.g., blocking IO, fast consumer(s) scenarios.\
+      - 구독할때 별도 스레드진행(publisher에 subscriber가 구독을 등록하는시점 즉, subscribe호출을 별도 스레드에서..)
     - publishOn
       - Typically used for fast publisher, slow consumer(s) scenarios.
       - 그리고 publishOn에서 consumer를 더 빠르게하겠다고 여러 스레드를 써서 event의 순서를 뒤바꾸면안된다! (규칙임)
+      - pub이 발행할때 별도스레드진행 (publisher가 subscriber에 데이터 발행해주는 시점 즉, subscriber의 onNext 호출을 별도 스레드에서)
 
   - 기타 팁
     - JVM은 유저 스레드가 모두 죽어있으면, 데몬스레드가 살아있더라도 애플리케이션 종료를 강행한다. 그러나, 유저스레드가 하나라도있으면 죽지않는다(당연 데몬스레드도 죽지않것지)
