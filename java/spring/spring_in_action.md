@@ -137,6 +137,9 @@
 - zip이나 merge는 내부적으로 어떤 스레드를 사용하나? (parallel 사용 - 가용 cpu 숫자에 맞추어 스레드 갯수 지정)
 
 
+
+---
+
 - https://m.blog.naver.com/gngh0101/221529470975 여기에 webflux 동작방식 정리 잘되어있음
 
 
@@ -185,7 +188,7 @@ public static void main(String... args) {
     - HttpHandler
       - 서로 다른 HTTP 서버를 쓰기위한 추상화가 전부
       - Netty, Jetty, undertow, 톰캣 ...
-    - WebHandler
+    - WebHandler (DispatcherHandler)
       - 요청을 처리하는핸들러(DispatcherServlet과 같은역할.. 프론트 컨트롤러)
       - 웹 어플리케이션에서 흔히 쓰는 광범위한 기능을 제공
       - User session과 Session Attribute
@@ -198,3 +201,10 @@ public static void main(String... args) {
       - 다른 필터 체인과 WebHandler 전후에 요청을 가로채 원하는 로직을 넣을수있음
     - WebExceptinoHandler
       - WebFilter 체인과 WebHandler에서 발생한 예외를 처리
+
+- DispatcherHandler 요청처리과정
+  - HandlerMapping을 뒤져 매칭되는 핸들러를 찾는다.. 첫번째로 매칭된 핸들러사용
+  - 핸들러를 찾으면 적당한 HandlerAdapter를 사용해 핸들러를 실행하고, HandlerResult를 돌려받는다
+    - HandlerAdpater중 HandlerFunctionAdapter를 사용한다면, HandlerFunction을 호출하게된다
+    - 핸들러가 리턴한 리액티브 타입(Mono or Flux)이 데이터를 produce하기 전에 에러를 알아차릴수만 있으면, @Controller로 선언하나 클래스에서 @ExceptionHandler or @ControllerAdvice를 사용하여 잡을수있음(여기서 응답코드 변경하거나 하겠지..)
+  - HandlerResult를 적절한 HandlerResultHandler로 넘겨 바로 응답을 만들거나 뷰로 렌더링하고 처리를 완료한다..
