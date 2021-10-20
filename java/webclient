@@ -216,4 +216,7 @@ releaseBody()
 You can also use bodyToMono(Void.class) if no response content is expected. However keep in mind the connection will be closed, instead of being placed back in the pool, if any content does arrive. This is in contrast to releaseBody() which does consume the full body and releases any content received.
 
   - 출처 : https://stackoverflow.com/questions/60304827/spring-webclient-how-to-handle-error-scenarios
+  - 추가 주의할점
+    - https://yangbongsoo.tistory.com/9
+
  	

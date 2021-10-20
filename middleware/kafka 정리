@@ -102,8 +102,12 @@ kafka-consumer-groups --bootstrap-server 172.16.0.55:9092,172.16.0.55:9094,172.1
 토픽 보관주기 설정
 ./kafka-configs.sh --zookeeper localhost:2181 --alter --entity-type topics --entity-name jeremy_test93 --add-config retention.ms=3600000
 ./kafka-configs.sh --zookeeper localhost:2181 --alter --entity-type topics --entity-name jeremy_test93 --delete-config retention.ms=3600000
-*확인
+
+토픽상태 확인 확인
 ./kafka-topics.sh --zookeeper localhost:2181 --topic jeremy_test93 --describe
+
+토픽 partition 변경
+./kafka-topics.sh --zookeeper localhost:2181 --alter --topic <토픽이름> --partitions 2
 
 ****************CONSUME 만들때 참고할것..****************
 -max_poll_record_config를 1(한개 데이터씩 가져온다..는 룰!)로 안놓으면 데이터 하나씩 처리하면서 다음꺼 기다려야할때 불가능.. 이전에 poll로 계속 데이터를 땡겨오는데 여러개를 땡겨오니깐 seek가 정상작동을안함.. 이미 seek해야할 record값은 넘어가있음..
