@@ -29,3 +29,10 @@ https://ssoco.tistory.com/19
    - 참고사이트 : https://johnmarc.tistory.com/125
 
 - 기본적인 내용 잘 나와있음 : https://cheese10yun.github.io/redis-getting-started/
+
+
+
+Redis client인 jedis, lettuce 비교 : https://jojoldu.tistory.com/418
+  - 이거보면서 성능어떻게 체크하는지도 참고할것
+
+  

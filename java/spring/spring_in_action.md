@@ -78,6 +78,9 @@
           - Flux로부터 발행될때 동기적으로(각 항목을 순차적으로 처리) 매핑이 수행
             - 비동기적으로(각 항목을 병행처리) 매핑을 수행하고싶다면 flatmap을 사용해야함
               - flatmap이 자동적으로 가능하게하는건 아닌듯하고.. flatmap은 여러 데이터들을 다시 Flux나 Mono로 만들때 인터리빙(끼어들기) 방식으로 순서를 보장하지않고 빠르게 스트림을 만들게 되는데, 이러한 인터리빙의 효과를 극대화 하기위해서는 flatmap에 전달하는 함수형 인터페이스 내부에 스케줄러를 잘 활용해서 해야함
+                - <span style="color:yellow">근데 Mono에서 flatmap 또한 async라고 하여, HTTP 요청과 같은 부분을 호출할때에는 flatmap을 사용하여야만 한다고하는데..(실제 webflux 성능관련한 영상에서도 보여주었는데..) Mono는 한건이기에 위빙과도 상관없고, map에서 전달하는 function에 비동기로 http 요청을하게되면 flatmap에 의미가없을거같은데.. 어떤식으로 효과가 생기는지모르겠음..</span>
+                  - map은 Mono가 아닌, 데이터의 타입을 리턴해야하는데, 이렇게 가져오면 비동기요청이 이미 되지도않음.. block으로 값을 가져와야하기때문에.. map은 의미가없다..
+                
         - flatmap
           
           ```java
@@ -201,6 +204,9 @@ public static void main(String... args) {
       - 다른 필터 체인과 WebHandler 전후에 요청을 가로채 원하는 로직을 넣을수있음
     - WebExceptinoHandler
       - WebFilter 체인과 WebHandler에서 발생한 예외를 처리
+      - WebExceptionHandler를 구현한 DefaultErrorWebExceptionHandler가 있는데, 이는 order가 -1로 되어있음.. 특별히 커스텀하게 에러를 리턴해야한다면 WebExceptionHandler를 구현한것을 등록하고 @Order를 -1보다 작은숫자로 해놔야함
+        - 근데 DefaultErrorWebExceptionHandler 가 json메세지(timestamp, path, status, error, message 등)로 깔끔하게 에러를 전달해주기때문에, 이를 사용하면 좋을듯
+        - ResponseStatusException 으로 던져야 DefaultErrorWebExceptionHandler가 잡아서 적절하게 값들을 셋팅하므로 ResponseStatusException을 커스텀하여 사용하면 좋을듯+ 
 
 - DispatcherHandler 요청처리과정
   - HandlerMapping을 뒤져 매칭되는 핸들러를 찾는다.. 첫번째로 매칭된 핸들러사용
@@ -208,3 +214,26 @@ public static void main(String... args) {
     - HandlerAdpater중 HandlerFunctionAdapter를 사용한다면, HandlerFunction을 호출하게된다
     - 핸들러가 리턴한 리액티브 타입(Mono or Flux)이 데이터를 produce하기 전에 에러를 알아차릴수만 있으면, @Controller로 선언하나 클래스에서 @ExceptionHandler or @ControllerAdvice를 사용하여 잡을수있음(여기서 응답코드 변경하거나 하겠지..)
   - HandlerResult를 적절한 HandlerResultHandler로 넘겨 바로 응답을 만들거나 뷰로 렌더링하고 처리를 완료한다..
+
+
+- webflux 주의사항 ([출처](https://www.youtube.com/watch?v=I0zMm6wIbRI))
+  - 리엑터의 log()함수는 사용하지말자!
+    - log가 왜 block...?
+  - map 과 flatmap 을 잘쓰자 (Mono)
+    - map : 동기식으로 아이템을 변경
+      - 너무 많은 map 함수 조합은 연산마다 객체를 생성하기때문에 GC에 대상이 많아질수있음
+      - 동기식으로 동작해
+    - flatmap : 비동기식으로 아이템 변경
+  - BlockHound 라이브러리로 Blocking 코드를 찾아보자!
+    - reactor-core 3.3.0 부터 내장
+
+response time 95th percentile
+mean requests/sec
+- 게이틀링??
+- 스캐터차트
+
+
+- Flux 있는데 Mono 왜 필요?
+  - 사용성과 context에서 중요
+  - 즉, 컨트롤러에서 Mono로 Response를 리턴한다면, 해당 요청은 스트림으로 작용하는게아니란것을 알수있다!
+  - 
