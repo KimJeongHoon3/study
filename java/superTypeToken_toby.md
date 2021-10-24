@@ -6,4 +6,5 @@
 
 - 슈퍼타입 토큰이 왜 필요한가?
   - `Class<T>`로 나타내는 타입토큰으로는 제네릭을 표현할수 없음..(ex. `List<String>.class` 는 에러..) 
-- 제네릭쓸때 T와 같이 선언한것을 parametrizedType이라함
+- `Collection<String>` 과 같이 제네릭을 사용하여 선언한것을 parametrizedType이라함
+  - 이 인터페이스는 다이아몬드 연산자 안의 타입들을 가져올수있는 함수도 가짐(getActualTypeArguments 호출시 배열반환하는데, 다이아몬드연산자에 타입들 선언한거 순서대로 배열로반환하는것!)
