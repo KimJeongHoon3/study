@@ -631,3 +631,7 @@ HTTP_김영한
       - 프록시 캐시 서버를 public 캐시(공용으로 사용하니깐) 라고함
       - 사용자의 웹 브라우저는 private 캐시라고함
   
+
+- 추가로 참고하면 좋을 사이트
+  - https://www.zerocho.com/category/HTTP/post/5b594dd3c06fa2001b89feb9
+  - 간단하게 정리 굿 : https://m-falcon.tistory.com/347

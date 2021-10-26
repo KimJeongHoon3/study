@@ -32,6 +32,7 @@ CORS
 		-same-origin(기본값) : 같은 origin간 요청에만 인증정보 담음
 		-include : 모든 요청에 인증정보담음
 		-omit : 모든 요청에 인증정보 담지않음
+		- => cookie같은 정보를 담아서 요청하려면 credntials를 사용해야함!!
 		- => 만약 인증정보를 담게되면 브라우저는 더 깐깐하게 체크.. 예를들어, include를 사용하였을경우, Access-Control-Allow-Origin는 *을 넘겨주면 브라우저에서 안띄워줌.. 명시적인 URL이 적혀있어야함
 
 내용출처(무지설명굿) : https://evan-moon.github.io/2020/05/21/about-cors/
