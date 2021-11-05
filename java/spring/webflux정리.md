@@ -118,8 +118,37 @@ public static void main(String... args) {
       - log가 block되는것은 아닌듯함.. 공식문서에 아래와같이나옴
         - you should take care to configure the underlying logging framework to use its most asynchronous and non-blocking approach — for instance, an AsyncAppender in Logback or AsyncLogger in Log4j 2.
         - 핵심은 구현체를 잘쓰라는것
-      - log를 써서 느려진이유가 block 때문은 아닌거같고, 로그 구현체의 문제인거나 로그찍는 양이 많앗다거나 했었을듯함..
+      - ~~log를 써서 느려진이유가 block 때문은 아닌거같고, 로그 구현체의 문제인거나 로그찍는 양이 많앗다거나 했었을듯함..~~
         - 무엇보다 block이 되었다면 blockhound에 잡혀야되는데 그렇지않있음..
+        - => blockhound에 잡히지는않았지만, 내부적으로 block되는 구간이있었다..(근데 왜 blockhound에는 안잡혓지...?)
+          - => 테스트 해본바, log를 쓰면 느리긴함.. doOnNext를 사용해서 log를찍으면 그렇지않음.. 
+            - log 썼을때 thread dump로 확인해본바, SignalLogger 내부에서 logger 작성하는 부분에 lock이 잡히고, 그에 따라 block된 스레드들이 많아짐(100개의 스레드로 요청을 서버로 보내고있었는데, 서버에서 29개의 block이 발견 - 참고로 해당서버의 cpu전체 코어갯수는 40개)
+            ```java
+              reactor-http-epoll-12
+              Stack Trace is:
+              java.lang.Thread.State: RUNNABLE
+              at java.util.Arrays.copyOf(Arrays.java:3181)
+              at java.util.concurrent.CopyOnWriteArrayList.add(CopyOnWriteArrayList.java:440)
+              at ch.qos.logback.classic.Logger.createChildByName(Logger.java:359)
+              at ch.qos.logback.classic.LoggerContext.getLogger(LoggerContext.java:154)
+              - locked <0x00000001dd4e1240> (a ch.qos.logback.classic.Logger)               //여기서 lock..
+              at ch.qos.logback.classic.LoggerContext.getLogger(LoggerContext.java:53)
+              at org.slf4j.LoggerFactory.getLogger(LoggerFactory.java:363)
+              at reactor.util.Loggers$Slf4JLoggerFactory.apply(Loggers.java:201)
+              at reactor.util.Loggers$Slf4JLoggerFactory.apply(Loggers.java:197)
+              at reactor.util.Loggers.getLogger(Loggers.java:182)
+              at reactor.core.publisher.SignalLogger$$Lambda$1295/975302839.apply(Unknown Source)
+              at reactor.core.publisher.SignalLogger.<init>(SignalLogger.java:119)
+              at reactor.core.publisher.SignalLogger.<init>(SignalLogger.java:75)
+              at reactor.core.publisher.Mono.log(Mono.java:3338)
+              at reactor.core.publisher.Mono.log(Mono.java:3306)
+              at reactor.core.publisher.Mono.log(Mono.java:3263)
+              at com.test.webfluxperformance.user.UserHandler.find(UserHandler.java:50)
+              ...
+
+            ```
+            - ![](log_block.png)
+            
   - map 과 flatmap 을 잘쓰자 (Mono)
     - map : 동기식으로 아이템을 변경
       - 너무 많은 map 함수 조합은 연산마다 객체를 생성하기때문에 GC에 대상이 많아질수있음
@@ -211,3 +240,6 @@ mean requests/sec
           ...
       }
     ```
+
+
+- 마블다이어그램 참고하기 좋은 사이트 : https://rxmarbles.com/

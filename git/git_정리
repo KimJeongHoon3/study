@@ -232,6 +232,7 @@ git pull origin <branch name>
 -git cherry-pick --continue
     - cherry-pick 충돌시 소스수정하고 계속 진행하도록 해주는 명령어
 
+
 Cherry-pick 관련 참고 : https://cselabnotes.com/kr/2021/03/31/git-%EB%AA%85%EB%A0%B9%EC%96%B4-git-cherry-pick/
 
 https://cjh5414.github.io/get-git-remote-branch/
@@ -348,3 +349,9 @@ git 메뉴얼
 *참고사항
     -git commit메세지 어떻게쓰면좋은가?
     https://blog.ull.im/engineering/2019/03/10/logs-on-git.html
+
+
+*******************************************
+Git submodule (나중에 정리할것!)
+    - https://ohgyun.com/711
+    - https://git-scm.com/book/ko/v2/Git-%EB%8F%84%EA%B5%AC-%EC%84%9C%EB%B8%8C%EB%AA%A8%EB%93%88

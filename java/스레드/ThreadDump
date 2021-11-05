@@ -19,10 +19,21 @@ ThreadDump
 출처: https://sjh836.tistory.com/151 [빨간색코딩]
 
 
+-dump 뜨는방법 
+  -pid 찾기
+    - jps -lv 
+      - jps option설명
+         -l : Displays the full package name for the application's main class or the full path name to the application's JAR file.
+         -v : Displays the arguments passed to the JVM.
+  -dump 뜨기
+    - jstack pid > thread_dump1.txt
+    - 보통 일정간격으로 여러번 dump를 떠서 확인해야함
+  - 공짜로 분석해주는 사이트 : http://gceasy.io/
 
 *cpu 많이 점유하는거 찾아서 스레드 덤프하기
 1) cpu 많이 점유하는 PID 찾기
     $ ps -mo pid,lwp,stime,time,cpu -C java
 2) 찾은 PID로 스레드 덤프
 3) 1)에서 검색해서 찾은 lwp값을 16진수로 변경하여 NID 검색(여기가 cpu 많이 먹는곳..)
-설명 매우 굿 : https://d2.naver.com/helloworld/10963
+
+설명 매우 굿(threaddump에 대한 기본적인 내용 및 확인방법들 설명 굿) : https://d2.naver.com/helloworld/10963

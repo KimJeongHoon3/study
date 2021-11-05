@@ -74,3 +74,6 @@ jackson 관련 정리
 - Enum type 의 serialize, deserialize 정리 매우굿 : 
   - https://velog.io/@recordsbeat/JacksonObjectMapper%EB%A1%9C-Enum%EC%BB%A8%ED%8A%B8%EB%A1%A4-%ED%95%98%EA%B8%B0
   - https://www.baeldung.com/jackson-serialize-enums
+
+- jackson 기본적인 사용법들 정리
+  - https://interconnection.tistory.com/137  
