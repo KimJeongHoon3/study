@@ -147,6 +147,7 @@
     - HashSet
       - 중복x, 순서x
       - 내부적으로 HashMap을 사용
+        - HashMap에서 key에다가 set에 추가할 값넣고 value에는 dummy data(그냥 Object) 넣음..
       - 정렬하고싶으면 ArrayList(Collection)나 LinkedList(Collection)으로 변경하여, Collections.sort(List) 하면됨 
       - Hashset의 Add매서드는 새로운 요소를 추가하기전에 기존에 저장된 요소와 같은 것인지 판별하기위해 추가하려는 요소의 hashCode와 equals를 호출하기때문에, 추가하려는 클래스의 해당 매소드를 적절히 오버라이딩 해야한다
         - equals를 재정의하지않으면, 기본적으로 객체의 주소값을 비교함
