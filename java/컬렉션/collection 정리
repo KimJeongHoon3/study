@@ -100,6 +100,7 @@ collection 정리
 -검색에는 뭐가 제일 빠른가?
 -hashmap vs hashset
     => 비교대상이 아님.. map과 set.. ㅡㅡ
+    => HashSet은 내부적으로 hashmap을 쓰니까 동일하도고도 볼수있다..
 -hashmap vs treemap
 
 
