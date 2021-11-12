@@ -23,7 +23,8 @@ collection 정리
             -key값이 달라도 버킷에 동일한 데이터가 들어가게될수있음! 버킷이 처음에 많이 생성안되면!! 처음에 16개 생성되는듯함..
                 if ((p = tab[i = (n - 1) & hash]) == null)  //여기서 hash는 key값의 hash값에 쉬프팅된것.. 처음에 n은 16.. 긍까 String이 달라도 버킷이 많지않기때문에 같은 버킷으로 저장될수있다!!
                     tab[i] = newNode(hash, key, value, null);
-            
+
+            	-*key가 String, Number 클래스 같은 Comparable 형태여야만 트리가 지원
     -treemap
         -시간복잡도
             -get : O(log n)
