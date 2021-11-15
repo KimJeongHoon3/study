@@ -154,9 +154,9 @@ toby_reactive_stream 유투브 강의정리
       - publisher <-- Observable
         - publisher는 subscriber로부터 요구에따라 일련의 연속적인 요소들을 제공해주는놈이다
       - subscriber <-- Observer
-      - subscription : publisher와 subscriber에서 중간다리역할을 해줌.. Subscription을 통해서 데이터를 요청하면, 해당 데이터만큼 push를 해줌.
+      - subscription : publisher와 subscriber에서 중간다리역할을 해줌.. Subscription을 통해서 데이터를 요청하면, 해당 데이터만큼 ***push***를 해줌.
         - Observer와 매우 유사하지만, 한 없이 push하는것이아닌 Subscription을 통해서 subscriber가 데이터를 요청하기때문에, pub과 sub의 속도차이가 난다면 이를 통해서 조절가능(back pressure라고함)
-        - subscription은 request라는 함수를 통해서 위의 작업이 이루어지는데, 리턴으 void다. 즉, iterable처럼 데이터를 pull하는 방식이아니라는것! push를 얼만큼 하냐에 대한 이야기임
+        - subscription은 request라는 함수를 통해서 위의 작업이 이루어지는데, 리턴이 void다. 즉, ***iterable처럼 데이터를 pull하는 방식이아니라는것!*** push를 얼만큼 하냐에 대한 이야기임
 
       - `onSubscribe onNext* (onError | onComplete)`
         - 시작은 onSubscrbie로 반드시 호출해야하며, onNext는 여러번 호출가능하고, OnError나 OnComplete는 옵션인데 둘중에 하나만 선택가능하다 라는 뜻
@@ -211,6 +211,8 @@ toby_reactive_stream 유투브 강의정리
     */
     
   ```
+  - 간단하게 그림으로 정리한 operator 동작과정 (구현소스는 github "reactive-programming의 chap2operators 패키지"참고)
+    - ![](operator동작과정.png)
   - 기타 팁
     - 제네릭으로 바꾸고싶을때는 구체적인 타입을 넣어서(물론 타입을 하나로만 하는것은 의미없겟지) 테스트해본뒤, 제네릭으로 변경하라!
     
@@ -220,17 +222,20 @@ toby_reactive_stream 유투브 강의정리
     - subscribeOn
       - Typically used for slow publisher e.g., blocking IO, fast consumer(s) scenarios.\
       - 구독할때 별도 스레드진행(publisher에 subscriber가 구독을 등록하는시점 즉, subscribe호출을 별도 스레드에서..)
+      - 발행하는 스트림부터가 이미 별도스레드임.. 그니깐 publisher에서 발행하는 속도가 상대적으로 느리면 요거쓰면 좋다
     - publishOn
       - Typically used for fast publisher, slow consumer(s) scenarios.
       - 그리고 publishOn에서 consumer를 더 빠르게하겠다고 여러 스레드를 써서 event의 순서를 뒤바꾸면안된다! (규칙임)
       - pub이 발행할때 별도스레드진행 (publisher가 subscriber에 데이터 발행해주는 시점 즉, subscriber의 onNext 호출을 별도 스레드에서)
-
+      - 다운스트림으로 올때 별도스레드.. 그니깐 consumer(다운스트림)가 상대적으로 느릴때쓰면좋다!
+      
   - 기타 팁
     - JVM은 유저 스레드가 모두 죽어있으면, 데몬스레드가 살아있더라도 애플리케이션 종료를 강행한다. 그러나, 유저스레드가 하나라도있으면 죽지않는다(당연 데몬스레드도 죽지않것지)
     - Flux의 interval은 데몬스레드로 동작
     - 스프링에서 ThreadFactory 잘 활용하기 좋도록 만들어놓은것이 CustomizableThreadFactory.. 내가 원하는부분만 변경하면됨
     - ExecutorService의 shutdown은 우아한종료가능
       - shutdownNow는 강제로 interrupt 발생시킴..
+      - shutdown하고 일정시간 기다려야하면 `es.awaitTermination(100, TimeUnit.SECONDS);` 이거 쓸것
 
 - 토비의 봄 TV 8회 스프링 리액티브 프로그래밍 (4) - 자바와 스프링의 비동기 기술
   - 자바의 비동기작업
@@ -275,7 +280,7 @@ toby_reactive_stream 유투브 강의정리
     
 
     - 스프링 비동기 기술
-      - DeferredResult <span style="color:yellow">아직 정확하게 언제쓸수있을지 각이 안옴..</span>
+      - DeferredResult 
         - client요청시 DeferredResult를 반환하면 DeferredResult에 결과를 셋팅하지않는이상 client에게 응답을 주지않는다
         - 이때, 스레드가 block되는 개념이 아니라, DeferredResult에 결과 셋팅하는 이벤트 발생하면 client에게 응답을 주는 프로세스가 진행되는것이다.. 즉 워커스레드를 점유하고있거나 하지않음
         - 이를 활용해서 특정 이벤트가 발생할때까지 기다렸다가 발생했을때 응답을 받을수있도록 하는 간단한 채팅도 구현가능하다
@@ -486,6 +491,15 @@ toby_reactive_stream 유투브 강의정리
 
     }
 
+    
+    @Service
+    public static class MyService5{
+        @Async
+        public CompletableFuture<String> work(String req){
+            return CompletableFuture.completedFuture(req + " | asyncService"); //이렇게 CompleatableFuture를 완료시킬수있음
+        }
+    }
+
   ```
 
 - 토비의 봄 TV 13회 스프링 리액티브 프로그래밍 (9) - Mono의 동작방식과 block
@@ -495,7 +509,7 @@ toby_reactive_stream 유투브 강의정리
   - block
     -  Mono에 담긴 결과값을 가져오고 싶을때는 block() 메소드를 사용하면된다
     - block을 호출하면 내부적으로 구독을 하여서 결과를 꺼내올수있다..
-    - Mono의 결과값을 이렇게 꺼내온다면, 구독을 해서 결과를 가져올때까지 block 되기때문에 block이라는 이름을 사용한것!
+    - Mono의 결과값을 이렇게 꺼내온다면, ***구독을 해서*** 결과를 가져올때까지 block 되기때문에 block이라는 이름을 사용한것!
     - 그러나, 가능한한 block은 사용하지말자!
   - 기타 팁
     - log 또한 publisher 임
@@ -555,7 +569,7 @@ toby_reactive_stream 유투브 강의정리
       - 타입레벨 - 메소드레벨의 @RequestMapping 처럼 공통의 조건을 정의하는것 가능
         - RouterFunction.nest()
         - 여러개 만드는방법.. 36분 참고
-    - webflux 함수형 스타일의 장점
+    - webflux 함수형 스타일의 장점 (Functional endpoint)
       - 모든 웹 요청 처리 작업을 명시적인 코드로 작성
         - 메소드 시그니처 관례와 타입체크가 불가능한 애노테이션에 의존하는 @MVC 스타일보다 명확
         - 정확한 타입 체크 가능 (함수형)
@@ -586,7 +600,7 @@ toby_reactive_stream 유투브 강의정리
         - HTTP API 호출
         - 기타 네트워크를 이용하는 서비스
       - WebFlux + ( 리엑티브 리포지토리 | 리엑티브 원격 API 호출 | 리액티브 지원외부서비스 | @Async 블록킹 IO )
-      - Flux나 Mono에서 데이터 꺼내오기위해서는 block이 필요한데, 그런로직 노노!
+      - Flux나 Mono에서 ***데이터 꺼내오기위해서는 block이 필요***한데, 그런로직 노노!
     
     - 기타팁
       - 처음 개발할때 타입하나씩 볼수있도록 체이닝을 사용하지말고 개발해볼것!@!@!@!@!@!
@@ -595,7 +609,4 @@ toby_reactive_stream 유투브 강의정리
 - 기타 이모저모
   - 제네릭에서 와일드카드(?) 를 쓰는경우는 언제?
     - 구체적으로 T와 같은 선언이 없이, 와일드카드를 쓰겠다는것은 해당 메소드내부에서는 구체적으로 타입관련한 조작이 없을것임을 의미한다! 즉, 그냥 제네릭의 구체적인 타입없이도 동작을 수행하는거라면 와일드카드로 
-- subscribeOn와 publishOn차이..
-
-
-- 
+ 
