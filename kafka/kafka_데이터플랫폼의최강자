@@ -149,7 +149,7 @@ accumulator라는놈이 메세지를 쌓아주게되면, sender가 RecordAccumul
 
 5장 컨슈머
 
--주요기능 : 파티션 리더에게 메세지 가져오기를 요청함.. 각 요청은 로그의 오프셋을 명시하고 그 위치로부터 로그 메세지를 수신.. 그래서 어디서 부터 가져올지를 지정할수있음.. 즉, 위치만 알고있다면 이전데이터를 가져올수도잇음
+-주요기능 : 파티션 리더에게 메세지 가져오기를 요청함.. 각 요청은 "로그의 오프셋을 명시"하고 "그 위치로부터 로그 메세지를 수신".. 그래서 어디서 부터 가져올지를 지정할수있음.. 즉, 위치만 알고있다면 이전데이터를 가져올수도잇음
 
 -주요옵션
     -bootstrap.servers : producer와 동일
@@ -173,7 +173,10 @@ accumulator라는놈이 메세지를 쌓아주게되면, sender가 RecordAccumul
                 -만약 poll을 하여 데이터 처리하는 시간이 길어지면, 하트비트를 코디네이터가 못받을수있으므로 본의아니게 리밸런싱이 일어남.. 
                 (-3초에 한번씩 하트비트를 전용으로 보내는 스레드가 있기때문에 위의 내용은 크게신경안써도될듯.. 아마 버전업하면서 변경이되었다고했던거같음..
                   관련 내용 그림&글 : https://chrzaszcz.dev/2019/06/kafka-heartbeat-thread/)
-        https://medium.com/11st-pe-techblog/%EC%B9%B4%ED%94%84%EC%B9%B4-%EC%BB%A8%EC%8A%88%EB%A8%B8-%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EC%A0%84%EB%9E%B5-4cb2c7550a72    
+            -모든 브로커는 특정 컨슈머 그룹의 코디네이터 역할을 합니다. 코디네이터는 컨슈머 그룹의 멤버 변화가 생겼을 때 파티션 리밸런싱 작업을 조정하는 역할을 합니다.
+            
+            -consumer관련 내부 로직들에 대한 설명 굿(컨슈머 그룹 리더 선출어떻게되는지 등) : https://medium.com/11st-pe-techblog/%EC%B9%B4%ED%94%84%EC%B9%B4-%EC%BB%A8%EC%8A%88%EB%A8%B8-%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EC%A0%84%EB%9E%B5-4cb2c7550a72    
+        
 
         아파치에서 설명한 코디네이터 디자인 : https://cwiki.apache.org/confluence/display/KAFKA/Kafka+Detailed+Consumer+Coordinator+Design#KafkaDetailedConsumerCoordinatorDesign-5.OnCoordinatorStartup
 
@@ -190,6 +193,7 @@ accumulator라는놈이 메세지를 쌓아주게되면, sender가 RecordAccumul
 
     -heartbeat.interval.ms : 그룹 코디네이터에게 어느 주기로 하트비트를 보낼것인지 조정하는것.. 보통 session.timeout.ms의 1/3 정도로 설정함.. (별도 스레드가 돌아감.. poll과 상관없이!)
     -max.poll.records : poll에 대한 최대 레코드 수 조정
+      -consumer가 max.poll.records를 줄인다고해서 요청을 많이 보내진않는다.. 컨슈머 구조상 "fetch.max.bytes"(한번에 얼마나 브로커로부터 가져올까 하는것)로 kafka의 브로커로부터 데이터를 쭉 받아오고 Fetcher라는 객체를 통해서 저장해놓았다가 consumer가 poll메서드를 호출하면 max.poll.records에 맞추어 돌려줌
     -max.poll.interval.ms : 코디네이터에게 하트비트는 주기적으로보내서 문제없는듯하나, 실제로 poll을 하지않고 있을수 잇으므로 이 설정을 통해서 해당 interval동안 poll을 하지않으면 장애로 판단하여 그룹에서 제외
                            -> poll해서 데이터 처리하는시간이 해당 설정값보다 초과되면 문제생긴걸로 간주하고 카프카가 연결끊는다.. poll() -> max.poll.interval.mx 시간안에 데이터 처리 -> poll()
     -auto.commit.interval.ms : 주기적으로 오프셋을 커밋하는 시간
@@ -204,7 +208,7 @@ accumulator라는놈이 메세지를 쌓아주게되면, sender가 RecordAccumul
 
 -컨슈머가 partition assign하는 과정
     1) 현재 가지고 있는 파티션 Revoke 
-    2) 컨슈머가 group coordinator에게 join group을 요청
+    2) 컨슈머가 group coordinator에게 join group을 요청(poll메서드 호출한거임..)
     3) 그룹 코디네이터가 컨슈머그룹의 리더에게 해당그룹에 있는 컨슈머들의 모든 리스트들(하트비트 보내서 살아있는놈)을 전달해주고 전달받은 리스트를 토대로 어떤 컨슈머에게 어떤 파티션이 배정될지를 리더가 결정해서 그룹 코디네이터에게 전달,, (해당 컨슈머 그룹에 1빠로 들어온놈이 리더임.. 이 리더는 컨슈머에게 파티션 할당하는 역할을하고 이 파티션할당이 이렇게됐다고 코디네이터그룹에게 전송.. )
     4) 그룹 코디네이터는 전달받은 정보들을 토대로 모든 컨슈머들에게 매칭된 파티션을 알려줌 (generation 정보화 함께 join 성공,, 리더만이 컨슈머그룹의 모든 컨슈머 정보를 가지고있고, 나머지 컨슈머들은 자신만알고있음..)
         -generation은 모든 컨슈머가 공유하게되는데, Rebalancing이 일어나면 하나씩 증가.. (컨슈머 하나가 컨슈머 그룹의 generation에 join 되는개념.. )
@@ -298,12 +302,14 @@ https://brunch.co.kr/@timevoyage/77
 주키퍼는 카프카 운영의 다음 측면에도 관여한다.
  - 클러스터 멤버십: 클러스터에 가입하고 클러스터 멤버십을 유지 관리한다. 브로커를 사용할 수 없게 되면 주키퍼는 클러스터 멤버십에서 브로커를 제거한다.
  - 토픽 설정: 클러스터의 토픽을 트래킹한다. 브로커가 토픽의 리더인지, 토픽에 파티션이 몇개인지, 토픽의 특정 설정이 업데이트됐는지 확인한다.
- - 접근 제어: 특정 토픽에 대해 누가 읽고 쓸 수 있는지 식별한다.
+ - 접근 제어: 특정 토픽에 대해 누가 읽고 쓸 수 있는지 식별한다. //컨슈머가 누구인지는 알수없음..
+   
  카프카가 팔로워들과 리더 브로커를 가질 수 있게 하는 것이 주키퍼다. 컨트롤러 브로커는 복제를 위해 토픽 파티션을 팔로워에게 할당하는 것은 물론 멤버로 있던 브로커가 실패할 때 이를 다시 지정하는 중요한 역할도 한다.
   https://12bme.tistory.com/521
 
-
-
+ - 브로커에 문제가 생기면, 주키퍼가 컨트롤러 브로커에게 노티를 해주고, 컨트롤러 브로커는 해당 브로커를 제외하고 그에따른 각 브로커의 파티션 리더들을 다시 선출하는 작업을함.. 
+ - brokers do communicate with each other ( replicas are reading the messages from leaders, controller is informing other brokers about changes), but they do not exchange metadata among themselves - they write metadata to a zookeeper
+ 출처 : https://stackoverflow.com/questions/52637490/kafka-inter-broker-communication
 
 
 
