@@ -5,7 +5,7 @@ netty in action
 -netty 핵심컴포넌트
     -channel 
     -콜백 : 
-        -콜백이 트리거 되면 channelHandler 인터페이스의 구현을 통해 이벤트를 처리할수있다.(무슨 말인지 이해가안감.. 그냥 인터페이스로 빼서 실행시켰다는건가..)
+        -콜백이 트리거 되면 channelHandler 인터페이스의 구현을 통해 이벤트를 처리할수있다. (동작 파라미터화)
     -future
     -이벤트와 핸들러
         -channelHandler : 데이터를 처리하는 비지니스 논리를 구현한곳(네트워킹 코드로부터 비지니스로직을 분리!!!)
@@ -54,12 +54,14 @@ netty in action
 -장점
     -사용자정의 버퍼형식으로 확장가능
     -내장 복합 버퍼 형식을 통해 투명한 제로카피 달성
+        -소켓에 복사해서 다시 커널에 전달하고 전송하는것이아닌, directBuffer를 통해서 소켓복사없이 바로 커널에 전달하여전송
+        -https://stackoverflow.com/questions/38638411/netty-4-1-iobuffer-v-s-directbuffer-v-s-heapbuffer
     -용량을 필요에 따라 확장가능(stringbuilder와 유사)
     -ByteBuffer의 filp 메소드 호출없이 리더와 라이터모드 전환가능
     -읽기와 쓰기의 고유 인덱스가 따로있음
-    -메서드 체인이 지원됨(뭔솔)
+    -메서드 체인이 지원됨
     -참조카운팅이 지원됨(풀링이랑 엮이는 이야기)
-    -풀링이 지원됨(pool을 사용하여 자원재사용가능 -> 오버헤드 줄여줌,, 가비지컬렉터의 부담 줄여줌..)
+    -풀링이 지원됨(pool을 사용하여 자원재사용가능 -> 오버헤드 줄여줌,, 가비지컬렉터의 부담 줄여줌.. 객체를 계속 생성하지않으므로!)
 
     *제로카피란
     -커널 영역에서 파일 데이터를 읽은 후 웹서버로 돌아가지않고 바로 소켓에 데이터를 담아 전달하는것!
@@ -121,7 +123,7 @@ netty in action
     -하나의 Channel에서 ChannelHandler 마다 ChannelHandlerContext는 다 다른 객체..!
     -ChannelHandler와 ChannelPipeline내의 다른 ChannelHandler 간의 "상호작용"을 관리함!
     -ChannelHandlerContext에서 바로 제공하는 메서드와 ChannelHandlerContext에서 채널이나 파이프라인을 불러와서 메서드를 호출하는데에는 차이가있다(둘이 상당히 유사함)
-        -후자와같은경우는 전체 파이프라인을 통해 전파된다.. write를 호출했을때 outboundhandler가 현재 호출한 핸들러보다 뒤에 등록되었어도 outboundHandler를 탄다
+        -후자와같은경우는 전체 파이프라인을 통해 전파된다.. write를 호출했을때 outboundhandler가 현재 호출한 핸들러보다 뒤에 등록되었어도 outboundHandler를 탄다 (소스상에서보면 write시 전역변수 tail부터 write 시작.. 즉, 맨 끝의 handler부터 write시작)
         -전자와같은경우는 이벤트흐름이 자신이거나 다음이다.. 흐름이 짧다.. write를 호출했을때 outboundhandler가 현재 호출한 핸들러보다 뒤에 등록되어있으면 outboundhandler 타지않는다.
             => 이를 잘 활용하면 성능상의 이점을 얻을수있음,, 아무래도 파이프라인을 다 휘젓고 돌아오지않으므로..!
 
