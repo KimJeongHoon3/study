@@ -189,10 +189,10 @@ innodb_locks : 어떤 잠금이 있는지 있는 테이블
     ||UPDATE tb_user <br>SET point_balance = point_balance-10<br>WHERE user_id='B'|
     |UPDATE tb_user <br>SET point_balance = point_balance+10<br>WHERE user_id='B'||
     ||UPDATE tb_user <br>SET point_balance = point_balance+10<br>WHERE user_id='A'|
-    |데드락 발생|
+    |데드락 발생||
     |commit;||
-    ||commit;|
-    ||
+    ||commit;||
+    
     => 이는 어플리케이션 단에서 고쳐주어야할 데드락인데, user_id의 순서대로 데이터를 처리하면해결가능.. 트랜잭션2에서 user_id를 A먼저!
 
   - 데드락2(유니크 인덱스관련)
@@ -203,8 +203,8 @@ innodb_locks : 어떤 잠금이 있는지 있는 테이블
     ||INSERT INTO tb_test VALUES(9);||
     |||INSERT INTO tb_test VALUES(9);|
     |ROLLBACK;|||
-    |데드락발생|
-    ||
+    |데드락발생|||
+
     => 트랜젝션1번이 rollback함과 동시에 배타락은 사라지고 트랜젝션2번과 3번은 대기하고있다가 공유락으로 해당 지점을 잠금한다. 그리고 배타락을 서로가 획득하려하지만 공유락이 걸려있어서 어느누구도 획득하지못하고 데드락<br>
     => 프로그램상에서 여러 스레드를 통해 동시에 실행되면 이런 현상이 나타날수있음.. 이에 대한 해결책으로는 불필요한 유니크 인덱스를 줄이는것과 프로그래밍 코드상에서 데드락을 핸들링해주는 방법이있다..
 
@@ -244,3 +244,16 @@ BEGIN and BEGIN WORK are supported as aliases of START TRANSACTION for initiatin
 
 The BEGIN statement differs from the use of the BEGIN keyword that starts a BEGIN ... END compound statement. The latter does not begin a transaction. See Section 13.6.1, “BEGIN ... END Compound Statement”.
 -출처 : mysql docs (+ https://dba.stackexchange.com/questions/261194/mysql-difference-between-begin-and-start-transaction)
+
+
+---
+
+- 넥스트 키 락 왜쓰나?
+  - [mysql 5.6 한글번역](http://211.245.104.72/?depth=140206)
+  - Repeatable read에서 팬텀row를 막기위함 
+    - 즉, A 트랜잭션이 select 한 뒤에 다시 select하는 사이에 B 트랜잭션에서 작업하여 커밋까지 완료하였는데, 그게 A트랜잭션이 select하는범위에 영향을 미치게되어 A 트랜잭션에서 항상 동일한 select 데이터를 보장하지못하는것을 막기위함!
+    - https://idea-sketch.tistory.com/46
+- update 쿼리 수행시 정확하게 어떻게 동작하나
+  - 만약 변경해야할 데이터를 보조인덱스를 사용해서 찾았고, 이를 변경한다면, 우선 보조인덱스로 락을 잡고 변경할 레코드를 클러스터드 인덱스로 또한 잠그고 작업한다..
+  - If a secondary index is used in a search and the index record locks to be set are exclusive, InnoDB also retrieves the corresponding clustered index records and sets locks on them.
+    - https://dev.mysql.com/doc/refman/8.0/en/innodb-locks-set.html
