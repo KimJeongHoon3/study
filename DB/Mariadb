@@ -108,7 +108,7 @@ Mariadb
                 -레코드를 어떤 방식으로 읽었는지 알수있음(풀스캔? 인덱스? 등)
                 -하나의 단위 SELECT 쿼리에서 아래 종류중에 하나만 사용하며, index_merge(where a or b)를 제외하고는 반드시 하나의 인덱스만 사용!!
                 -종류(아래로 갈수록 느린것)
-                    -system : 레코드가 1건만 존재하거나 한건도 존재하지않는 테이블을 차모하는 형태의 접근방법.. MyISAM or MEMORY 일때만 쓰이고 InnoDB나 XtraDB엔진에서는 안쓰인다 (InnoDB로 할경우 index 가 사용)
+                    -system : 레코드가 1건만 존재하거나 한건도 존재하지않는 테이블을 참조하는 형태의 접근방법.. MyISAM or MEMORY 일때만 쓰이고 InnoDB나 XtraDB엔진에서는 안쓰인다 (InnoDB로 할경우 index 가 사용)
                     -const : 쿼리의 WHERE 조건절에 PK나 Unique Key 가지고 반드시 1건을 반환하는 쿼리의 처리방식,, 다른 DBMS에서는 이를 "유니크 인덱스 스캔"이라고 표현
                         -만약 PK로 여러 컬럼이 지정되어있을때, 하나의 컬럼으로 조회하게되면 const 안됨! ref로 잡힘(비록 1건만 조회되더라도! 엔진 입장에서는 확실히 알수가없으니!)
                         -Mariadb(MySQL)의 옵티마이저가 쿼리를 최적화하는 단계에서 쿼리를 통째로 상수화한다는 뜻임
@@ -159,7 +159,7 @@ Mariadb
                 -mysql 5.1이상의 버전에서는 "컨디션푸시다운" 이라는것을 통해서 범위제한조건이든 체크조건이든 모두 스토리지엔진에서 처리가능하도록 만들어졌기때문에 key_len에 범위제한조건과 체크조건 모두 포함된 인덱스 길이가 나타난다
                     -mysql 5.1미만일때는 체크조건은 MySQL엔진에서 수행하기때문에 key_len은 범위제한조건만 나타난다. 즉, 두개의 컬럼으로 인덱스가 잡혀있어도, 범위제한 조건이 하나여서 하나의 컬럼만 사용하면 해당 길이만 나타난다..
             -ref 컬럼
-                -참조조건(equal 비교조건)으로 어떤 값이 제공됐는지 보여줌
+                -참조조건("equal 비교"조건)으로 어떤 값이 제공됐는지 보여줌
                 -상수값지정했따면 ref 컬럼은 const로 표시,, 다른 테이블의 컬럼값이면 그 테이블 명과 컬럼 명이 표시
                 -func라고 지정될때가있는데, 이는 사용자가 명시적으로 변환을 했을때(ex. 수식을 넣어준다든가..) 혹은 내부적으로 Mariadb서버가 내부적으로 값을 변환해야할때 나타난다(ex. 숫자타입인데 문자타입으로 넣어줬을때.. 내부적으로 전환하는동작) 
                     -되도록이면 서버가 내부적으로 func 안하도록 해주는게좋음!!
@@ -201,7 +201,7 @@ Mariadb
                         -group by 처리가 "인덱스를 이용"할때 쿼리의 실행계획에서 나타남
                         -이를 "루스 인덱스 스캔"이라고함
                         -인덱스를 순서대로 쭉 읽는것(타이트 인덱스 스캔)이 아님! 필요한 부분만 듬성듬성 읽는것!
-                            *타이트 인덱스 스캔 의 예 : count(*), SUM(), AVG() 과 같이 하나도 빠짐없이 필요한것
+                            *타이트 인덱스 스캔 의 예 : count(*), SUM(), AVG() 과 같이 하나도 빠짐없이 필요한것 (이때는 위 문구 안나타남..)
                             *루스 인덱스 스캔의 예 : MAX, MIN 등
                         -where 절에 인덱스가 포함되어있지않고, group by 절에 인덱스가 포함되어있으면 타이트 인덱스 스캔이 일어남
                         -where 절에 인덱스가 포함되어있고, group by도 해당 인덱스 컬럼으로 조회하면 루스 인덱스 스캔이 일어남
@@ -237,10 +237,10 @@ Mariadb
                         -어느정도 인덱스를 통해서 읽다가 PK로 정렬해서 데이터를 가져오는것..
                             -클러스터 인덱스는 리프페이지가 데이터페이지므로 범위조건 검색에 PK로 검색하면 데이터페이지 왔다갔다하는 비용을 상당히 줄일수있으니 개이득
 		    -Select tables optimized away
-			-완전 최적화된 쿼리.. 이보다 빠를순없다..
-			-Max나 Min값이 인덱스를 탔을때 나타나거나 count(*)와 같이 바로 갯수만 세면 되는것들..
-			-MySQL 공식 문서 내용 : The query contained only aggregate functions (MIN(), MAX()) that were all resolved using an index, or COUNT(*) for MyISAM, and no GROUP BY clause. The optimizer determined that only one row should be returned.
-			-이거 관련해서 상당히 자세하게 분석해놓음 : https://blog.naver.com/PostView.nhn?blogId=pjt3591oo&logNo=221030483713
+                -완전 최적화된 쿼리.. 이보다 빠를순없다..
+                -Max나 Min값이 인덱스를 탔을때 나타나거나 count(*)와 같이 바로 갯수만 세면 되는것들..
+                -MySQL 공식 문서 내용 : The query contained only aggregate functions (MIN(), MAX()) that were all resolved using an index, or COUNT(*) for MyISAM, and no GROUP BY clause. The optimizer determined that only one row should be returned.
+                -이거 관련해서 상당히 자세하게 분석해놓음 : https://blog.naver.com/PostView.nhn?blogId=pjt3591oo&logNo=221030483713
 
     -explain extended
         -filtered 컬럼추가
@@ -381,8 +381,8 @@ where `employees`.`e1`.`first_name` = (/* select#2 */ select `employees`.`e2`.`f
 
             -퀵소트 알고리즘 알아볼것!
             -ORDER BY .. LIMIT n 최적화  //////////// 무슨말 ???????
-                -ORDER BY절을 가진 쿼리가 인덱스를 사용하지 못할때, 서버에서 실시간 정렬(Using fil알고리즘을 수행함.. 만약 이때, 레코드가 너무 많으면 계속 소팅하고 병합하는 작업이 이어진다.. 이는 CPU와 디스크에 많은부담!
-                -이에 MYSQL은 소트버퍼의 크기보다 작은 경우에 우선순위 큐를 만들고 그 큐를 이용해서 정렬을 수행.. 이렇게 우선순위 큐를 이용하면 퀵 esort)을 수행해야한다. 소트버퍼에서 퀵 소트 소트 알고리즘으로 900건의 결과를 모두 정렬할 필요가 없으며 단순히 employees 테이블의 레코드를 하나씩 읽어서 우선순위 큐에만 넣어주면된다.. 
+                -ORDER BY절을 가진 쿼리가 인덱스를 사용하지 못할때, 서버에서 실시간 정렬(Using filesort)을 수행해야한다. 소트버퍼에서 퀵 소트 알고리즘을 수행함.. 만약 이때, 레코드가 너무 많으면 계속 소팅하고 병합하는 작업이 이어진다.. 이는 CPU와 디스크에 많은부담!
+                -이에 MYSQL은 소트버퍼의 크기보다 작은 경우에 우선순위 큐를 만들고 그 큐를 이용해서 정렬을 수행.. 이렇게 우선순위 큐를 이용하면 퀵 소트 알고리즘으로 900건의 결과를 모두 정렬할 필요가 없으며 단순히 employees 테이블의 레코드를 하나씩 읽어서 우선순위 큐에만 넣어주면된다..
                 즉, 소트 버퍼의 크기가 256KB이므로 조회한 데이터가 이보다작으면 그냥 큐에넣고 sort해서 빠르게 결과값 가져간다는것!
 
     -GROUP BY
@@ -412,7 +412,7 @@ where `employees`.`e1`.`first_name` = (/* select#2 */ select `employees`.`e2`.`f
             -인덱스있어도 임시테이블만든다....
         -정렬보장안됨.. 아래 두 문장은 내부적으로 같은작업을 수행하나 정렬의 차이만 있음(group by든 distinct든 인덱스를 사용하면 모두 정렬된다.. 왜 이렇게 나눳지..?)
             SELECT DISTINCT emp_no FROM salaries;  -- 정렬안됨
-            SELECT emp_no FROM salaries GROUP BY emp_no;  -- 정렬됨
+            SELECT emp_no FROM salaries GROUP BY emp_no;  -- 정렬됨 (GROUP BY .. ORDER BY NULL 이런거 봤을때 group by는 내부적으로 정렬을 따로 수행하는듯함.. distinct는 아예 이런 신경을 안쓴다는거일듯!)
         -SELECT DISTINCT col1, col2 ..
             => 이는 col1만 유니크하게 Select 하는것이 아니라, col1과 col2 를 합쳐서 유니크하게 select하는것이다!! 
                 일부컬럼만 유니크하게 가져오는 방법은 "없다"
@@ -451,7 +451,7 @@ where `employees`.`e1`.`first_name` = (/* select#2 */ select `employees`.`e2`.`f
                 -created_tmp_disk_tables : 임시테이블이 디스크일때만 누적해서 올라감
 
     -index condition pushdown
-        -인덱스를 가지고 비교하는작업은 스토리지엔진에서 가능한데, 인덱스의 컬럼이라도 인덱스를 온전히 사용하기가 어려운경우 (ex. 인덱스컬럼 like '%abc' )는 Mariadb 엔진이 다시한번 필터링을 해야했다.. Mysql5.6 이상부터는 해당 내용을 ***인덱스에만 포함되어있는 컬럼***이라면 스토리지엔진에서 처리하도록 변경해주었음!
+        -인덱스를 가지고 비교하는작업은 스토리지엔진에서 가능한데, "인덱스의 컬럼이라도 인덱스를 온전히 사용하기가 어려운경우" (ex. 인덱스컬럼 like '%abc' )는 Mariadb 엔진이 다시한번 필터링을 해야했다.. Mysql5.6 이상부터는 해당 내용을 ***인덱스에만 포함되어있는 컬럼***이라면 스토리지엔진에서 처리하도록 변경해주었음!
     
     -멀티 레인지 리드(Multi Range Read)
         -넌 클러스터드 인덱스를 사용하여 여러 컬럼의 여러 레코드를 조회하게되었을때 랜덤엑세스가 상당히 많이 발생된다(인덱스의 리프페이지가 클러스터 인덱스의 키를 가리키고 그 키를 따라 데이터 페이지를 가게되는데, 같은 데이터 페이지에 있는 데이터라 할지라도 한번에 다 못읽고 계속 레코드 건수마다 access 하게됨)
