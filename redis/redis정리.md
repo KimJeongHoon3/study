@@ -94,6 +94,8 @@
         - 해당 key의 모든 subkey와 value 가져옴
       - `Hget <key> <subkey>`
       - `Hmget <key> <subkey1> <subkey2> ... <subkeyN>`
+      - Hash vs strings
+        - Hashes을 이용하여 매핑 만들기 ( Strings VS Hashes ) - https://sabarada.tistory.com/m/135
   - Collection 주의사항
     - 하나의 컬렉션에 너무많은 아이템을 담으면 좋지않음
       - 1만개 이하 몇천개 수준이 저걸..
