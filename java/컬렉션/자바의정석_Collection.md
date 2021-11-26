@@ -100,6 +100,8 @@
                 }
             }
 
+
+            // 참고사항 : list를 위의 두번째처럼 for문으로 돌리게되면, ArrayList일때는 시간복잡도가 O(N) 이지만, LinkedList일때는 O(N^2) 이 된다.. LinkedList에서 처음 for문으로 돌아가는 시간복잡도 O(N)에, list.get(i)으로 가져올때 내부적으로 해당 인덱스까지 다음노드 타면서 들어가니깐... 암튼 List<?>는 iterator로 돌리던지, 향상된for문(for-each) 사용할것
             
 
         ```
