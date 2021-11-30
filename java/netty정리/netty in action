@@ -84,7 +84,7 @@ netty in action
     -다이렉트버퍼 : 네이티브 호출을 통해 메모리를 할당.. 즉, 중간에 따로 복사하는 버퍼가 있지않고 직접접근,, 그래서 힙버퍼는 가비지컬렉터의 대상이 되지만 디이렉트버퍼는 안됨
         -힙버퍼보다 할당과 해제의 비용부담이 약간 더 큼,,
         -데이터가 heap에 있지않기 때문에 복사도해줘야한다함..(heap 영역에 올라와야지 사용할수있어서그런듯..?)
-
+        -다이렉트버퍼를 사용하면 해당 버퍼를 jvm에 참조하는부분이있고, GC 일어날때 일반적인 GC 스레드가 아닌, 다른 특정 스레드에 의해 버퍼 메로리가 해제된다고함 (참고 : https://homoefficio.github.io/2019/02/27/Java-NIO-Direct-Buffer%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%B4%EC%84%9C-%EB%8C%80%EC%9A%A9%EB%9F%89-%ED%8C%8C%EC%9D%BC-%ED%96%89-%EA%B8%B0%EC%A4%80%EC%9C%BC%EB%A1%9C-%EC%AA%BC%EA%B0%9C%EA%B8%B0/)
     *네이티브란?
         -OS수준 으로 해석하면됨.. 즉, 위의 "네이티브 호출을 통해 메모리를 할당" 한다는것은 OS의 함수를 다이렉트로 호출(커널영역으로 접근)하는것으로보임..
 
@@ -92,6 +92,38 @@ netty in action
     -duplicate,slice,order,readSlice ..
     -이는 수정하면 원본도 동일하게 수정된다
         -독립된 복사를 원한다면 copy를 사용할것!
+
+-------------- 사용 참고 -----------------
+
+public class ByteBufTest {
+    @Test
+    void testByteBuf(){
+        ByteBuf buffer = Unpooled.buffer();
+        byte[] bytes = "안녕".getBytes(StandardCharsets.UTF_8);
+        buffer.writeBytes(bytes);
+
+        System.out.println("buffer.isWritable() : "+buffer.isWritable());
+        System.out.println("buffer.isReadable() : "+buffer.isReadable());
+        System.out.println("buffer.capacity() : "+buffer.capacity());
+        System.out.println("buffer.readerIndex() : "+buffer.readerIndex());
+        System.out.println("buffer.writerIndex() : "+buffer.writerIndex());
+
+        ByteBuf result = Unpooled.buffer(buffer.readableBytes());
+        byte[] b=new byte[buffer.readableBytes()];
+        buffer.readBytes(result); //읽을수있는 크기 보다 큰 배열을 파라미터로 넘기면 에러..
+        System.out.println(result.toString(Charset.defaultCharset()));
+
+        System.out.println("buffer.isWritable() : "+buffer.isWritable());
+        System.out.println("buffer.isReadable() : "+buffer.isReadable());
+        System.out.println("buffer.capacity() : "+buffer.capacity());
+        System.out.println("buffer.readerIndex() : "+buffer.readerIndex());
+        System.out.println("buffer.writerIndex() : "+buffer.writerIndex());
+        
+        //write한것만큼 read할수있고, write인덱스보다 넘어가버리면 read할때 에러남
+    }
+}
+
+----------------------------------------
 
 06 ChannelHandler와 ChannelPipeline
 -Channel의 일반적인 수명주기
