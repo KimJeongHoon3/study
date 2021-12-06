@@ -5,7 +5,7 @@ collection 정리
     -ArrayList
         -시간복잡도
             -add : O(1)
-            -remove : O(n) => index로 지울때는 O(1)
+            -remove : O(n) => 맨뒤의 데이터 지울때는 O(1)
             -get : O(1) => 인덱스로 바로 찾기때문에 겁나빠름
             -contains : O(n)
         -특징

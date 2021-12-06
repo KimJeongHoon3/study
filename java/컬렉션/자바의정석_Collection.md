@@ -161,11 +161,36 @@
             - 내부적으로 같은 해쉬값이면 LinkedList 자료구조를 사용해서 저장함.. LinkedList 자료구조는 데이터 많이 저장될수록 성능떨어지는건 위에서 이야기했음
     - LinkedHashSet
       - 중복x, 순서o
+      - LinkedHashMap 사용
+        - 시간복잡도는 HashMap과 동일하나, 연결노드를 가지고있기때문에 메모리는 좀더 먹겠지
+        - Entry 생성을 아래와같이해서 before와 after를 가짐으로써 순서를 기억
+        ```java
+          static class Entry<K,V> extends HashMap.Node<K,V> {
+              Entry<K,V> before, after;
+              Entry(int hash, K key, V value, Node<K,V> next) {
+                  super(hash, key, value, next);
+              }
+          }
+
+          //map에 put 하여 Node 생성될때 아래 함수 타게됨..
+          private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
+              LinkedHashMap.Entry<K,V> last = tail;
+              tail = p;
+              if (last == null)
+                  head = p;
+              else {
+                  p.before = last;
+                  last.after = p;
+              }
+          }
+        ```
     - TreeSet
       - 중복x, 순서x (정렬시켜버리므로)
+      - TreeMap 사용
       - 이진검색트리 라는 자료구조의 형태로 데이터를 저장하는 컬렉션 클래스
         - 이전검색트리는 정렬, 검색, 범위검색에 높은 성능을 보이는 자료구조
         - TreeSet은 이진검색트리의 성능을 향상시킨 '레드-블랙 트리'로 구현되어있다함
+          - [이거보고 꼭 한번 구현해볼것!](https://zeddios.tistory.com/237)
         ```java
             class TreeNode{
                 TreeNode left; //왼쪽 자식노드 (부모노드의 값보다 작은값)
