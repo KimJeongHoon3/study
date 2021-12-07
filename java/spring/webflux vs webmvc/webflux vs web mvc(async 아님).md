@@ -2,6 +2,7 @@
   - webflux 테스트용 application, web mvc 테스트용 application 은 내부 로직은 동일하며, 내부로직을 달리하여서 두가지 테스트를 진행
   - 테스트 환경
     - jmeter로 테스트(로컬에서 구동)
+      - 6 core, memory 32GB
     - 56번 개발서버에 어플리케이션 구동 및 redis 구동
     - local에 1초가량의 delay가 있는 api 서버 구동
       - 스레드풀에 1000개의 스레드를 고정시킴 (1000개의 요청에 대해서 block없음)

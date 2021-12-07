@@ -60,6 +60,19 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 import static org.springframework.web.reactive.function.server.RouterFunctions.*;
 
 public static void main(String... args) {
+   // HttpHandler httpHandler = RouterFunctions.toHttpHandler(route(GET("/hello"), request -> ServerResponse.ok().build()));
+
+   // ReactorHttpHandlerAdapter reactorHttpHandlerAdapter=new ReactorHttpHandlerAdapter(httpHandler);
+
+   // DisposableServer server = HttpServer.create()
+   //         .host("localhost")
+   //         .port(9898)
+   //         .handle(reactorHttpHandlerAdapter)
+   //         .bindNow();
+   // server.onDispose().block();
+
+
+
     long start = System.currentTimeMillis();
     BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(18); // encoder 생성
 
@@ -82,6 +95,9 @@ public static void main(String... args) {
     LOGGER.debug("Started in " + (System.currentTimeMillis() - start) + " ms"); // Started in 703 ms
     server.onDispose().block(); // main 스레드 차단  
 }
+
+
+
 
 ``` 
 - WebHttpHandlerBuilder
