@@ -121,9 +121,9 @@ public static void main(String... args) {
       - form 데이터 파싱, 캐시조회
       - multipart 데이터 추상화
       - 등등등
-    - WebFilter
+    - WebFilter (FilteringWebHandler(WebHandlerDecorator의 구현체)에 셋팅되어서 WebHandler의 decorator역할)
       - 다른 필터 체인과 WebHandler 전후에 요청을 가로채 원하는 로직을 넣을수있음
-    - WebExceptinoHandler
+    - WebExceptinoHandler (ExceptionHandlingWebHandler(WebHandlerDecorator의 구현체)에 셋팅되어서 WebHandler의 decorator역할)
       - WebFilter 체인과 WebHandler에서 발생한 예외를 처리
       - WebExceptionHandler를 구현한 DefaultErrorWebExceptionHandler가 있는데, 이는 order가 -1로 되어있음.. 특별히 커스텀하게 에러를 리턴해야한다면 WebExceptionHandler를 구현한것을 등록하고 @Order를 -1보다 작은숫자로 해놔야함 
         - 즉, 에러를 핸들링하기위해서는 WebExceptionHandler를 Component로 등록할것 Order(-2)로 사용할것([참고사이트](https://stackoverflow.com/questions/49648435/http-response-exception-handling-in-spring-5-reactive))
