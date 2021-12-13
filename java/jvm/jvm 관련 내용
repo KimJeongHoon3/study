@@ -10,6 +10,7 @@ jvm에 대한 자세한 설명 : https://12bme.tistory.com/382
                     https://blog.naver.com/PostView.nhn?blogId=rokey_89&logNo=221658053244&redirect=Dlog&widgetTypeCall=true&directAccess=false
                     https://aljjabaegi.tistory.com/387
 
+메서드 영역 잘 설명 : https://velog.io/@syleemk/Java-%EB%A9%94%EB%AA%A8%EB%A6%AC-%EA%B5%AC%EC%A1%B0
 
 jvm 구성 : 클래스 로더(Class Loader)가 컴파일된 자바 바이트코드를 런타임 데이터 영역(Runtime Data Areas)에 로드하고, 실행 엔진(Execution Engine)이 자바 바이트코드를 실행한다.
     -classloader : .class 파일들을 로드하여 runtime data area에 배치해준다

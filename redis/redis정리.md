@@ -10,7 +10,7 @@
 
 
 - nosql,, insert,select 겁나빠름.. master-slave 기능이있어서 이중화가능.. 수많은 언어의 api제공.. 성능이 좋다..
-- restTemplate이란놈이 다양한 redis 작업과 예외변환, 직렬화지원..
+- redisTemplate이란놈이 다양한 redis 작업과 예외변환, 직렬화지원..
 - cluster 지원한다함..
 
 
