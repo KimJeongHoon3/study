@@ -11,6 +11,8 @@ jvm에 대한 자세한 설명 : https://12bme.tistory.com/382
                     https://aljjabaegi.tistory.com/387
 
 메서드 영역 잘 설명 : https://velog.io/@syleemk/Java-%EB%A9%94%EB%AA%A8%EB%A6%AC-%EA%B5%AC%EC%A1%B0
+            - 이것도 한번봐볼것.. : https://mia-dahae.tistory.com/101
+            - 메타스페이스관련 내용 : https://goodgid.github.io/Java-8-JVM-Metaspace/
 
 jvm 구성 : 클래스 로더(Class Loader)가 컴파일된 자바 바이트코드를 런타임 데이터 영역(Runtime Data Areas)에 로드하고, 실행 엔진(Execution Engine)이 자바 바이트코드를 실행한다.
     -classloader : .class 파일들을 로드하여 runtime data area에 배치해준다
@@ -35,8 +37,8 @@ jvm 구성 : 클래스 로더(Class Loader)가 컴파일된 자바 바이트코�
         -Heap area : new 키워드로 생성된 객체와 배열이 배치되는 영역.. Method Area에 로드된 클래스만이 생성가능(garbage collection 이슈는 여기서 발생! 모든 Thread 공유)
             -Young Generation
                 -Eden영역 : Object가 Heap에 최초로 할당되었을때 저장되는영역,, 여기서 참조가 오랜시간 있으면 Survivor 영역으로 이동되고, 그렇지않으면 여기에 계속 남아있게된다.. 그때에 Eden영역에 청소가 일어나는데, 이를 Minor GC라고함 
-                -Survivor1 : Survivor1 or Survivor2 둘중 하나는 반드시 비어있어야함
-                -Survivor2
+                -Survivor0 : Survivor0 or Survivor1 둘중 하나는 반드시 비어있어야함
+                -Survivor1
             -Old Generation
                 -Old : Young Generation에서 Live Object로 오래 살아남아 성숙된 Object는 Old Generation으로 이동,, Old Generation의 메모리도 충분하지않으면 해당영역에서 GC가 발생하는데 이를 가리켜 Full GC(Major GC) 라고 함
                     *성숙된 Object : 특정 횟수 이상 참조되어 기준 Age를 초과한 Object를 말함,,
