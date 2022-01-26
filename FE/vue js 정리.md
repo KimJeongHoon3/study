@@ -220,3 +220,28 @@
     - 공식문서의 style guide를 잘보고 하자!
       - vue js 코어팀에서 작성해준.. 어떤형식으로 뷰를 개발할지를 알려주고있음..
       - cookbook 을 통해서 발생할수있는 문제상황에 대해서 어떻게 핸들링하는지 잘나오니 참고할것 
+
+---
+
+- npm (node package manager - 여기서 package는 라이브러리라고 봐도 무방.. node.js 설치시 같이설치됨)
+  - 전세계에 대중적으로 쓰이는 자바스크립트 라이브러리들 공개저장소..
+  - 쓰는이유
+    - package.json 파일을 통해 라이브러리 버전을 일괄적으로 관리가능
+    - 특정라이브러리의 cdn주소를 알기위해 해당 페이지로가서 가져오지않아도됨! `npm install xxx` 로 바로 셋팅가능.. package.json에 추가된다!
+      - 지우고싶으면 `npm uninstall xxx`
+      - `npm install xxx --global` 로 설치도 가능한데, 이는 `/usr/local/lib/node_modules` 에 설치됨.. 시스템레벨에 전역으로 설치됨 (--global 대신 -g 써도됨)
+        - 그럼 지역(그냥 install만 친것)과 글로벌의 차이는?
+          - 지역은 설치한 폴더 내부의 `node_modules` 폴더 아래에 해당라이브러리가 생성됨
+          - 글로벌은 시스템 레벨 경로에 들어가게됨 `/usr/local/lib/node_modules`
+    - 지역설치에는 두 종류
+      - `npm install xxx --save-prod`
+        - `npm i xxx` 로 축약가능
+        - package.json의 dependecies에 추가됨
+        - 배포용 라이브러리.. 화면과 직접적으로 연관되는 라이브러리!
+          - ex) react, vue ...
+      - `npm install xxx --save-dev`
+        - `npm i xxx -D` 로 축약가능
+        - package.json의 devDependecies에 추가됨
+        - 최종적으로 빌드하게될때 devDependency의 라이브러리는 배포가안됨
+        - 개발보조 라이브러리
+          - ex) webpack, js-compression..
