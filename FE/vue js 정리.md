@@ -57,6 +57,11 @@
       - 프로토타입
         - 자바스크립트는 프로토타입 기반 객체지향 프로그래밍 언어 (Not 클래스 기반 객체지향)
 
+- 기타 팁
+  - 자바스크립트가 싱글 쓰레드 기반이고 콜백 큐.. 싱글쓰레드이기 때문에 당연히 하나의 스레드에서 여러많은 처리가 일어나면 상당히 느려질수밖에 없다.. 이를 해결하기위해서 비동기 콜백은 필수적!
+    - 콜백이 많아지면 콜백헬이 나타나기때문에 이를 개선한것이 Promise.. 이를 더 개선한것이 async, await 키워드를 사용하는것!
+      - async, await 키워드를 사용하는것은 개발자가 비동기 처리를 프로그래밍관점으로 보기편하게해줌.. (비동기인데 그냥 위에서 아래로 쭉 읽을수있음.. )
+      - 참고 : https://joshua1988.github.io/web-development/javascript/js-async-await/
 
 - 기타 내용 파악해볼것
   - 콜백 함수는 클로저이므로 콜백 큐에 단독으로 존재하다가 호출되어도 콜백함수를 전달받은 함수의 변수에 접근할 수 있다. (https://poiemaweb.com/js-function)
@@ -136,5 +141,82 @@
       - 위아래로 구분없이 전달받게되면 엮이는게 많아서 나중에 에러를 찾기가 너무어려움..
       - 그래서 데이터는 자식방향으로만, 이벤트는 상위의 방향으로만 전달될수있도록 정의..
 
+  - axios
+    - 뷰에서 권고하는 HTTP 통신라이브러리
+    - Promise 기반 HTTP client
+      - Promise : 자바스크립트의 비동기 처리 패턴
+      - 자바스크립트의 비동기 처리패턴
+        - callback
+        - promise
+        - promise + generator
+        - async & await
+  - 템플릿 문법
+    - 디렉티브
+      - `v-[문법]`
+      - v가 붙으면 Vue인스턴스 내부에서 찾는다.. 즉, vue를 사용하겠다고 생각하면될듯
+      - 종류
+        - `v-show` vs `v-if`
+          - `v-if`는 조건에 맞지않으면 dom에서 사라짐.. `v-show`는 dom에 남아있고 그냥 보여지지만 않는것!
+        - `v-on`
+          - 마우스나 키보드 입력시 사용할수 디렉티브
+            - `v-on:keyup="메서드명"`, `v-on:onclick="메서드명"`
+            - `v-on:keyup.enter="메서드명"`
+              - 여기서 ".enter"라는 modifier를 사용가능.. 엔터를 쳤을때만 이벤트가 실행됨
+    - 데이터바인뎅
+      - `{{}}`
+    - Vue 문법
+      - computed 를 사용하여 특정변수 변화에따라 적용해야하는 부분을 정의할수있음.. (Computed라는 말이 계산된이니깐.. 그에 맞는 동작이 들어가있다고 생각하면될듯)
+      - 요구사항이 있을때, 어떻게 접근하면될까?
+        - 일단 vue [공식문서](https://vuejs.org/)에서 확인
+          - 키워드가 중요..
+        - 왠만한거는 다 찾을텐데, 그래도 못찾으면 그냥 기본적인 자바스크립트문법으로 접근..
+      - watch
+        - `function(newValue, oldValue)`
+          - newValue는 새로이 변화된값
+          - oldValue는 이전값
+        - 데이터의 변화에따라서 특정 로직을 실행할수있는 뷰의속성..
+      - watch vs computed
+        - computed는 단순한 값에 대한 계산.. => validation
+        - watch는 무거운로직들.. 매번 실행하는데부담스러운 로직.. (http 요청과같은..)
+        - [공식문서 설명](https://vuejs.org/v2/guide/computed.html#Computed-vs-Watched-Property)
+          - Vue does provide a more generic way to observe and react to data changes on a Vue instance: watch properties. When you have some data that needs to change based on some other data, it is tempting to overuse watch - especially if you are coming from an AngularJS background. However, it is often a better idea to use a computed property rather than an imperative watch callback. 
+        - computed를 활용하여 조건에따라 class로 특정 css 입힐때에도 사용하기좋음..
+        ```javascript
+          <div id="app">
+            <p v-bind:class="errorTextColor">Hello</p>
+          </div>
+          
+          <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+          <script>
+            new Vue({
+              el: '#app',
+              data: {
+                // cname: 'blue-text',
+                isError: false
+              },
+              computed: {
+                errorTextColor: function() {
+                  // if (isError) {
+                  //   return 'warning'
+                  // } else {
+                  //   return null;
+                  // }
+                  return this.isError ? 'warning' : null;
+                }
+              }
+            });
+          </script>
+        ```
   - 기타팁
     - ***MDN에서 사용방법들 찾아보자!***
+    - npm : node package manager
+      - `package.json` 에 있는 것들을 시랳ㅇ시켜줌
+        - `npm run serve` 는 `package.json`의 scripts에 정의되어있음
+          - 이를 통해 index.html 을 실행하면 src 내부에있는 파일들을 묶어서 주입됨.. 내부적으로 web pack이 들어가있음..
+    - components 폴더에 component를 등록할때는 두단어 이상+파스칼 케이스 로 조합을 하는게 관례.. 
+      - 두 단어 이상사용하는것은 컴포넌트태그인지 html표준태그인지 브라우저가 구분할수있게하기위함..
+    - webpack 역할
+      - 뷰 로더가 싱글파일 컴포넌트(~.vue 파일)를 찢어서 브라우저가 이해할수있도록해줌
+    - 공식문서의 style guide를 잘보고 하자!
+      - vue js 코어팀에서 작성해준.. 어떤형식으로 뷰를 개발할지를 알려주고있음..
+      - cookbook 을 통해서 발생할수있는 문제상황에 대해서 어떻게 핸들링하는지 잘나오니 참고할것 
