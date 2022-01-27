@@ -245,3 +245,188 @@
         - 최종적으로 빌드하게될때 devDependency의 라이브러리는 배포가안됨
         - 개발보조 라이브러리
           - ex) webpack, js-compression..
+
+--- 
+- vue js 중급 (https://www.inflearn.com/course/vue-pwa-vue-js-%EC%A4%91%EA%B8%89/dashboard)
+  - todo app 만들기 (하단 코드 참고)
+    - App.vue
+      - 컴포넌트 기반 설계!
+      - 현재 App.vue는 모든 데이터를 조작하고 실제적인 비지니스 로직들이 일어나게된다.. 이를 "컨테이너"라고 부른다. 
+        TodoHeader, TodoInput.. 이런것들은 화면에서 보여주고 이벤트가 발생했다는사실만 app에게 전달해주게되는것! 그리고 이를 "프렌젠터 컴포넌트"라고 부른다.
+        지금 구조의 핵심은.. 데이터를 조작하는것을 한곳에 모은다.. 그리고 프레젠터 컴포넌트들은 조작에 대한 요청만한다.. 이런 명확한 역할의 분리를 통해서 복잡한구조를 좀더 단순화 할 수 있겠다! 중복도 줄일수 있겠지..
+      ```javascript
+        <template>
+          <div id="app">
+            <TodoHeader></TodoHeader>
+            <TodoInput v-on:addTodoItem="addTodoOneItem"></TodoInput>
+            <TodoList v-bind:propsdata="todoItems" v-on:removeTodoItem="removeTodoOneItem" v-on:toggleTodoItem="toggleTodoOneItem"></TodoList>
+            <TodoFooter v-on:clearAll="clearAllItems"></TodoFooter>
+          </div>
+        </template>
+
+        <script>
+        import TodoFooter from './components/TodoFooter.vue';
+        import TodoHeader from './components/TodoHeader.vue';
+        import TodoInput from './components/TodoInput.vue';
+        import TodoList from './components/TodoList.vue';
+
+        export default {
+          components: {
+            TodoHeader: TodoHeader,
+            TodoFooter: TodoFooter,
+            TodoInput: TodoInput,
+            TodoList: TodoList
+          },
+          data:function(){
+                return {
+                    todoItems:[]
+                }
+          },
+          created: function(){ //vue lifecycle 중 하나.. (created -> mounted -> update -> destory).. 좀더 엄밀히이야기하자면 Hook임.. create 라이프사이클을 타면 호출되는..
+                if(localStorage.length>0){
+                    for(var i=0;i<localStorage.length;i++){
+                        if(localStorage.key(i)!=='loglevel:webpack-dev-server'){
+                            this.todoItems.push(JSON.parse(localStorage.getItem(localStorage.key(i))));
+                        }
+                        
+                    }
+                }
+            },
+            methods: {
+              addTodoOneItem:function(todoItem){
+                var obj={ 
+                    completed: false,
+                    item: todoItem
+                }
+                localStorage.setItem(todoItem, JSON.stringify(obj)); //JSON.stringify : javascript 객체를 json string 으로 변환.. 이렇게 사용하는 이유는 그냥 obj를 넣어버리면 Object object로 나타나기때문에 보기가 어려움.. 반대로 json string을 json object로 사용하기위해서는 JSON.parse() 하면됨
+                this.todoItems.push(obj);
+              },
+              removeTodoOneItem:function(todoItem,index){
+                localStorage.removeItem(todoItem.item);
+                this.todoItems.splice(index,1); //해당 인덱스부터 하나 지우겠다.. 
+              },
+              toggleTodoOneItem:function(todoItem,index){
+                // todoItem.completed = !todoItem.completed;  //이렇게 하위에서 전달받은 데이터의 속성을 건드는것은 안티패턴! 데이터의 직접적인 조작은 현재 컴포넌트의 todoItems로 하자.. 
+                this.todoItems[index].completed=!this.todoItems[index].completed
+                // localStorage에 데이터 갱신하는 API가 없기떄문에 아래와같이 사용..
+                localStorage.removeItem(todoItem.item); 
+                localStorage.setItem(todoItem.item, JSON.stringify(todoItem));
+              },
+              clearAllItems:function(){
+                localStorage.clear();
+                this.todoItems=[];
+              }
+            }
+        }
+        </script>
+      ```
+
+  - ES6 for vue.js
+    - ES6 는 최신의 자바스크립트 문법
+    - ES6란?
+      - ECMAScript 2015와 동일한 용어
+      - react, angular, vue 에서 권고하는 언어 형식
+      - ES5에 비해 문법이 간결.. => 빠르고 편리함
+      - [Babel](https://babeljs.io/)
+        - 구 버전 브라우저 중에서는 ES6의 기능을 지원하지않는 브라우저가 있으므로 transpiling이 필요
+        - ES6의 문법을 각 브라우저의 호환 가능한 ES5로 변환하는 컴파일러(컴파일러보다 명확한것은 트랜스파일링)
+    - const & let
+      - 새로운 변수 선언 방식
+        - 기존 자바스크립트 변수선언에 상당히 모호함이 단점..
+      - 블록 단위 `{}`로 변수의 범위가 제한되었음
+      - const : 한번 선언한 값에 대해서 변경할 수 없음 (상수 개념)
+        - 객체로 선언되어있을때, 객체 내부값은 변경가능함.. 자바 final과 비슷한듯..
+      - let : 한번 선언한 변수에 대해 다시 선언할 수 없음.. 해당 변수에 값은 변경가능
+        - 블록 레벨 스코프를 따르는 변수를 선언하기위해서 사용!
+        ```javascript
+          let foo=1;
+          {
+              console.log(foo); // 1 출력
+          }
+
+          let foo=1;
+          {
+              console.log(foo); // Uncaught ReferenceError: Cannot access 'foo' before initialization 
+              let foo=3;
+
+              //여기서 에러발생하는것은, let foo는 블럭안에 foo라는 지역변수를 선언해준 것인데, console.log에서 foo를 참조하고자할때 foo는 해당 시점에 "일시적 사각지대" 상태여서 에러가 발생함.. 즉, ES6도 호이스팅은 여전히 발생한다!
+              // 선언단계 -> 일시적 사각지대 -> 초기화단계(let foo===undefined) -> 할당단계 (foo===1)
+              // 기존 ES5에는 일시적 사각지대가 없음
+          }
+        ```
+      - 참고사항
+        - ES5의 특징 
+          - 변수의 scope
+            - `{}`에 상관없이 스코프가 설정
+            ```javascript
+              var sum=0;
+              for(var i=1;i<=5;i++){ //여기 i가 전역 scope 으로 잡힘..
+                sum=sum+i;
+              }
+
+              console.log(sum); // 15
+              console.log(i); //6
+              
+              ////////////////////////////////
+              //ES6 let 사용
+              let sum=0;
+              for(let i=1;i<=5;i++){ 
+                sum=sum+i;
+              }
+
+              console.log(sum); // 15
+              console.log(i); // Uncaught ReferenceError: i is not defined
+            ```
+          - Hoisting (Hoist : 끌어올리다)
+            - Hoisting 이란 선언한 함수와 변수를 해석기가 가장 상단에 있는것처럼 인식
+            - js 해석기는 코드의 라인순서와 관계없이 함수선언식과 변수를 위한 메모리 공간을 먼저 확보
+            - 함수 표현식은 이에 해당이 안됨
+              ```javascript
+                var sum=function(){ //익명함수.. 요게 함수 표현식
+                  return 10+20; 
+                }
+
+                function abc(){ //이건 함수 선언문
+                  return 10+20; 
+                }
+              ```
+            - [호이스팅관련 참고하면 좋은 곳](https://poiemaweb.com/js-data-type-variable#24-%EB%B3%80%EC%88%98-%ED%98%B8%EC%9D%B4%EC%8A%A4%ED%8C%85variable-hoisting)
+  - 기타 팁
+    - 린터(Linter)란 코딩 컨벤션(Coding convention)과 관련된 에러(Error)를 체크해주는 작은 프로그램이다. 코딩 컨벤션이란 읽기 쉽고 관리하기 쉬운 코드를 작성하기 위한 일종의 코딩 스타일에 대한 약속이라고 할 수 있다.
+      - 자바스크립트에서는 eslinter 사용
+    - vetur 
+      - Vetur 플러그인은 Vue.js를 개발하는 데 도움을 주는 유용한 플러그인 중 하나다. Linting, Syntax-highlighting, Formatting 등을 지원해준다.
+    - 모바일,PC,테블릿 등 웹사이트 로딩시에 해당 기기에 최적화된 형태로 나타나는 디자인기법이 반응협웹
+    - localStorage vs sessionStorage
+      - https://ko.javascript.info/localstorage
+    - 동등비교 / 일치비교 연산자
+      - 동등비교 : `==`
+        - 타입이 달라도 암묵적 타입 변환을 통해 타입을 일치시켜서 같은 값이면 true를 반환해준다..
+        - 편리할수 있지만 예상치못한 side effect을 일으킬수 있으므로 사용 자제.. (타입변환을 어떻게 할지 항상 정확하게 파악하지못하면 당연 부작용생수있음..)
+      - 일치비교 : `===`
+        - 타입과 값 모두 같아야함!
+    - slice vs splice
+      - slice는 begin부터 end 전까지의 복사본을 새로운 배열 객체로 반환.. 원본배열 수정 x
+      - splice는 원본배열을 수정
+      - https://im-developer.tistory.com/103
+    - `<meta name="viewport" content="width=device-width, initial-scale=1">`
+      - 반응형 웹이라는것을 알려줌.. 모바일,PC,테블릿 등 웹사이트 로딩시에 해당 기기에 최적화된 형태로 나타나는 디자인기법이 반응협웹
+    - `slot` 을 사용하여 특정 부분들은 재정의 할 수 있다! 즉, slot을 활용하여 재사용할수있도록해줌! 여기서보면 header, body, footer를 재정의할수있다!
+      - 모달에서 사용되었음..
+    - `<input type="text" v-model="newTodoItem" v-on:keyup.enter="addTodo">`
+      - `v-model`을 이용하면 동기화가 가능하다
+      - 즉, newTodoItem이라는 데이터에 input태그의 text가 수정될때마다 반영된다.. 물론, vue 도구를 통해서 newTodoItem을 변경하면 그에 맞게 input에 나타난다.. 즉, v-model을 사용함으로써 input에 있는 텍스트와 newTodoItem의 값은 언제나 일치시켜준다
+    - `<span v-bind:class="{textCompleted: todoItem.completed}">{{todoItem.item}}</span>`
+      - `v-bind:class` 를 사용한다는것은 동적으로 class를 변경할때 사용한다고 보면된다..
+    - `v-for`
+      - 배열로 넘어오는 데이터를 처리할 수 있음
+      - 아래 소스 참고
+      ```javascript
+          <li v-for="(todoItem, index) in propsdata" v-bind:key="todoItem.item" class="shadow"> //v-for 로 받은 하위 태그들에서 자유롭게 쓸 수 있음..! v-bind:key는 여기서 딱히 의미없음.. vscode validation때문에 맞춰준것..
+              <i class="checkBtn fas fa-check" v-bind:class="{checkBtrnCompleted: todoItem.completed}" v-on:click="toggleComplete(todoItem,index)"></i>
+              <span v-bind:class="{textCompleted: todoItem.completed}">{{todoItem.item}}</span>
+              <span class="removeBtn" v-on:click="removeTodo(todoItem,index)">  
+                  <i class="fas fa-trash-alt"></i> 
+              </span>
+          </li>
+      ```
