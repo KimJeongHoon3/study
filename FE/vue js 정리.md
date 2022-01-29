@@ -56,7 +56,45 @@
         - `for–in` 문은 객체의 프로퍼티를 순회하기 위해 사용하고 `for–of` 문은 배열의 요소를 순회하기 위해 사용
       - 프로토타입
         - 자바스크립트는 프로토타입 기반 객체지향 프로그래밍 언어 (Not 클래스 기반 객체지향)
+  - ES6
+    - 모듈
+      - 일반적으로 모듈은 파일 단위로 분리되어 있으며 애플리케이션은 필요에 따라 명시적으로 모듈을 로드하여 재사용한다. 즉, 모듈은 애플리케이션에 분리되어 개별적으로 존재하다가 애플리케이션의 로드에 의해 비로소 애플리케이션의 일원이 된다. 모듈은 기능별로 분리되어 작성되므로 코드의 단위를 명확히 분리하여 애플리케이션을 구성할 수 있으며 재사용성이 좋아서 개발 효율성과 유지보수성을 높일 수 있다.
+      - 자바스크립트는 파일마다 독립적인 파일 스코프를 갖지않고 하나의 전역객체를 공유한다.. 즉, 자바스크립트 파일을 여러개의 파일로 분리하여 script 태그로 로드하여도 분리된 자바스크립트 파일들이 결국 하나의 자바스크립트 파일 내에 있는것처럼 하나의 전역객체를 공유한다.. 이로인해 전역변수가 중복되는 등의 문제가 발생..
+      - script 태그에 type="module" 어트리뷰트를 추가하면 로드된 자바스크립트 파일은 모듈로서 동작한다. ES6 모듈의 파일 확장자는 모듈임을 명확히 하기 위해 mjs를 사용하도록 권장
+      - ES6 모듈은 파일 자체의 스코프를 제공한다. 즉, ES6 모듈은 독자적인 모듈 스코프를 갖는다. 따라서, 모듈 내에서 var 키워드로 선언한 변수는 더 이상 전역 변수가 아니며 window 객체의 프로퍼티도 아니다.
+        - 모듈 내에서 선언한 변수는 모듈 외부에서 참조할 수 없다. 스코프가 다르기 때문이다.
+        - 만약 모듈 안에 선언한 식별자를 외부에 공개하여 다른 모듈들이 참조할 수 있게 하고 싶다면 `export` 키워드를 사용한다. 선언된 변수, 함수, 클래스 모두 export할 수 있다.
+        - 모듈에서 공개(export)한 대상을 로드하려면 `import` 키워드를 사용한다.
+        - 모듈에서 하나만을 export할 때는 `default` 키워드를 사용할 수 있다.
+          - `export default` 를 사용하게되면, 개발자가 원하는 이름으로 import를 할 수 있다..! 대신, 이름을 개발자가 지정을 해주어야한다!
+            - `import mutations from './mutations'`
+          - 반대로 `export` 는 named export 라고하여 export시 사용된 이름을 써야한다! 하지만, import시에 당연 이름을 변경할 수 있다
+            - `import * as getters from './getters.js'`
+            - `import { pi, square, Person } from './lib.mjs';` 
+              - `lib.mjs` 파일에 `export { pi, square, Person };` 이렇게 사용중임 
+            - `import { pi as PI, square as sq, Person as P } from './lib.mjs';`
+          ```javascript
+            // 📄 index.js
+            // 👇 default export
+            export default getUserInfo =()=> {
+              console.log('i am iron man');
+            }
+            // 👇 named export
+            export deleteUser =() => {
+              console.log('delete');
+            }
 
+            // 📄 main.js
+            import UserInfo from './index'  // 👈 getUserInfo 함수가 import 됨. 이름 마음대로 변경해서 사용 가능.
+            import getUserInfo from './index'  // 👈 getUserInfo함수가 import 됨. 이름 마음대로 변경해서 사용 가능.
+            import requestDeleteUser from './index' // 👈 getUserInfo함수가 import 됨.
+            import { deleteUser } from './index'  //👈 deleteUser 함수가 import 됨. named export는 선언된 메서드 이름 또는 변수 명으로만 import 받아야 한다.
+
+            // ⭕ named와 defualt export를 둘 다 import 가능
+            import {default as UserInfo, deletUser } from './index'
+
+            // 해당 내용 출처 : https://pinokio0702.tistory.com/370
+          ```
 - 기타 팁
   - 자바스크립트가 싱글 쓰레드 기반이고 콜백 큐.. 싱글쓰레드이기 때문에 당연히 하나의 스레드에서 여러많은 처리가 일어나면 상당히 느려질수밖에 없다.. 이를 해결하기위해서 비동기 콜백은 필수적!
     - 콜백이 많아지면 콜백헬이 나타나기때문에 이를 개선한것이 Promise.. 이를 더 개선한것이 async, await 키워드를 사용하는것!
@@ -391,6 +429,188 @@
                 }
               ```
             - [호이스팅관련 참고하면 좋은 곳](https://poiemaweb.com/js-data-type-variable#24-%EB%B3%80%EC%88%98-%ED%98%B8%EC%9D%B4%EC%8A%A4%ED%8C%85variable-hoisting)
+    - Arrow Function (화살표함수)
+      ```javascript
+        //ES5
+        var sum=function(a,b){
+          return a+b;
+        }
+        //ES6
+        var sum=(a,b) => {
+          return a+b;
+        }
+        // => var sum=(a,b) => a+b;  이렇게도 축약가능
+      
+
+        var arr=["a","b","c"];
+        //ES5
+        arr.forEach(function(value){
+          console.log(value);
+        });
+        //ES6
+        arr.foreach*(value => console.log(value));
+
+      ```
+    - 향상된 객체 리터럴
+      ```javascript
+        var dictionary = {
+          //ES5
+          lookup: function(){
+            console.log('a');
+          },
+          //ES6
+          lookup2(){ //이런식으로 ":function" 생략가능
+            console.log('b');
+          }
+        }
+
+        var figures=10;
+        var dictionary={
+          // figures: figures,  //ES5
+          figures  // ES6,, 객체의 속성명과 값 명이 동일할 때 이렇게 축약가능..
+        }
+      ```
+    
+    - `...`
+      - object spread operator (객체를 흩뿌려주는 오퍼레이터)
+      - 객체의 내용을 그대로 가져와준다.. 
+      ```javascript
+        let josh = {
+          field: 'web',
+          language: 'js'
+        }
+
+        let developer ={
+          nation: 'korea',
+          ...josh //이는 위에 선언한 josh 객체를 그대로 여기에 가져다 쓰는것이다. depth가 생기는것이아니라, 속성을 그대로 가져오게됨.. field:'web', language: 'js' 요거 추가됨
+        }
+
+      ```
+
+    - <span style="color:red">모듈관련 정리필요..</span>
+---
+  - Vuex
+    - Vuex 란?
+      - 무수히 많은 컴포넌트들의 데이터를 관리하기 위한 상태관리 패턴이자 라이브러리
+        - 복잡한 애플리케이션의 컴포넌트들을 효율적으로 관리하는 라이브러리
+        - 컴포넌트가 많아졌을때 어떻게 관리할까? 에 대한 해결책을 제시
+      - React의 Flux 패턴에서 기인..
+        - Flux란?
+          - Unidirectional data flow
+          - 데이터의 흐름이 한 방향으로 움직인다!
+          - action -> dispatcher -> model -> view 
+            - action: 화면에서 발생하는 이벤트 또는 사용자의 입력
+            - dispatcher: 데이터를 변경하는 방법, 메서드
+            - model: 화면에 표시할 데이터
+            - view: 사용자에게 비춰지는 화면 (action을 다시 호출함)
+          - 왜 Flux가 나오게됏나?
+            - MVC 패턴의 문제점
+            - 기능추가 및 변경에 따라 생기는 문제점을 예측하기가 어려워짐.. ex) 페이스북 채팅화면
+            - 앱이 복잡해지면서 생기는 업데이트 루프
+            - `controller` -> `model*N` <-> `View*N`
+            - <span style="color:red">스프링의 MVC와는 조금 다른듯함..? 맞나..? 정확하게 이해안감.. 추후확인 필요..</span>
+       - vuex 왜 필요? 
+         - 복잡한 애플리케이션에서 컴포넌트 갯수 많아지면 컴포넌트간에 데이터 전달이 어려워짐..
+           - props, emit을 사용한다하지만, 컴포넌트간에 자식들이 많아지거나한다면 어디서부터 시작된 이벤트인지 다 알고있기가 어렵다..
+       - vuex 컨셉
+         - State
+           - 컴포넌트 간에 공유하는 데이터 `data()`
+         - View
+           - 데이터를 표시하는 화면 `template`
+         - Action
+           - 사용자의 입력에 따라 데이터를 변경하는 `methods`
+         - => state -> view -> action -> state -> view .... (단방향)
+         - => 화면에서 버튼 클릭하면, 클릭에 해당하는 어떤 메서드가 실행될것이고, 해당 메서드는 데이터를 변경할것이다.. 그리고 그것이 다시 화면에 나타나게된다..
+       - vuex 구조
+         - 컴포넌트 -> 비동기로직 -> 동기로직 -> 상태
+         - ![](vuex_structure.png)
+         - actions는 비동기 처리로직..
+         - mutations는 state값을 변경하는곳! 즉, actions에서 state를 변경하는것이아니다..!
+       - vuex 기술요소
+         - state : 여러 컴포넌트에 공유되는 데이터 `data`
+         - getters : 연산된 state 값을 접근하는 속성 `computed`
+         - mutations : state 값을 변경하는 이벤트 로직 & 메서드 `methods`
+           - state의 값을 변경할 수 잇는 유일한 방법이자 메서드
+           - 뮤테이션은 `commit()`으로 동작시킨다
+           - 왜 state를 바로 접근해서 변경하지않고 mutations를 사용하는가?
+             - state는 여러 컴포넌트에서 공유하고있기때문에 어느 컴포넌트에서 해당 state를 변경했는지 추적하기가 어려움..
+             - 뮤테이션을 거치면 vuex에서 제공해주는 디버깅이 용이..
+         - actions : 비동기 처리로직을 선언하는 메서드 `async methods` 
+           - 엄밀히 이야기하면 비동기 로직을 담당하는 mutations
+           - 데이터 요청, Promise, ES6 async와 같은 비동기 처리는 모두 actions에 선언
+           - 왜 비동기 처리로직은 actions에 선언?
+             - 비동기를 수행하게되면 수행결과가 언제 날라올지 알수 있는것은 비동기의 결과를 받을때인데, 그렇게 결과를 받아서 mutations를 호출하여 state를 적절하게 변경하게되면 비동기 처리에 대한 순서를 파악하거나 디버깅이 용이하다..  
+             - 그래서 mutations에는 동기 처리 로직만 넣어주어야한다!
+             - actions에서 바로 state로 접근하면 안되는듯함! <span style="color:red">확인필요!!</span>
+        ```javascript
+          export const store= new Vuex.Store({ //export를 사용하면 외부에서 store를 사용할수있음
+            state: { //이 state는 틀리면안됨...
+                num:10 //이를 호출하는것은 this.$store.state.num
+            },
+            mutations: {
+              printNumbers(state){ //항상 첫번째인자로 state를 넘겨받을수있음
+                return state.num;
+              },
+              setNumber(state, anotherNum){ //이를 호출하는것은 this.$store.commit('setNumbers',20) 요렇게
+                return state.num+anotherNum;
+              }
+            },
+            actions: {
+              delayDoubleNumber(context){ //context로 store의 메서드와 속성 접근가능.. 이를 호출하는것은 this.$store.dispatch('delayDoubleNumber') 요롷게
+                context.commit('printNumber');
+              }
+            }
+        });
+        ```
+      - vuex 헬퍼
+        - state -> mapState
+        - getters -> mapGetters
+        - mutations -> mapMutations
+        - actions -> mapActions
+        - 헬퍼 어떻게 쓰나?
+          ```javascript
+            import { mapState } from 'vuex'
+            import { mapState } from 'vuex'
+            import { mapState } from 'vuex'
+            import { mapState } from 'vuex'
+
+            export default{
+              computed(){
+                  ...mapState(['num']), ...mapGetters(['countedNum'])
+                  // ...mapState(['num']) 은 num(){return this.$store.state.num; } 을 줄인것..
+              },
+              methods: {
+                  ...mapMutations(['clickBtn']), ...mapActions(['asyncClickBtn'])
+              }
+            }
+          ```
+      - 앱이 비대해져서 1개의 store로는 관리하기가 힘들때 `modules` 속성을 사용한다!
+        ```javascript
+          import Vue from 'vue'
+          import Vuex from 'vuex'
+          import todo from 'moduls/todo.js'
+          import todo2 from 'moduls/todo2.js'
+
+          export const store=new Vuex.store({
+            modules: {
+              moduleA: todo, //물론, todo: todo 이렇게 사용할수도 있음.. 그러면 축약도 되겟지..
+              moduleB: todo2
+            }
+          });
+
+          // todo.js
+          const state ={}
+          const getters ={}
+          const mutations ={}
+          const actions ={}
+          export default {
+            state,
+            getters,
+            mutations,
+            actions
+          }
+        ```
+---
   - 기타 팁
     - 린터(Linter)란 코딩 컨벤션(Coding convention)과 관련된 에러(Error)를 체크해주는 작은 프로그램이다. 코딩 컨벤션이란 읽기 쉽고 관리하기 쉬운 코드를 작성하기 위한 일종의 코딩 스타일에 대한 약속이라고 할 수 있다.
       - 자바스크립트에서는 eslinter 사용
@@ -430,3 +650,4 @@
               </span>
           </li>
       ```
+    - `v-on:keyup.enter`는 한글입력시 두번 이벤트가 발생함.. 이를 해결하기위해서는 `v-on:keypress.enter` 로..
