@@ -25,6 +25,7 @@ spring:
       - 엔티티매니저 팩토리와 엔티티매니저 관계
         - 요청이 들어오면 요청에 따라 팩토리가 엔티티 매니저를 생성해준다
         - 그리고 엔티티매니저는 DB 커넥션풀에있는 커넥션을 사용하여 DB와 연결하고 데이터를 주고받는다
+        - 팩토리는 여러 스레드가 접근해도 안전하게 엔티티 매니저를 하나씩 생성할수있지만, 엔티티매니저는 동시에 여러 스레드가 접근하면 동시성문제가 발생하므로 조심해야한다!!
       - 영속성 컨텍스트란 엔티티를 영구 저장하는 환경(문맥)
         - 그래서 persist는 엄밀히이야기하면 DB에 저장되는게아니라, 영속성 컨텍스트에 저장하는것
       - 영속성컨텍스트와 엔티티매니저는 그럼 무슨관계?
@@ -60,9 +61,13 @@ spring:
               - key가 @id, value가 엔티티객체로 구성된 map이 내부적으로 등록되어 1차캐시가 됨
                 - 그래서 하나의 트랜잭션에서 동일한 키로 여러번 조회를 수행할때, 반환되는 엔티티객체는 완전 same (== true)! value꺼를 반환해주니깐 당연하것지..?
               - find할때 DB먼저 뒤지기전에 1차캐시를 조회.. 
-              - 1차캐시에 없으면 DB에서 직접조회해서 1차캐시에 등록하고 반환해줌(그렇기떄문에 다시 동일한 데이터 검색 요청이들어오면 1차캐시에서 바로 전달해줄수있음 )
-              - 근데 이는 아주 큰 이점은아님,, 엔티티매니저 생명주기가 한 트랜잭션.. 상당히 짧음
+                - ***1차 캐시는 글로벌하지 않다. 해당 스레드 하나가 시작할때 부터 끝날때 까지 잠깐 쓰는거다. 공유하지 않는 캐시다***
+                - 100명 한테 요청 100개 오면, 엔티티 매니저 100개 생기고 1차캐시도 100개 생긴다. 스레드 종료되면, 그때 다 사라진다. 
+                  
+              - 1차캐시에 없으면 DB에서 직접조회해서 1차캐시에 등록하고 반환해줌(그렇기떄문에 한 트랜잭션내에서 다시 동일한 데이터 검색 요청이들어오면 1차캐시에서 바로 전달해줄수있음 )
+              - 근데 이는 아주 큰 이점은아님,, ***엔티티매니저 생명주기가 한 트랜잭션***.. 상당히 짧음
                 - 그래서 jpa(hibernate)에서 어플리케이션 전체에서 공유하는걸 2차캐시라고함
+                
             - 쓰기지연
               - 커밋하기전까지 db에 쓰지않고있다가 commit하면 한꺼번에 씀(1차캐시에는 바로바로 등록되면서, 쓰기 지연 SQL 저장소에 넣어놓음)
                 - 예를들어 persist(a), persist(b) 이렇게 두번 호출할때, 쓰기지연 SQL 저장소에 쿼리를 넣어놨다가 commit호출하면(flush) 한번에 쿼리문들을 날림 
@@ -77,11 +82,11 @@ spring:
       - 플러시 발생시
         - 변경감지(dirty checking) => 수정된 엔티티 쓰기 지연 SQL 저장소에 등록 => 쓰기지연 SQL 저장소의 쿼리를 DB에 전송
         - ***중요한것은 아직 db에 commit이 수행되는것은아니다!!***
-          - 플러시한다고해서 1차캐시가 지워지는것은 아님
+          - 플러시한다고해서 ***1차캐시가 지워지는것은 아님***
       - 플러시하는방법
         - `em.flush()` : 직접호출
         - 트랜잭션 커밋 : 자동호출
-        - JPQL 쿼리실행 : 자동호출
+        - ***JPQL 쿼리실행*** : 자동호출
     
   - 엔티티맵핑
     - 객체와테이블맵핑 : `@Entity`, `@Table`
@@ -701,12 +706,13 @@ spring:
       - `executeUpdate()`를 호출하여 쿼리한번으로 여러 테이블 로우변경
         - update, delete 지원
         - insert(insert into ..select, 하이버네이트 지원)
+        - spring data jpa에서는 `@Modifying`을 선언하여가능! (`@Query` 있는곳에 같이쓰면되겠지)
       - 주의할점
         - 벌커연산은 영속성 컨텍스트를 무시하고 데이터베이스에 직접 쿼리 (그렇기때문에 영속성켄텍스트의 내용과 실제 DB와 다를수있다.. 즉 데이터 꼬이기쉬움..)
           - 어떻게해결?
             - 영속성컨텍스트로 뭔가 하기전에 벌크연산을 먼저실행
             - 만약 영속성컨텍스트에 값이 있는것 같다면, 벌크연산 수행 후 영속성 컨텍스트를 직접 초기화 (clear 호출하자!)
-            - spring data jpa에서는 `@Modifying`을 선언하여가능! (`@Query` 있는곳에 같이쓰면되겠지)
+            
         - 벌크연산 수행하면 자동으로 flush 된다~ 그렇기때문에 영속성컨텍스트에만 변경된 데이터들은 모두 반영이되기에 문제가없다! 다만 DB에서 벌크연산하여 반영된 데이터와 영속성 컨텍스트에 있는 데이터와 정합성이 안맞을수있으니(바로 위 내용) 주의할것~~
 - 기타팁
   - 도메인 분석 설계
@@ -756,3 +762,13 @@ spring:
    - name은 FK가 될 컬럼의 이름 (그냥 컬럼이름 셋팅하는게 name이다... 다만, FK로 사용된다라는걸 명시하는것..)
    - 조인을 하려면 FK가 조인할 대상 테이블의 컬럼이 있어야하는데, 이게 바로 referencedColumnName
      - 굳이 직접적으로 표기하지않는이유는 referencedColumnName을 생략하면 대상 테이블의 PK로 자동 지정되기떄문
+ - hibernate는 flush를 날릴때 쿼리들의 순서를 재조정한다.. 
+   - Execute all SQL (and second-level cache updates) in a special order so that foreign-key constraints cannot be violated:
+      1. Inserts, in the order they were performed
+      2. Updates
+      3. Deletion of collection elements
+      4. Insertion of collection elements
+      5. Deletes, in the order they were performed
+   - [레퍼런스](https://docs.jboss.org/hibernate/orm/4.2/javadocs/org/hibernate/event/internal/AbstractFlushingEventListener.html#performExecutions(org.hibernate.event.spi.EventSource)) 
+   - <span style="color:red">왜 외래키 위반을 막기위해서 순서를 재조정한다고했을까?</span>
+ - <span style="color:red">2차캐시란?</span>

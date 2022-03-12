@@ -885,3 +885,6 @@
   - 0, -0
   - NaN
   - '' (빈문자열)
+- computed 언제사용?
+  - 캐싱이 필요한곳에사용! method를 호출하면 계속 동일한 작업을 수행하지만, computed는 캐싱되어서 사용된다!
+  - https://mosei.tistory.com/entry/Vuejs-Computed%EC%9D%98-%EA%B8%B0%EB%8A%A5%EB%93%A4-%EC%BA%90%EC%8B%B1-GetterSetter
