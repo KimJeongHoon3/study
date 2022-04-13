@@ -333,7 +333,87 @@ spring data jpa
           }
           
         ```
+  - 나머지 기타기능들..(실무에서 그렇게 많이 쓰이진않음)
+    - Specifications
+      - 동적쿼리를 가능할수있도록 해주는 JPA Criteria를 사용하기 위해서 spring data jpa에서 제공해주는 인터페이스와같음
+      - 근데 이게 직관적이게 알아보기가 너무 힘들기때문에 실무에서는 JPA Criteria를 거의 안쓴다! 대신에 QueryDSL을 사용하자.
+    - Query By Example
+    - Projections
+      - 엔티티 대신에 DTO로 조회결과 데이터를 주입하는것
+        - 즉, Select 할때 특정 필드만 가져오고싶을때 
+      - 사용방법
+        - 인터페이스 기반 Closed projection 
+          - 특정 원하는 필드만 딱 가져올수있음(최적화가능)
+          ```java
+            public interface UsernameOnly {
+              String getUsername();
+            }
 
+            public interface MemberRepository ... {
+              List<UsernameOnly> findProjectionsByUsername(String username); //find...ByUsername에서 ...에는 아무거나 들어와도 상관없음.. 핵심은 반환값에 List<UsernameOnly>를 받아올수있는데, 여기서 UsernameOnly는 인터페이스지만, 스프링이 해당인터페이스를 기반으로 jdk dynamic proxy 기술을 사용해서 객체를 만들어서 반환해준다!
+            }
+          ```
+        - 인터페이스 기반 open projection
+          - 엔티티의 모든 데이터를 가져오되, 가져온 필드들을 합쳐서 리턴받을수있음..!
+            - SpEL 문법활용
+            - 특정 필드만 가져오게되는 최적화는 안됨~
+          ```java
+            public interface UsernameOnly {
+              @Value("#{target.username + ' ' + target.age + ' ' + target.team.name}")
+              String getUsername();
+            }
+
+            public interface MemberRepository ... {
+              List<UsernameOnly> findProjectionsByUsername(String username); 
+            }
+          ```
+        - 클래시 기반 projection
+          - DTO 생성자의 이름이 중요!
+          - 당연 구체화된 클래스가있으니 프록시를 사용하지않음
+          ```java
+            public class UsernameOnlyDto {
+                private final String username;
+                public UsernameOnlyDto(String username) { //여기 넘겨받는 username을 찾게됨
+                      this.username = username;
+                }
+                public String getUsername() {
+                      return username;
+                } 
+            }
+          ```
+        - 동적으로 프로젝션 데이터 변경가능
+          ```java
+             <T> List<T> findProjectionsByUsername(String username, Class<T> type); //type으로 특정 클래스를 넘겨줘서 Projection을 다양하게 지정할수있음
+          ```
+      - 주의사항
+        - 프로젝션 대상이 root 엔티티면, JPQL SELECT 절 최적화 가능 (지정한 컬럼만 가져오니깐) 
+        - 프로젝션 대상이 ROOT가 아니면 (join을 수행하게될때..) 
+          - LEFT OUTER JOIN 처리
+          - 모든 필드를 SELECT해서 엔티티로 조회한 다음에 계산
+        - => 프로젝션 대상이 root엔티티 하나정도면 유용하게 사용하지만, join을 하게되거나 쿼리 복잡해지면 QueryDSL을 사용해야한다.. 
+    - 네이티브 쿼리
+      - jpa를 사용한다면 가급적 사용 노노.. 어쩔수없을때만 사용하자!
+      - 이렇게 쓸바에는 아예 repository 따로만들어서 Mybatis나 JdbcTemplate으로 사용하자..
+      - 페이징 지원
+      - 반환 타입
+        - Object[]
+        - Tuple
+        - DTO(스프링 데이터 인터페이스 Projections 지원)
+      - 제약
+        - Sort 파라미터를 통한 정렬이 정상 동작하지 않을 수 있음(믿지 말고 직접 처리) 
+        - JPQL처럼 애플리케이션 로딩 시점에 문법 확인 불가
+        - 동적 쿼리 불가
+      ```java
+        public interface MemberRepository extends JpaRepository<Member, Long> {
+          @Query(value = "select * from member where username = ?", nativeQuery =
+      true)
+          Member findByNativeQuery(String username); //Member 로 반환하려면 member 테이블의 컬럼들이 정확하게 매칭이필요함..
+        }
+ 
+       - 동적 네이트브 쿼리 (나중에 필요하면 찾아보자...)
+        - 하이버네이트를 직접 활용
+        - 스프링 JdbcTemplate, myBatis, jooq같은 외부 라이브러리 사용
+      ```
     
 - 기타팁
   - gradle 의존관계보기
