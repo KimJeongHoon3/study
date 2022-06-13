@@ -146,6 +146,7 @@ Docker
             -docker-compose build
             -docker-compose build wordpress
                 -wordpress컨테이너만 build
+
         
 ****************
 -이미지란?
@@ -232,3 +233,19 @@ Using storage drivers you can carve out persistent storage from other devices in
 db2 connect to jeremy_test_1_0_7
 db2 -tvmf /var/custom/ata_sp_com.sql
 db2 -tvmf /var/custom/ata_sp_mmt.sql
+
+-docker compose 실행시 그냥 바로 꺼지는경우 (exit 0)
+  -아래와 같이 tty 셋팅해주어야함 
+version: '3'
+services:
+  haproxy:
+    image: centos:7
+    ports:
+      - 8880:8880
+      - 11180:80
+    tty: true
+
+
+Docker 네트워크 설정 및 link 기능 간단한 설명 : https://cumulus.tistory.com/34
+네트워크 설정(docker-compose에서 셋팅) : https://hulint.tistory.com/45
+docker로 직접 네트워크 생성한것 셋팅 : https://log-laboratory.tistory.com/204

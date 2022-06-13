@@ -199,6 +199,13 @@
           -	https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#BDD_behavior_verification
           - Mockito 여러 기능 설명 굿(@Spy, @InjectMocks ..) : https://sun-22.tistory.com/94
           - Mockito 내용정리 굿 : https://jdm.kr/blog/222
+    - 주의할 점
+      - given().willReturn(인스턴스.인스턴스method) vs WillReturn().given(인스턴스).인스턴스method() 차이!
+        - mock일때랑 spy일때랑 다른데, spy일때 given()이 먼저 시작되면, 실제 객체를 한번 호출한다.. 물론 willReturn에 셋팅한 값을 반환은 해준다.. 반대로 willReturn이 먼저시작되면 실제 객체를 호출하지않고 해당 메서드가 when때 실행될때만 수행한다..
+          - mock은 실제 객체가 아니고 그냥 가짜객체이기때문에 위 두개는 동일하다..
+        - 암튼 spy일때 이런 동작으로인해서 then 부분에 메서드 호출을 체크할때, given()으로 시작하여 메서드에 stub을 했다면 해당 메서드는 이미 1번 호출된것을 감안해야한다...
+        - 스택오버플로우에는 되도록 willReturn으로 시작되는걸 사용하라고하는데, 컴파일시점에 타입체킹 && 가독성측면에서 given으로 시작되는게 또 좋다고도함
+        - https://stackoverflow.com/questions/20353846/mockito-difference-between-doreturn-and-when
 
 - Junit or Mockito 사용관련 참고사항
   - SPY

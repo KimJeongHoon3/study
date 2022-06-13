@@ -1,0 +1,3 @@
+- springboot ssl 적용
+  - "인증서 + 개인키" 로 keystore를 만들어서 해당 keystore를 boot설정에 등록하면 ssl 가능..
+  - https://veneas.tistory.com/entry/Spring-Boot-%EC%8A%A4%ED%94%84%EB%A7%81-%EB%B6%80%ED%8A%B8-SSL-%EC%9D%B8%EC%A6%9D%EC%84%9C-%EC%A0%81%EC%9A%A9-TLS-p12
