@@ -178,3 +178,4 @@
         - Monitor 명령을 통해 패턴을 파악해야함
         - 그러나 중요한것은 monitor를 잘못쓰면 서버에 더 큰 문제가 일어나니, 빠르게 보고 꺼야함..
 - [출처](https://www.youtube.com/watch?v=mPB2CZiAkKM&t=1882s)
+- [redis 내부구조](https://m.blog.naver.com/hanajava/220895464821)

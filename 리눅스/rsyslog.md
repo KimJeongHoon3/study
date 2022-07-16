@@ -1,0 +1,2 @@
+- rsyslog
+- https://m.blog.naver.com/sunchan683/221511250171

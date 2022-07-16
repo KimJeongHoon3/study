@@ -1,0 +1,3 @@
+- systemd vs init.d
+  - https://mamu2830.blogspot.com/2021/07/init-systemd-difference.html
+  - 위 블로그 설명 매우 굿

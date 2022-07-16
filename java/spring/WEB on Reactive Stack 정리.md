@@ -134,8 +134,9 @@ public static void main(String... args) {
       - WebExceptionHandler 통해서 예외처리 어떻게하는지보다가 돌아가는 흐름 분석한 내용
         - MappingHandler로 Handler 찾고, 찾은 핸들러를 HandlerAdatper(HandlerFunctionAdpater인 경우 HandlerFunction을 실행)로 실행시키고, 그에대한 결과값인 HandlerResult를 HandlerResultHandler가 실행시켜서 결과를 셋팅하여 응답하게된다
         - filter는 HandlerAdapter가 mapping된 핸들러 실행 전후에 수행됨 (filter 또한 결과적으로 HandlerFunction으로 만들어져서 기존의 HandlerFunction에 더해지는것..)
-        - 그렇다보니, 비지니스 로직을 수행을 다 진행하고 결과를 전달받는 로직으로 HandlerFunction을 만들어놓았다면, 에러 발생시 after와 같은 filter는 당연 실행안되고, 그냥 filter 에서도 response에 대한 처리 로직을 수행안됨
-        - 만약, 비지니스 로직을 수행하고 값을 넣는것을 Mono로 감싸서 response의 body로 넘겨주어 파이프라인을 만들었다면, body 내부에 있는 Mono는 HandlerResultHandler에서 결과값을 셋팅할때 수행될테니, 만약 에러가 난다해도 filter에서 절대 잡힐수가없다..
+        - 그렇다보니, 비지니스 로직을 수행을 다 진행하고 결과를 전달받는 로직으로(lazy loading을 사용하지않고 핸들러쪽에서 파이프라인만드는 과정에서 비지니스로직 바로 수행후 결과데이터를 넣는것..) HandlerFunction을 만들어놓았다면, 에러 발생시 after와 같은 filter는 당연 실행안되고, 그냥 filter 에서도 response에 대한 처리 로직을 수행안됨
+        - 만약, 비지니스 로직을 수행하고 값을 넣는것을 Mono로 감싸서 response의 body로 넘겨주어 파이프라인을 만들었다면(just말고 Mono.fromSupplier나 Mono.defer 사용하여 lazy loading한것..- 최종 Subscribe 호출할때 로직수행되어서 lazyloading), body 내부에 있는 Mono는 HandlerResultHandler에서 결과값을 셋팅할때 수행될테니, 만약 에러가 난다해도 filter에서 절대 잡힐수가없다..
+          - filter의 수행시점은 mvc의 인터셉터와 같다.. 기존 mvc에는 lazyloading개념 없으니.. 컨트롤러에서 리턴해주는것을 가지고 Interceptor가 요청의 마무리를 진행할수있었다.. filter는 딱 그 역할이니.. lazyloading은 어디서 처리하나?가 그럼 남게되는데, lazyloading으로 실행되는 로직(여기서는 body값)은 그러므로 filter에서는 에러가 떨어졌는지, 값이 무엇인지 알수없다.. 그렇기에 lazyloading으로 수행되는 로직은 onErrorResume과 같은것을 사용해서 lazyloading에 맞게 따로 에러에 대한 파이프라인을 셋팅할 필요가있다!
         - 그러므로 webFilter나, WebExceptionHandler 에서 예외를 받아서 처리해주어야한다!
           - *filter는 handler를 수행하기전에 필요한 로직을 메서드안에 정의할수있고, response에 대한것은 next.handler(request)를 통해(이게 Mono에 감싸진 response 리턴해줌)에 정의할수있다..
 
@@ -221,7 +222,7 @@ public static void main(String... args) {
       - 너무 많은 map 함수 조합은 연산마다 객체를 생성하기때문에 GC에 대상이 많아질수있음
       - 동기식으로 동작해
     - flatmap : 비동기식으로 아이템 변경
-      - flatmap을 사용하면 확 변하는개념이아니라, 반환값이 일단 publisher 이기때문에 비동기식으로 사용할수있다는것! 그리고 Flux일때 flatmap은 위빙이라는 작업을 통해서 비동기작업이 이루어졌을때 작업을 시작한 순서와 상관없이 빠르게 끝난것부터 조합을하기때문에 빠름!
+      - flatmap을 사용하면 확 변하는개념이아니라, 반환값이 일단 publisher 이기때문에 비동기식으로 사용할수있다는것! 그리고 Flux일때 flatmap은 인터리빙이라는 작업을 통해서 비동기작업이 이루어졌을때 작업을 시작한 순서와 상관없이 빠르게 끝난것부터 조합을하기때문에 빠름!
   - BlockHound 라이브러리로 Blocking 코드를 찾아보자!
     - reactor-core 3.3.0 부터 내장
     

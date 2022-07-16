@@ -257,3 +257,9 @@ The BEGIN statement differs from the use of the BEGIN keyword that starts a BEGI
   - 만약 변경해야할 데이터를 보조인덱스를 사용해서 찾았고, 이를 변경한다면, 우선 보조인덱스로 락을 잡고 변경할 레코드를 클러스터드 인덱스로 또한 잠그고 작업한다..
   - If a secondary index is used in a search and the index record locks to be set are exclusive, InnoDB also retrieves the corresponding clustered index records and sets locks on them.
     - https://dev.mysql.com/doc/refman/8.0/en/innodb-locks-set.html
+
+
+
+---
+읽어보면 좋은자료
+- https://www.letmecompile.com/mysql-innodb-lock-deadlock/

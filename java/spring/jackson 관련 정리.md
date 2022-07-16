@@ -79,3 +79,7 @@ jackson 관련 정리
   - https://interconnection.tistory.com/137  
 - localdate로 직렬화
   - https://velog.io/@recordsbeat/Jackson%EC%9C%BC%EB%A1%9C-LocalDate-%EC%9E%90%EB%8F%99-%EB%A7%A4%ED%95%91%ED%95%98%EA%B8%B0
+
+- jackson custom serialization 
+  - deserialization 도 동일하기에 참고하면 좋음
+  - https://homoefficio.github.io/2016/11/18/%EC%95%8C%EA%B3%A0%EB%B3%B4%EB%A9%B4-%EB%A7%8C%EB%A7%8C%ED%95%9C-Jackson-Custom-Serialization/
