@@ -396,7 +396,7 @@
     - ***타입변환***이나 ***NULL여부 변경***은 테이블의 데이터를 복사하면서 구조를 변경하는것이기때문에 느리다!  
     - MySQL의 InnoDB나 MyISAM 스토리지 엔진을 사용하는 테이븛에서 컬럼을 ***추가,변경,삭제*** 작업은 모두 임시테이블로 복사하면서 처리된다!
       - 어느정도 진행됐는지 확인을 위해서는 " SHOW GLOBAL STATUS LIKE '%Handler% " 로 확인가능
-  
+    - [mysql8 버전에 따른 컬럼 관련 DDL시 개선내용](https://yhjin.tistory.com/83?category=1014637)
   - 인덱스 변경
     - 인덱스 추가
       - ALTER TABLE 테이블명 ADD [PRIMARY KEY | UNIQUE INDEX | INDEX ] 인덱스명 (컬럼1,컬럼2 ...);
@@ -410,23 +410,23 @@
     - 컬럼 및 인덱스 변경을 모아서 실행 가능
       - > ALTER TABLE employees <br> &emsp; DROP INDEX ix_firstname, <br> &emsp; ADD INDEX ix_new_firstname (first_name), <br> &emsp; ADD COLUMN emp_telno VARCHAR(15);
       - 가능하다면 스키마 변경은 테이블단위로 모아서 실행할것!
-    - 프로세스 조회
-      - SHOW PROCESSLIST;
-      - 서버에 접속한 사용자, 어떤 쿼리실행중인지 등에 대한 PROCESS의 많은 정보들이있음   
-    - 프로세스 강제 종료
-      - KILL QUERY id값 : 커넥션의 해당 쿼리만 강제종료
-      - KILL id값 : 커넥션의 해당쿼리 종료 및 커넥션 강제종료 (이는 커넥션에서 다른 트랜잭션이 진행되고 있었다면 문제가 일어날수있기 때문에 kill query를 먼저 실행해보는게 좋음!!)
-    - 시스템변수 조회 및 변경
-      - SHOW VARIABLES [like ''] -- 세션(현재커넥션)시스템변수조회
-      - SHOW GLOBAL VARIABLES [like ''] -- 글로벌 시스템변수조회
-      - SET 변수명 = 값; -- 세션(현재커넥션) 시스템변수 변경 (동적으로 변경할수있는 변수에 한함)
-      - SET GLOBAL 변수명 = 값; -- 글로벌 시스템변수 변경 (동적으로 변경할수있는 변수에 한함)
-    - 경고나 에러조회
-      - SHOW warnings;
-      - SHOW errors; 
-    - 권한조회
-      - SHOW PRIVILEGES; -- 사용자에게 부여할수있는 권한목록
-      - SHOW GRANT FOR 'jeremy_test'@'%'; -- 'jeremy_test'@'%' 이 계정에 대한 권한 정보나옴
+  - 프로세스 조회
+    - SHOW PROCESSLIST;
+    - 서버에 접속한 사용자, 어떤 쿼리실행중인지 등에 대한 PROCESS의 많은 정보들이있음   
+  - 프로세스 강제 종료
+    - KILL QUERY id값 : 커넥션의 해당 쿼리만 강제종료
+    - KILL id값 : 커넥션의 해당쿼리 종료 및 커넥션 강제종료 (이는 커넥션에서 다른 트랜잭션이 진행되고 있었다면 문제가 일어날수있기 때문에 kill query를 먼저 실행해보는게 좋음!!)
+  - 시스템변수 조회 및 변경
+    - SHOW VARIABLES [like ''] -- 세션(현재커넥션)시스템변수조회
+    - SHOW GLOBAL VARIABLES [like ''] -- 글로벌 시스템변수조회
+    - SET 변수명 = 값; -- 세션(현재커넥션) 시스템변수 변경 (동적으로 변경할수있는 변수에 한함)
+    - SET GLOBAL 변수명 = 값; -- 글로벌 시스템변수 변경 (동적으로 변경할수있는 변수에 한함)
+  - 경고나 에러조회
+    - SHOW warnings;
+    - SHOW errors; 
+  - 권한조회
+    - SHOW PRIVILEGES; -- 사용자에게 부여할수있는 권한목록
+    - SHOW GRANT FOR 'jeremy_test'@'%'; -- 'jeremy_test'@'%' 이 계정에 대한 권한 정보나옴
     ---
 
   - SQL 힌트

@@ -134,3 +134,43 @@ https://soul0.tistory.com/372
 https://opentutorials.org/course/228/4894
 
 심도있게 설명 : http://www.moserware.com/2009/06/first-few-milliseconds-of-https.html
+
+
+*인증서관련..
+- p12는 인증서의 한 종류이다..
+- p12인증서 평문으로 보는 방법 :
+openssl pkcs12 -in [.p12파일] -out cert.pem -nodes
+openssl x509 -in cert.pem -text
+출처: https://littleshark.tistory.com/32 [꼬마상어의 생각:티스토리]
+- 인증서 파일형식 및 확장자 차이점비교
+  - https://www.letmecompile.com/certificate-file-format-extensions-comparison/#:~:text=%ED%82%A4%EB%A5%BC%20%EC%9D%98%EB%AF%B8-,.,%ED%95%98%EB%A0%A4%EB%A9%B4%20%ED%8C%A8%EC%8A%A4%EC%9B%8C%EB%93%9C%EA%B0%80%20%ED%95%84%EC%9A%94%ED%95%98%EB%8B%A4.
+  - https://www.sslcert.co.kr/guides/kb/54?page=2
+  
+- ssl 깔끔한 정리(와이어샤크도잇음.)
+  - https://nuritech.tistory.com/25#:~:text=%EA%B2%80%EC%A6%9D%20%EC%9B%90%EB%A6%AC%EB%8A%94%20%EC%95%84%EB%9E%98%EC%99%80%20%EA%B0%99%EB%8B%A4,%EB%90%9C%20%EC%9D%B8%EC%A6%9D%EC%84%9C%EB%A5%BC%20%EB%B3%B5%ED%98%B8%ED%99%94%20%ED%95%9C%EB%8B%A4.
+
+
+- java 코드로 설명
+  - http://blog.purewell.biz/2010/02/java-tlsssl.html
+
+- Resttemplate에 ssl인증서 셋팅방법
+  - https://stackoverflow.com/questions/60611646/using-p12-file-for-ssl-using-spring-boot
+
+
+- ssl
+  - 서버인증
+  - 클라이언트인증
+  - 데이터 암호화
+
+- 인증서(Certificate)는 소유자의 공개키가 맞는지를 검증하는 도구
+- KeyStore와 TrustStore
+  - Java에서는 JSSE (Java Secure Socket Extension)이라는 API 세트로 관련 기능이 제공되고 있습니다. Java 1.4 이후로는 JRE 기본 패키지에 포함되었습니다.
+  - JSSE는 KeyStore와 TrustStore라는 두 개의 파일을 사용합니다. KeyStore는 클라이언트 인증을 위해 클라이언트 측에 놓이는 것이고, TrustStore는 서버를 인증하기 위한 것입니다. 
+  - KeyStore는 비밀키, 관련된 인증서 혹은 인증서 체인을 가지고 있는 데이타베이스입니다. 인증서 체인은 클라이언트 인증서와 하나 이상의 CA 인증서(공인인증서)로 구성됩니다. 보통 서버 역할을 하는 측에서만 필요하지만, 클라이언트 인증을 요구하는 경우 클라이언트 쪽도 있어야 합니다. 
+  - TrustStore는 클라이언트가 신뢰할 수 있는 인증서만을 가지고 있습니다. 이들 인증서는 CA 루트 인증서 즉 자기서명 인증서입니다. 보통 웹서버가 설치되면 cacerts.jks라는 파일명으로 이 TrustStore가 저장됩니다. 
+
+  - SSL을 이용하여 웹서버를 구성할 경우 다음과 같은 선택 사항이 있습니다. 
+    - 서버측 인증 : 대부분의 전자 상거래 사이트들은 서버측 인증을 사용하고 있습니다. 클라이언트는 웹서버로 인증서를 요구하고 그 인증서가 신뢰성 있는 것인지 확인해야 안전한 전자 상거래를 할 수 있습니다. 웹서버로 부터 전달되는 인증서의 서명을 확인하기 위해서 CA의 Truststore를 사용합니다. 
+    - 상호 인증 : 상호 인증은 서버와 클라이언트 양쪽 모두를 인증하는 것입니다. 서버측 인증은 앞서 설명한 것과 같습니다. 추가로 웹서버는 클라이언트가 신뢰성이 있는지를 마찬가지로 확인하게 됩니다.
+
+http://btsweet.blogspot.com/2014/06/tls-ssl.html

@@ -206,6 +206,18 @@
         - 암튼 spy일때 이런 동작으로인해서 then 부분에 메서드 호출을 체크할때, given()으로 시작하여 메서드에 stub을 했다면 해당 메서드는 이미 1번 호출된것을 감안해야한다...
         - 스택오버플로우에는 되도록 willReturn으로 시작되는걸 사용하라고하는데, 컴파일시점에 타입체킹 && 가독성측면에서 given으로 시작되는게 또 좋다고도함
         - https://stackoverflow.com/questions/20353846/mockito-difference-between-doreturn-and-when
+      - 호출 시기? 횟수? 에 따라서 다르게 응답해주고싶을때
+        ```java
+            BDDStubber stubber = willDoNothing();
+            for (int i = 0; i < 8; i++) {
+                if (i % 2 == 1) {
+                    stubber.willThrow(new Exception("임의에러"));
+                    continue;
+                }
+                stubber.willNothing();
+            }
+            stubber.given(haproxyConfigManageService).uploadAclConfig(anyString(), anyString(), anyString(), anyInt(), eq(acl));;
+        ```
 
 - Junit or Mockito 사용관련 참고사항
   - SPY
