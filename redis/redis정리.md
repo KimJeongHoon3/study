@@ -179,3 +179,8 @@
         - 그러나 중요한것은 monitor를 잘못쓰면 서버에 더 큰 문제가 일어나니, 빠르게 보고 꺼야함..
 - [출처](https://www.youtube.com/watch?v=mPB2CZiAkKM&t=1882s)
 - [redis 내부구조](https://m.blog.naver.com/hanajava/220895464821)
+
+
+- 동시성 제어(여러대의 서버있을때..)를 위한 분산락
+  - redisson 활용 
+    - https://velog.io/@hgs-study/redisson-distributed-lock
