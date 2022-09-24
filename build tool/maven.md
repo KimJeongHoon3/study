@@ -1,4 +1,39 @@
 maven
+- maven dependency 매커니즘
+  - 상당히 많은 dependency를 통해서 라이브러리들을 불러오게되는데, 이에따라 transitive(이행성) dependency가 생긴다.
+    - 이행성?
+      - 어떤 이항관계에서 갑이 을에 관계되고 을이 병에 관계되는 경우 반드시 갑이 병에 관계되는 것을 요구하는 조건.
+      - 즉 A->B 를 의존하고, B->C를 의존할떄, A->C를 의존하는 관계.. 
+  - 이때에, 여러 dependency간에 어떻게 사용할것인지를 정의하는 정책들이 있는데, 아래와 같음
+    - Dependency mediation
+      - "nearest definition" 정책을따른다.
+        - depth가 똑같으면 먼저 선언된게 win
+        - depth가 덜 깊은쪽이 win (dependency tree에서 가까운쪽!)
+        - 만약 모듈을 통해서 의존하게된 라이브러리 버전이 있을때, 루트에서 직접 지정한 라이브러리가 있다면, 당연 루트에서 지정한 라이브러리 버전이 win
+        ```java
+            A
+            ├── B
+            │   └── C
+            │       └── D 2.0
+            └── E
+                └── D 1.0
+                "여기서 D 1.0이 win"
+        ```
+    - Dependency management
+      - 이 섹션을 통해서 transitive dependency를 만났을때 버전을 지정할수있고, 같은 pom내에서 버전을 지정하지않았다면, 해당 섹션에서 지정한 버전을 사용한다
+    - Dependency scope
+      - dependency의 scope를 지정할수있음
+        - compile
+        - provided
+          - compile과 매우 유사하나, runtime시에 가져오지않음.. 말 그대로 (다른곳에서) 이미 제공되었으니, 해당 dependency는 런타임시엔 추가하지말라는뜻
+        - runtime
+        - test
+        - system
+        - import
+
+  - 참고 사이트
+    - [Maven – Introduction to the Dependency Mechanism](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html)
+    - [Maven의 Transitive Dependency 길들이기 | The Sapzil](https://blog.sapzil.org/2018/01/21/taming-maven-transitive-dependencies/)
 - `pom.xml`에서 모듈간 혹은 모듈 Import시 루트 프로젝트와 겹치는 라이브러리가 있다면?
   1. 프로젝트 실행시 maven에 exclusion 해놓으면 다른 모듈에 있어도 읽어오지않는다
   2. 모듈로 가져오는 버전보다 당연 로드되는 프로젝트 버전이 우선
