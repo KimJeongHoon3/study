@@ -386,3 +386,7 @@ chapter 23 IOCP(Input Output Completion Port)
         -IO의 진행대상인 소켓의 핸들을 배열에 저장해놓고, 관리할 필요없음
         -IO의 처리를 위한 스레드의 수를 조절가능!(IO처리에 대한 더 빠른 속도보장..  + serversocket이 클라이언트 연결하는 스레드와 IO처리하는 스레드를 분리)
         
+
+*****
+멀티플렉싱 관련 내용설명
+https://engineering.linecorp.com/ko/blog/do-not-block-the-event-loop-part1/
