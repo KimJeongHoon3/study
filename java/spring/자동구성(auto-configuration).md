@@ -1,4 +1,12 @@
 자동구성(auto-configuration)
+- 간단설명
+  - 클래스 패스에 적절한 jar 가 있다면, 별도로 bean을 생성하지않더라도 알아서 생성되는것! (물론, 자동구성 셋팅이 되어있어야겠지.. 근데 그걸 기본적으로 spring boot가 해줬다는것..)
+  - `@EnableAutoConfiguration` 이 필요한데(`@Configuration`과 함께씀..), `@SpringBootApplication`에 포함되어있기때문에 둘중에 하나만 있으면됨
+  - 자동구성은 default를 잡아주는것뿐, 실행하는 프로젝트에 사용자가 정의해놓은 bean이 있으면 그걸 우선사용하게됨
+  - 물론 자동구성셋팅하기 싫으면 제외도 가능하다
+  - https://docs.spring.io/spring-boot/docs/current/reference/html/using.html#using.auto-configuration
+- mvc에서의 자동구성
+  - https://docs.spring.io/spring-boot/docs/current/reference/html/web.html#web.servlet.spring-mvc.auto-configuration
 
 - auto-configuration 정리
   - `org.springframework.boot.autoconfigure.EnableAutoConfiguration` 의 `resources/META-INF/spring.factories` 여기서 등록된 자동구성을 살펴볼수있음

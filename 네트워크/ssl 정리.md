@@ -5,7 +5,7 @@
       - 클라이언트가 서버에게 제공할 인증서 필요 (보통은 서버가 발급해주는듯)
     - 데이터전송시 암호화
   - tcp 3-way 핸드쉐이크 끝나고 진행
-  - 아래와 같은 과정을 가짐
+  - 아래와 같은 과정을 가짐 (tls 1.2v)
     - ![](ssl_handshake.png)
     1. Client Hello (클라이언트 -> 서버)
        - ssl 시작하니 본인 알려주는것인데, 3가지 전달
@@ -45,5 +45,8 @@
 - ssl 2 way handshake
   - https://upload.wikimedia.org/wikipedia/commons/a/ae/SSL_handshake_with_two_way_authentication_with_certificates.svg
 
+- tls 1.2v 와 tls 1.3v는 대칭키 생성 과정이 다르다! 당연 1.3v가 개선
+  - [참고사이트](https://cabulous.medium.com/tls-1-2-andtls-1-3-handshake-walkthrough-4cfd0a798164)
 - [참고사이트](https://run-it.tistory.com/29)
 - [간결하게 잘 나옴](https://cheapsslsecurity.com/p/what-is-2-way-ssl-and-how-does-it-work/)
+- [쉽게 정리](https://nuritech.tistory.com/25#:~:text=%EA%B2%80%EC%A6%9D%20%EC%9B%90%EB%A6%AC%EB%8A%94%20%EC%95%84%EB%9E%98%EC%99%80%20%EA%B0%99%EB%8B%A4,%EB%90%9C%20%EC%9D%B8%EC%A6%9D%EC%84%9C%EB%A5%BC%20%EB%B3%B5%ED%98%B8%ED%99%94%20%ED%95%9C%EB%8B%A4.)
