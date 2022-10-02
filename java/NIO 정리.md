@@ -16,3 +16,5 @@ https://homoefficio.github.io/2016/08/06/Java-NIO%EB%8A%94-%EC%83%9D%EA%B0%81%EB
 http://eincs.com/2009/08/java-nio-bytebuffer-channel-file/
 http://eincs.com/2009/08/java-nio-bytebuffer-channel/
 http://eincs.com/2009/09/compare-allocate-allocatedirect-method-of-bytebuffer/
+
+- [NIO 간결하고 깔끔하게 소스랑 설명 굿](https://engineering.linecorp.com/ko/blog/do-not-block-the-event-loop-part2)
