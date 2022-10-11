@@ -8,6 +8,29 @@
 - mvc에서의 자동구성
   - https://docs.spring.io/spring-boot/docs/current/reference/html/web.html#web.servlet.spring-mvc.auto-configuration
 
+- 자동구성 만들어보기
+  - `@AutoConfiguration` 주석은 자동구성으로 셋팅해놓은것들을 `@Configuration`과 같이 만들어줌..(해석이 이게맞나..? 무튼 설정어노테이션과 동일..)
+  - 이는 보통 `@ConditionalOnClass`, `@ConditionalOnMissingBean` 과 같이씀
+  - 2.7.3 기준 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` 여기서 자동구성 확인가능 (한줄에 한 클래스)
+  - componentscan 대상이 되면안됨.. 
+  - `@AutoConfiguration`의 속성의 befor, beforeName, after, afterName 속성으로 순서지정가능
+    - `@AutoConfigureBefore`, `@AutoConfigureAfter` 도 사용가능
+    - `@AutoConfigureOrder` 으로도 순서 지정가능
+- Condition 어노테이션
+  - Class Conditions
+  - Bean Conditions
+  - Property Conditions
+  - Resource Conditions
+  - Web Application Conditions
+  - SpEL Expression Conditions
+- 테스트 가능
+    ```java
+      private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+              .withConfiguration(AutoConfigurations.of(MyServiceAutoConfiguration.class));
+    ```
+    - webContext일때는 `WebApplicationContextRunner` or `ReactiveWebApplicationContextRunner`
+    - 
+
 - auto-configuration 정리
   - `org.springframework.boot.autoconfigure.EnableAutoConfiguration` 의 `resources/META-INF/spring.factories` 여기서 등록된 자동구성을 살펴볼수있음
     - 자동구성 순서도 지정할수있음 `@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)`
