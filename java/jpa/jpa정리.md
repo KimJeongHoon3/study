@@ -772,3 +772,10 @@ spring:
    - [레퍼런스](https://docs.jboss.org/hibernate/orm/4.2/javadocs/org/hibernate/event/internal/AbstractFlushingEventListener.html#performExecutions(org.hibernate.event.spi.EventSource)) 
    - <span style="color:red">왜 외래키 위반을 막기위해서 순서를 재조정한다고했을까?</span>
  - <span style="color:red">2차캐시란?</span>
+
+
+
+- jpa, hibernate 차이..
+  - jpa는 기술명세.. 즉 인터페이스.. 객체에 종속성을 주기위함..
+    - jpa 구현체중 하나가 hibernate
+  - https://suhwan.dev/2019/02/24/jpa-vs-hibernate-vs-spring-data-jpa/

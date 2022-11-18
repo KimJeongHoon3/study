@@ -71,6 +71,17 @@ Docker
     -network connect 명령어 : 기존에 생성된 컨테이너에 네트워크를 추가
         -docker network connect [OPTIONS] NETWORK CONTAINER(name)
 
+    - docker inspect 이미지
+      - 이미지에 대한 상세정보 확인가능.
+      - CMD정의, ENV 등등
+
+    - docker top 컨테이너명 aux
+      - 해당 컨테이너에서 돌아가고있는 것들 pid, cpu, memory 등 확인가능
+        - RSS : 실제 물리 메모리 사용량
+        - VSZ : 가상 메모리 사용량
+        - SIZE : 대략적인 스왑 메모리 사용량
+        - %MEM : 메모리 사용 비율
+
 -"docker-compose"
     -설치
         1) sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose

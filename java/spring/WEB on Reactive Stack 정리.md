@@ -312,3 +312,14 @@ mean requests/sec
 
 
 - 마블다이어그램 참고하기 좋은 사이트 : https://rxmarbles.com/
+
+
+
+----
+- webflux에서 jdbc 혹은 blocking call 핸들링방법
+```java
+    Mono blockingWrapper = Mono.fromCallable(() -> { 
+        return /* make a remote synchronous call */ 
+    }).subscribeOn(Schedulers.elastic());
+```
+  - [참고사이트](https://itstory.tk/entry/Spring-Webflux-JDBC%ED%98%B9%EC%9D%80-blocking-call-%ED%95%B8%EB%93%A4%EB%A7%81-%EB%B0%A9%EB%B2%95)

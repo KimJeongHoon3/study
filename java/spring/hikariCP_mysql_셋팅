@@ -57,3 +57,6 @@ Hikari cp dead lock 관련 내용정리 매우 굿 : https://techblog.woowahan.c
 HikariCP는 어떤 타이밍에 Connection Validation Check를 수행할까?
 첫째, 커넥션을 DB에서 새로 맺을 때
 둘째, 커넥션 풀에서 커넥션을 가져올때
+
+
+HiKariCP 설정관련 설명 굿 : https://netmarble.engineering/hikaricp-options-optimization-for-game-server/?fbclid=IwAR1S5J4yfxPOfa-z6Ek0-CM-67ksIpHXl9yXm8b2kFcXGt4_s16Rgv5nUlY
