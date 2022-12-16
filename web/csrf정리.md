@@ -6,3 +6,9 @@ csrf
   - 돈이 빠져나갈수도있고, 메일을 다른 사람에게 대량으로 보낼수도있고.. 등등
 - [내용설명 간단 굿](https://devscb.tistory.com/123)
 - [spring security 적용 및 rest api에서는 왜 csrf가 Diable인지 설명](https://zzang9ha.tistory.com/341)
+
+- rest api 앱에서 spring security csrf를 Disable 하는이유?
+  - jwt와 같이 client가 헤더를 통해서 인증을 하게되는 경우가 많은데, 이럴경우 csrf에 안전..
+    - 하지만, xss는 여전히 취약할수있음..
+  - 핵심은 쿠키에 넣으면 동일하게 csrf에 취약할수있다는것..! 
+  - https://kchanguk.tistory.com/197?category=887999
