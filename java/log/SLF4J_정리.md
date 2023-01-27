@@ -7,3 +7,5 @@ SLF4J_정리
   - Throwable 객체를 마지막에 넘기게되면, stack trace를 로깅해준다!
     - logger.error("User : {}", user, ex); 
     - 이거쓸때도 파라미터 3개 이상되지않도록해야한다!
+  
+- [slf4j란](https://livenow14.tistory.com/63)

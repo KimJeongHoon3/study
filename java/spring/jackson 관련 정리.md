@@ -68,6 +68,25 @@ jackson 관련 정리
         }
     ```
 
+- `LocalDateTime` 을 원하는 포맷으로 변경하고싶을때
+  - `@JsonFormat` 사용
+    - ex. `@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")`
+  - 그냥 단순히 `ObjectMapper`를 사용하면 `LocalDateTime` 파싱안됨
+    - 원하는 포맷으로 셋팅하기위해서는 `jackson-datatype-jsr310` 모듈과 `ObjectMapper`에 아래와 같은 셋팅필요
+    ```java
+      ObjectMapper objectMapper = new ObjectMapper();
+      objectMapper.registerModule(new JavaTimeModule()); // jsr310 모듈에 있음
+      objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // 직렬화할때 한줄로 깔끔하게 찍어줌 Ex. "2020-01-01T00:00:00.123"
+    ```
+  - [참고](https://umanking.github.io/2021/07/24/jackson-localdatetime-serialization/)
+- 보통 boolean은 isXXX 라고 필드명을 명시하는 경우가 많은데, 이와같은 경우 jackson은 정상파싱안됨 (메서드를 찾는것으로 인식하는것같음.. 좀 더 정확하게 찾아보자..)
+  - `@JsonPropery`를 사용해서 역직렬화할때 참고할수있도록 이름을 명시해줘야함
+    ```java
+      @JsonProperty("isAvailable")
+      private boolean isAvailable;
+    ```
+
+
 - 참고사이트
   - https://www.baeldung.com/jackson-exception
 
@@ -85,5 +104,8 @@ jackson 관련 정리
   - deserialization 도 동일하기에 참고하면 좋음
   - https://homoefficio.github.io/2016/11/18/%EC%95%8C%EA%B3%A0%EB%B3%B4%EB%A9%B4-%EB%A7%8C%EB%A7%8C%ED%95%9C-Jackson-Custom-Serialization/
 
-- json 상속관련 설명 굿 
+- json 상속관련 설명 굿
   - https://kobumddaring.tistory.com/51
+
+- jackson 공식문서
+  - https://github.com/FasterXML/jackson-docs
