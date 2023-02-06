@@ -103,8 +103,118 @@ effective_java_객체생성과파괴
       - https://velog.io/@adduci/Java-%EC%84%9C%EB%B9%84%EC%8A%A4-%EB%A1%9C%EB%8D%94ServiceLoader
     - 정적 팩터리를 사용하는게 유리한 경우가 많으므로 무작정 public 생성자를 제공하진말자!
 
-- 아이템3_
+---
+
+- 아이템2_생성자에 매개변수가 많다면 빌더를 고려하라
+  - 생성자 매개변수가 많아지면 클라이언트 코드를 작성하거나 읽기 어렵다
+    - 값의 의미가 헷갈리고, 매개변수도 몇개인지 주의해서 세어보아야.. 타입도 많으면 헷갈려서 버그유발쉬움
+  - 자바 빈즈 패턴
+    - setter로 넣는것
+    - 읽기는 쉬움..
+    - but 객체 하나를 만들기 위해서는 메서드를 여러개 호출해야하고, 객체가 완전히 생성되기 전까지 일관성이 무너진상태가됨..
+    - 또한 setter가 있기때문에 불변으로 만들수 없음.. 그래서 스레드 안전성을 얻으려면 프로그래머가 추가작업필요..
+  - 빌더 패턴
+    - 안전성 + 가독성
+    - 빌더로 생성 과정
+      1. 필수 매개변수만으로 생성자(혹은 정적 팩터리 - 보통 이렇게 쓰이는듯)를 호출해 빌더 객체 얻음
+      2. 빌더 객체가 제공하는 일종의 세터 메서드들로 원하는 선택 매개변수들을 설정 (보통 메서드체이닝방식)
+      3. 매개변수가 없는 build 메서드를 호출해 필요한 객체를 얻는다
+    - 유효성검사?
+      - 잘못된 매개변수를 빨리 발견할 수 있도록 빌더의 생성자와 메서드에서 입력 매개변수를 검사
+      - build 메서드가 호출하는 생성자에서는 여러 매개변수에 걸친 불변식을 검사
+        - ex. startDate 와 endDate의 유효성검사 (startDate <= endDate)
+    - 활용
+      - 계층적으로 설계된 클래스에 좋음
+      - 추상클래스엔 추상빌더, 구체 클래스에는 구체빌더
+      - 빌더 하나로 여러 객테를 순회하면서 만들수있고, 빌더에 넘기는 매개변수에 따라서 다른 객체를 만들도록가능. 
+    - 매개변수가 4개 이상은 되어야 활용하는게 좋음!
+  - 생성자나 정적 팩터리가 처리해야할 매개변수가 많다면, 빌더 패턴을 선택하자! 특히 매개변수중 다수가 필수가 아니거나 같은 타입이라면 특히나!
+  - 기타 팁
+    - 불변과 불변식
+      - 불변: 어떠한 변경도 허용하지않는다는 뜻
+        - ex. String 객체
+      - 불변식: 프로그램이 실행되는 동안, 혹은 정해진 기간동안 반드시 만족해야하는 조건
+        - 변경을 허용할 수는 있으나, 주어진 조건 내에서만 허용
+        - ex. Period 클래스에서 start 필드의 값은 반드시 end 필드의 값보다 앞서야하는것..
+      - => 가변객체에도 불변식은 존재할 수 있다! 크게보면 불변은 불변식의 극단적 예
+       
+---
+
+- 아이템3_private 생성자나 열거 타입으로 싱글턴임을 보증하라
+  - 싱글턴: 인스턴스를 오직 하나만 생성할 수 있는 클래스
+    - 함수와 같은 무상태 객체
+      - ex?
+    - 설계상 유일해야하는 시스템 컴포넌트
+      - ex?
+    - 클래스가 싱글턴으로 만들어지면 테스트가 어려워진다.. (mock으로 만들기가 여러우므로..)
+    - 만드는방식?
+      - `public static final` 필드 방식의 싱글턴 (정적 멤버가 필드)
+      ```java
+      class Elvis {
+          public static final Elvis INSTANCE = new Elvis();
+          private Elvis() {}
+          public void doSomething() {
+            //...
+          }
+      }
+      ```
+        - 간결하다! 
+        - 싱글턴임이 명확하게 API에서 보여진다
+      - 정적 팩토리 방식 (정적 멤버가 메서드)
+      ```java
+      class Tom { // 정적 팩토리 메서드를 제공
+          private static final Tom INSTANCE = new Tom();
+          private Tom() {}
+
+          public static Tom getInstance() { return INSTANCE; }
+
+          public void doSomething() {
+              //...
+          }
+      }
+      ```
+        - 마음 바뀌면 코드 안바꾸고 싱글턴이 아니게 만들 수 있음
+        - 정적 팩터리를 제네릭 싱글턴 팩토리로 만들수 있다는점
+        - 정적 팩터리의 메서드 참조를 공급자로 사용가능
+          - ex. `Supplier<Tom> = Tom::getInstance`
+      - 열거타입 방식
+      ```java
+      enum Jeremy {
+          INSTANCE;
+
+          public void doSomething() {
+              // ...
+          }
+      }
+      ```
+        - 매우 간결. 추가 노력없이 직렬화 가능
+        - 리플렉션 공격에서도 제2의 인스턴스가 생기는 일을 완벽히 막아준다함..
+        - ***대부분 상황에서는 원소가 하나뿐인 열거타입이 싱글턴을 만드는 가장 좋은방법이라함!***
+        - Mock은 어떤식으로 만드는게좋을까?
   - 기타 팁 
+    - 만드는 방식 1번과 2번은 직렬화시에 아래와 같이 진행해야함..
+      ```java
+      class TomSerialization implements Serializable {
+          private static final TomSerialization INSTANCE = new TomSerialization();
+          private transient String instanceField; // 1
+          private TomSerialization() {}
+
+          public static TomSerialization getInstance() { return INSTANCE; }
+
+          public void doSomething() {
+              //...
+          }
+
+          private Object readResolve() { // 2
+              return INSTANCE;
+          }
+      }
+
+      1. transient필요.. 직렬화시에 제외해야할 변수에는 transient 사용
+      2. 역직렬화할때 새로운 인스턴스가 계속 만들어진다 (readObject 가 내부적으로 역직렬화시에 계속 새로운 인스턴스를 만들어준다.    
+        이를 해결하기위해서 readResolve 가 필요한데, 해당 메서드가 있으면 여기서 리턴해주는 값을 사용하게된다.     
+        readObject를 통해서 만들어진 객체는 GC에 의해서 사라지게되고 결국 readResolve가 전달해준 인스턴스만 남게된다!
+      ```
     - [객체 직렬화시 readResolve와 readObject](https://madplay.github.io/post/what-is-readresolve-method-and-writereplace-method)
     - 리플렉션 공격??
       - 
