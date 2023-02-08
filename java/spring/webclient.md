@@ -41,6 +41,7 @@ webclient
         .messageWriters().stream()
         .filter(LoggingCodecSupport.class::isInstance)
         .forEach(writer -> ((LoggingCodecSupport)writer).setEnableLoggingRequestDetails(true)); //요기 true 하고, org.springframework.web.reactive.function.client.ExchangeFunctions의 로깅레벨을 DEBUG로
+        //근데 이거 셋팅한거와 별 다른게 없다함..
     ```
   - Client Filters
     - Request 또는 Response 데이터에 대해 조작을 하거나 추가작업 가능
