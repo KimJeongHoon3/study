@@ -223,7 +223,20 @@ effective_java_객체생성과파괴
       ```
     - [객체 직렬화시 readResolve와 readObject](https://madplay.github.io/post/what-is-readresolve-method-and-writereplace-method)
     - 리플렉션 공격??
-      - 
+
+---
+
+- 아이템4_인스턴스화를 막으려거든 private 생성자를 사용하라
+  - 정적메서드와 정적 필드만을 담은 클래스를 만드는경우
+    - 특정 인터페이스를 구현하는 객체를 생성해주는 정적 메서드(혹은 팩터리)를 모아놓기도함
+      - ex. Collections
+      - 자바 8부터는 인터페이스에 정적메서드를 활용하여 사용가능 (default와 다름.. default는 그냥 해당 인터페이스 기반 사용가능한 구현된 메서드)
+    - final 클래스와 관련한 메서드들을 모아놓을때도 사용 (무슨말..?)
+      - final 클래스는 상속불가..
+  - **유틸성 클래스** 같은 경우 생성자를 private으로 두어, 인스턴스화를 막자!
+    - 생성자 private이면 상속도 어려움~
+
+
 
 - 아이템7_
   - 기타 팁
