@@ -349,7 +349,10 @@ effective_java_객체생성과파괴
       - 네이티브 피어(native peer)와 연결된 객체
         - 네이티브 피어: 일반 자바 객체가 네이티브 메서드 호출을 위해 만들어진 객체. 
         - 네이티브 피어는 자바 객체가 아니기때문에 GC가 수거못한다
-        - fianlizer를 통해 가능하긴하나, 성능저하감당이 어렵거나, 사용 후 바로 회수해야하는 자원이라면 close 메서드 사용해야함(결국 그냥 try-with-resources 호출하는게 제일좋은듯..)
+          - <span style="color:red">finalizer 메서드를 GC가 객체를 destory 전에 호출해준다하는데, 이 말인즉슨, finalizer는 GC의 관리대상이고 수거해갈 대상이라는것 같은데, 네이티브 피어가 GC가 수거는 못하지만 finalizer는 호출해준다는게 말이되나..? </span>
+            - https://www.geeksforgeeks.org/finalize-method-in-java-and-how-to-override-it/
+        - finalizer를 통해 가능하긴하나, 성능저하감당이 어렵거나, 사용 후 바로 회수해야하는 자원이라면 close 메서드 사용해야함(결국 그냥 try-with-resources 호출하는게 제일좋은듯..)
+          
   - cleaner
     - finalizer보다 덜 위험하지만, 여전히 예측안됨, 느림, 일반적으로 불필요
     - cleaner를 사용하게되면, 가바지 컬렉터의 효율을 떨어뜨린다..
