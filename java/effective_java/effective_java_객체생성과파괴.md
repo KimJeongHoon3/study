@@ -346,18 +346,78 @@ effective_java_객체생성과파괴
       - 자원의 소유자가 close 메서드를 호출하지않는것을 대비한 안정망..
         - `FileInputStream`, `FileOutputStream`, `ThreadPoolExecutor`    
           - 나중에라도 반드시 닫아주어야 할것들..
-      - 네이티브 피어(native peer)와 연결된 객체
+          - 그런데 `FileInputStream` close 메서드에서도 최대한 try-with-resources를 사용하라고 권함.. finalization에 의존하도록 하지말고, Cleaner를 통해 native 자원을 청소하라고함
+          ```java
+          // FileInputStream 생성시에 FileChannelImpl.open()을 통해서 fileChannel을 셋팅해주는데, fileChannel에서 사용하는 FileDescriptor에 아래와 같이 처리
+
+          public class FileChannelImpl extends FileChannel {
+
+            ...
+
+             // Cleanable with an action which closes this channel's file descriptor
+            private final Cleanable closer;
+
+            private static class Closer implements Runnable {
+                private final FileDescriptor fd;
+
+                Closer(FileDescriptor fd) {
+                    this.fd = fd;
+                }
+
+                public void run() {
+                    try {
+                        fdAccess.close(fd); // 여기서 내부적으로 native 메서드 호출을 통해 file 관련 자원에 대한 연결을 해제한다. 내부로 따라들어가다보면 "private native void close0() throws IOException;" 이거 호출
+                    } catch (IOException ioe) {
+                        // Rethrow as unchecked so the exception can be propagated as needed
+                        throw new UncheckedIOException("close", ioe);
+                    }
+                }
+            }
+
+            private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
+                                    boolean writable, boolean direct, Object parent)
+            {
+                ...
+
+                // Register a cleaning action if and only if there is no parent
+                // as the parent will take care of closing the file descriptor.
+                // FileChannel is used by the LambdaMetaFactory so a lambda cannot
+                // be used here hence we use a nested class instead.
+                this.closer = parent != null ? null :
+                    CleanerFactory.cleaner().register(this, new Closer(fd)); // 혹여 클라이언트가 직접 close를 통해 자원해제를 하지않았을 경우를 대비하기위한 cleaner 처리..
+            }
+          }
+
+
+          ```
+      - 네이티브 피어(native peer)와 *연결된* 객체
         - 네이티브 피어: 일반 자바 객체가 네이티브 메서드 호출을 위해 만들어진 객체. 
         - 네이티브 피어는 자바 객체가 아니기때문에 GC가 수거못한다
-          - <span style="color:red">finalizer 메서드를 GC가 객체를 destory 전에 호출해준다하는데, 이 말인즉슨, finalizer는 GC의 관리대상이고 수거해갈 대상이라는것 같은데, 네이티브 피어가 GC가 수거는 못하지만 finalizer는 호출해준다는게 말이되나..? </span>
+          - 네이티브 피어를 사용하는 자바객체를 통해서(얘는 GC 대상이되므로..) 네이티브 피어에대한 자원해제 처리를 해줘야한다. 즉, 네이티브 피어를 사용하는 자바객체에 finalize나 Cleaner를 활용하여 혹여나 클라이언트가 직접적으로 자원해제 호출을 하지 못하였을때 GC가 해당 자바객체를 수거해가며 finalize를 호출 해주길 바라며(근데 GC가 반드시 호출하진않을수 있음.. ) 안전망으로 사용하는것.. (위 `FileChannelImpl` 확인)
             - https://www.geeksforgeeks.org/finalize-method-in-java-and-how-to-override-it/
-        - finalizer를 통해 가능하긴하나, 성능저하감당이 어렵거나, 사용 후 바로 회수해야하는 자원이라면 close 메서드 사용해야함(결국 그냥 try-with-resources 호출하는게 제일좋은듯..)
+        - 하지만 객체 소멸자는 결국 성능저하를 유발하기때문에 이를 감당할 수 있고, 네이티브 피어가 심각한 자원을 가지고 있지 않을때만 사용..
+          - <span style="color:red">심각한 자원은 뭐지..?</span>
+            - => 그냥 중요하지않은 자원을 이야기하는듯..? 
+        - 성능저하감당이 어렵거나, 사용 후 바로 회수해야하는 자원이라면 close 메서드 사용해야함(결국 그냥 try-with-resources 호출하는게 제일좋은듯..)
+        
           
   - cleaner
     - finalizer보다 덜 위험하지만, 여전히 예측안됨, 느림, 일반적으로 불필요
     - cleaner를 사용하게되면, 가바지 컬렉터의 효율을 떨어뜨린다..
 
+  - 결론
+    - finalizer와 cleaner는 안전망 역할이나, *중요하지않은* native 자원회수용정도로만 써야함.. 반드시 호출된다는 보장도 없고 성능저하도 유발시키기때문에 되도록이면 쓰지말자..
+
   - 기타 팁
     - 자바에서는 비메모리자원을 회수하는데, try-with-resources와 try-finally를 사용하여 해결한다
     - 파일이나 스레드 등 종료해야할 자원을 가지는 인스턴스는 자신이 닫혔는지를 추적할수있도록 하는게 좋다
       - close 호출시 필드에 기록하고, 다른 메서드는 이 필드를 검사해서 객체가 닫힌 후에 불렸다면, IllegalStateException을 던지는것!
+    - 정적 중첩 클래스가 아닌, 그냥 중첩 클래스는 자동으로 바깥 객체의 참조를 갖게된다
+    - non-static inner class는 메모리 릭을 반드시 발생시키는것은 아니다..!
+      - outer class가 바깥에서 참조하는게 없음에도, outer class와 Inner 서로간의 참조로 인해서 아예 GC가 자원해제를 못한다고 생각할 수 있으나, GC가 찾는데 시간이 더 걸릴뿐 수거가 안되지 않는다 (참조하는게 아예 없으면 당연 더 빨리 찾아서 수거가능.. 하지만 상호간에 참조가 진행된다해도, 루트부터 쭉쭉 연결되어있는 참조대상들에서 끊어져있다면 시간문제일뿐 다 수거해감)
+        - 다만, non-static inner class에서 별도 스레드로 뭔가 작업을 진행하고있다면, 
+        - 아 여기부터 좀더 찾아보자... 또는 좀더 테스트해보자..
+      - non-static inner class는 언제 메모리 릭을 유발할 수 있는지? (코드로 설명?)
+      - https://azza.tistory.com/entry/Java-nonstatic-inner-class-%EB%8A%94-%EB%A9%94%EB%AA%A8%EB%A6%AC-%EB%A6%AD%EC%9D%84-%EB%B0%9C%EC%83%9D%EC%8B%9C%ED%82%A4%EB%8A%94%EA%B0%80
+      - https://fsd-jinss.tistory.com/142
+      - https://stackoverflow.com/questions/20380600/gc-performance-hit-for-inner-class-vs-static-nested-class
