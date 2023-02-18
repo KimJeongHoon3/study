@@ -413,11 +413,96 @@ effective_java_객체생성과파괴
     - 파일이나 스레드 등 종료해야할 자원을 가지는 인스턴스는 자신이 닫혔는지를 추적할수있도록 하는게 좋다
       - close 호출시 필드에 기록하고, 다른 메서드는 이 필드를 검사해서 객체가 닫힌 후에 불렸다면, IllegalStateException을 던지는것!
     - 정적 중첩 클래스가 아닌, 그냥 중첩 클래스는 자동으로 바깥 객체의 참조를 갖게된다
+      - 람다 역시 바깥 객체의 참조를 갖기 쉬우니 조심!
     - non-static inner class는 메모리 릭을 반드시 발생시키는것은 아니다..!
       - outer class가 바깥에서 참조하는게 없음에도, outer class와 Inner 서로간의 참조로 인해서 아예 GC가 자원해제를 못한다고 생각할 수 있으나, GC가 찾는데 시간이 더 걸릴뿐 수거가 안되지 않는다 (참조하는게 아예 없으면 당연 더 빨리 찾아서 수거가능.. 하지만 상호간에 참조가 진행된다해도, 루트부터 쭉쭉 연결되어있는 참조대상들에서 끊어져있다면 시간문제일뿐 다 수거해감)
-        - 다만, non-static inner class에서 별도 스레드로 뭔가 작업을 진행하고있다면, 
-        - 아 여기부터 좀더 찾아보자... 또는 좀더 테스트해보자..
+      - non-static inner class는 항상 자신을 containing하는 클래스를 참조하고있다. (반면, static nested class 는 containing 클래스를 참조하지않는다 - 디컴파일시 바로 확인 가능)
+        - 그에따라 non-static inner class가 문제가 되는것은, inner class를 가지고있는 containing 클래스가 inner class보다 더 오래 살게되지않고, inner class가 더 오래 살때 문제가된다. 왜냐하면, 더이상 containing 클래스는 사용하지않고, 어디서 사용하는지도 알수 없는 상태인데, inner class가 계속 살아 있다면(참조되고있다면) containing 클래스를 계속 참조하고있기떄문에, GC가 수거해가지않는다. 이렇게 되었을때, 생각지도 못한 메모리 누수가 유발될 수 있다. 그래서 항상 inner class를 사용한다면, containing 클래스는 inner class보다 더 오래 살 수 있도록(즉, 최소한 containing 클래스가 제거될때 inner class도 같이 제거 될수있도록)
+      
       - non-static inner class는 언제 메모리 릭을 유발할 수 있는지? (코드로 설명?)
+        - `HashMap` 테스트
+          - `HashMap`은 내부에 `KeySet`을 inner class 로 정의하여 `HashMap.keySet()` 호출시 Map의 key값들을 Set 형태로 return 해준다
+          - 이를 기반으로 10번의 루프 동안 HashMap에는 계속 새로운 객체를 할당하고 루프를 빠져나올때, 디버깅을 포인트를 잡아서 visualVm으로 힙덤프해보았다
+            - 첫번째 테스트: inner class의 참조변수를 가져오는 keySet 호출시 아무런 작업 없음 
+              - 코드 
+                ```java
+                  for (int i=0;i<10;i++){
+                      HashMap<String, String> map = new HashMap<>();
+
+                      map.put(i+"",i+"");
+
+                      Set<String> strings = map.keySet();
+                  }
+                  System.out.println("hi"); // 단순 디버깅 포인트 잡기위함.  
+                ``` 
+              - 힙덤프 (디버깅 포인트가 System.out.println("hi"); 있는 지점에서 힙덤프 뜸)
+                - ![](./inner_class_heapdump.png)
+                - GC가 모두 수거해갔기에 남아있는것 없음
+            - 두번째 테스트: inner class의 참조변수를 가져오는 keySet 호출시 반환된 참조값을 List에 담음
+              - 코드
+                ```java
+                  List<Set<String>> list = new ArrayList<>();
+                  for (int i=0;i<10;i++){
+                      HashMap<String, String> map = new HashMap<>();
+
+                      map.put(i+"",i+"");
+
+                      Set<String> strings = map.keySet();
+                      list.add(strings);
+                  }
+                  System.out.println("hi"); // 단순 디버깅 포인트 잡기위함. 
+                ``` 
+
+              - 힙덤프 (디버깅 포인트가 System.out.println("hi"); 있는 지점에서 힙덤프 뜸)
+                - ![](./inner_class_cause_memory_leak_heapdump.png)
+                - GC가 수거해가지 못하고, 루프에 지정한 갯수 대로(10개) 그대로 살아있다. 또한, HashMap은 루프 돌떄마다 새로 계속해서 할당을 해줌에도 불구하고 GC가 수거해가지 않고있다(inner class인 keySet이 자신의 Containing 클래스인 HashMap을 계속 참조하고있다.)
+            - 결론
+              - 두번째 테스트에서 보면, HashMap에 계속 새로운 객체를 할당했으나, inner class인 keySet은 containing 클래스인 HashMap을 계속 참조하기떄문에 HashMap은 GC가 수거해가지않았다. 즉, keySet의 inner class가 List에 담게되면서, HashMap보다 더 긴 시간 살아있게되었고, 그러다보니 HashMap은 그에 따라 같이 참조되어 GC가 수거하지않는다. 이런 부분이 containing 클래스가 GC될 것을 기대할수있으나, 정상동작하지않고 예상치못한 메모리 릭을 유발할 수 있는 구간이 될 수 있다.
+
       - https://azza.tistory.com/entry/Java-nonstatic-inner-class-%EB%8A%94-%EB%A9%94%EB%AA%A8%EB%A6%AC-%EB%A6%AD%EC%9D%84-%EB%B0%9C%EC%83%9D%EC%8B%9C%ED%82%A4%EB%8A%94%EA%B0%80
       - https://fsd-jinss.tistory.com/142
       - https://stackoverflow.com/questions/20380600/gc-performance-hit-for-inner-class-vs-static-nested-class
+      - https://stackoverflow.com/questions/10864853/when-exactly-is-it-leak-safe-to-use-anonymous-inner-classes
+
+- 아이템9_try-finally보다는 try-with-resources를 사용하라
+  ```java
+        // .java
+        try (FileInputStream fIn = new FileInputStream("");
+             FileOutputStream fOut = new FileOutputStream("")) {
+            System.out.println("작업");
+        }
+
+        // .class
+        FileInputStream fIn = new FileInputStream(""); // 1
+
+        try {
+            FileOutputStream fOut = new FileOutputStream("");
+
+            try {
+                System.out.println("작업");
+            } catch (Throwable var7) {
+                try {
+                    fOut.close();
+                } catch (Throwable var6) {
+                    var7.addSuppressed(var6); // 2
+                }
+
+                throw var7;
+            }
+
+            fOut.close();
+        } catch (Throwable var8) {
+            try {
+                fIn.close();
+            } catch (Throwable var5) {
+                var8.addSuppressed(var5);
+            }
+
+            throw var8;
+        }
+
+        fIn.close();
+
+        // 1. try-with-resources 를 사용하기 위해선 AutoCloseable 인터페이스를 구현해야한다. (FileInputStream은 AutoCloseable의 구현체다)
+        // 2. 여러개의 자원을 해제해야하는 상황에서, 예외처리를 addSuppressed를 사용하여 예외를 숨겨서 전달해준다. 자바7에서 Throwable에 추가된 getSuppressed 메서드를 이용하면 프로그램 코드에서 가져올 수 있다
+  ```
