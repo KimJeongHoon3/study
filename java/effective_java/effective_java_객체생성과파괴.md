@@ -310,6 +310,7 @@ effective_java_객체생성과파괴
     - 클라이언트가 콜백만 등록하고, 명확하게 해지안해주면 콜백 계속 쌓임..
     - 약한 참조로 저장하자! ex. `WeakHashMap`의 key로 저장
       - ??? 잘 이해안감.. 결국 key를 null로 셋팅은 해주어야하는게 맞는건가??
+      - => 테스트해봣더니, Map 내부가아닌, 외부에 참조가 없다면 GC가 일어난 뒤 모두 사라지기된다..!
 
   - 기타 팁
     - 힙 프로파일러를 활용해서 메모리 누수를 잠 감지하자!
@@ -323,6 +324,7 @@ effective_java_객체생성과파괴
           - weakHashMap
       - [내용설명 굿](https://blog.breakingthat.com/2018/08/26/java-collection-map-weakhashmap/)
       - [내용설명 굿](https://jake-seo-dev.tistory.com/11)
+      - [baeldung 글 해석](https://meaownworld.tistory.com/77)
 
 ---
 
