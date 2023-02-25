@@ -172,4 +172,104 @@ effective_java_모든객체의공통메서드
 ---
 
 - 아이템11_equals를 재정의하려거든 hashCode도 재정의하라
-    
+  - equals를 재정의한 클래스에서 hashCode를 재정의하지않으면, hashCode의 일반 규약을 어긴것이며, 이는 HashMap이나 HashSet 같은 컬렉션의 원소로 사용될때 문제를 일으킨다.
+  - Object 명세에서 발췌한 규약
+    - equals 비교에 사용되는 정보가 변경되지 않았다면, 애플리케이션이 실행되는 동안 그 객체의 hashCode 메서드는 몇번을 호출해도 일관되게 항상 같은 값을 반환 (단, 애플리케이션을 다시 실행한다면 이 값이 달라져도 된다)
+    - equals(Object)가 두 객체를 같다고 판단했다면, hashCode는 똑같은 값을 반환해야한다
+      - 논리적으로 같은 객체이면(equals가 true), 같은 hashCode가 반환되어야한다!
+      - equals 비교에 사용되지 않은 필드는 반드시 제외해야한다! 그래야지만, 위의 규약을 어기지 않을 수 있다!
+    - equals(Object)가 두 객체를 다르다고 판단했더라도, hashCode가 항상 서로 다른값을 반환할 필요는 없다. (단, 다른 객체에 대해서는 다른 값을 반환해야 해시테이블의 성능이 좋아진다.)
+  - 이상적인 해시함수는 주어진(서로 다른) 인스턴스들을 32비트 정수 범위에 균일하게 분배해야한다
+  - `Objects.hash`
+    - 적절한 hash 값을 반환해주지만, 성능이 아쉽다
+      - 입력인수를 담기위한 배열이 만들어지고, 입력중 기본타입이 있다면 박싱과 언박싱도 거치게되기때문..
+    - 불변클래스라면 캐시로 이를 해결가능
+      - 인스턴스 생성시 해시코드 계산
+      - 지연 초기화 전략
+        ```java
+        public class HashCodeLazyInitThreadSafe { // 불변클래스 전제!
+            private String coreField1;
+            private String coreFiled2;
+            private int hashCode; // 캐싱
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                HashCodeLazyInitThreadSafe that = (HashCodeLazyInitThreadSafe) o;
+                return Objects.equals(coreField1, that.coreField1) && Objects.equals(coreFiled2, that.coreFiled2);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = hashCode; // 스레드에 안전하기위해서는 공유 가능한 멤버변수를 직접 수정하지말고 이렇게 지역변수로 새로이 만들어서 진행하자
+                if (result == 0) {
+                    result = coreField1.hashCode();
+                    result = 31 * result + coreFiled2.hashCode();
+        //            result = Objects.hash(coreField1, coreFiled2); // 위의 두줄을 이렇게 한줄로도 가능
+                    
+                    hashCode = result;
+                }
+
+                return result;
+            }
+        }
+        ```
+  - 기타 팁
+    - HashMap은 같은 해시버킷에 있다할지라도, hashCode가 다른 엔트리끼리는 동치성 비교를 시도조차 하지 않도록 최적화 되어있다(해시코드는 다르지만, 같은 해시버킷에 들어갈 수 있다.)
+        ```java
+            public class HashMap<K,V> extends AbstractMap<K,V> implements Map<K,V>, Cloneable, Serializable {
+                
+                //...
+
+                public V get(Object key) {
+                    Node<K,V> e;
+                    return (e = getNode(key)) == null ? null : e.value;
+                }
+
+                final Node<K,V> getNode(Object key) {
+                    Node<K,V>[] tab; Node<K,V> first, e; int n, hash; K k;
+                    if ((tab = table) != null && (n = tab.length) > 0 &&
+                        (first = tab[(n - 1) & (hash = hash(key))]) != null) { // 1
+                        if (first.hash == hash && // always check first node   // 2
+                            ((k = first.key) == key || (key != null && key.equals(k))))
+                            return first;
+                        if ((e = first.next) != null) {
+                            if (first instanceof TreeNode)
+                                return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+                            do {
+                                if (e.hash == hash &&                          // 3
+                                    ((k = e.key) == key || (key != null && key.equals(k))))
+                                    return e;
+                            } while ((e = e.next) != null);
+                        }
+                    }
+                    return null;
+                }
+
+                //...
+            }
+
+            1. Node<K,V>[] 라는 배열(해시테이블)의 각 요소들은 해시 버킷이다. tab[(n - 1) & (hash = hash(key))] 을 통해서 해시 버킷을 찾게된다. 즉, "(n - 1) & (hash = hash(key))" 요게 해시 버킷을 찾는 로직이다. Node<K,V> 는 LinkedList 혹은 트리구조로 구성되어있는데, 이를 통해서 해시버킷이 같을때 해시코드가 같은 대상을 찾게 된다.
+
+            2, 3. 모두 "== hash" 를 통해서 전달받은 인스턴스의 hash 값과 같은지 확인하고있다. 즉, 해시코드가 다른 엔트리끼리는 뒤의 동치성 비교(equals)도 시도하지않게 된다. 
+        ```
+    - equals나 hashCode계산이 많이 복잡해질것 같은 필드들은, 필드의 표준형을 만들어서 사용하자!
+    - 참조 타입 필드의 값이 null 이면 hashCode는 0을 사용하자 (관례)
+    - 필드가 배열인데, 핵심원소가 하나도 없다면 단순히 상수 0 을 사용하자
+      - 모두가 핵심원소이면 Arrays.hashCode를 사용하자
+    - 성능을 높인답시고 해시코드를 계산할때 핵심필드를 생략해서는 안된다! 해시 품질이 나빠져 해시테이블의 성능을 심각하게 떨어뜨릴수 있다
+    - hashCode가 반환하는 값의 생성규칙을 API 사용자에게 구체적으로 공표하지말자
+      - 추후에 계산방식 바꾸기 어려울수있다(더 좋은 해시알고리즘이 생겼음에도불구하고..)
+
+---
+
+- 아이템12_toString을 항상 재정의하라
+  - Object의 기본 toString 메서드는 `클래스_이름@16진수로_표시한_해시코드` 이다
+  - 이는 ***유익한 정보를 제공***하기 어렵기때문에 재정의가 필요할뿐만아니라, 모든 하위클래스에서 이 메서드를 재정의하라고 규약에 명시되어있다
+  - 실전에서 toString은 그 객체가 가진 주요 정보 모두를 반환하는것이 좋다. 하지만, 객체의 모든 상태를 문자열로 담기에 적절하지않다면, 요약정보를 담아주는게 좋다
+  - toString을 활용해서 포맷을 명시하였다면, 명시한 포맷에 맞는 문자열과 객체를 상호 전환할 수 있는 정적 팩터리나 생성자를 함께 제공해주는게 좋다
+  - toString에 포맷이 있던없던 toString에 특별한 의도가 있다면, 주석으로 명확하게 전달해주자!
+  - 포맷 여부와 상관없이, toString이 반환한 값에 포함된 정보를 얻어올 수 있는 API를 제공해주자
+    - 프로그래머들이 toString의 값을 직접 파싱해서 작업하도록하면, 추후 toString의 내용이 변했을때(변할수 있다고 명시했을지라도..) 갑작스런 에러를 경험할 수 있다.
+  - 상위 클래스에서 이미 알맞게 재정의한 경우는 재정의 놉
