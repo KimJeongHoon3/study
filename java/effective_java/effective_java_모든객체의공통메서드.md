@@ -284,6 +284,11 @@ effective_java_모든객체의공통메서드
 ---
 
 - 아이템13_clone 재정의는 주의해서 진행하라
+  - Cloneable을 구현한 클래스는 clone을 재정의해야한다!
+    - 접근제한자는 public
+    - 반환타입은 클래스자신
+    - clone 메서드내부에서 super.clone 호출이후 필요한 필드를 전부 적절히 수정해야한다
+      - 가변객체 복사, 가변객체 복제본이 가진 객체 참조 모두가 복사된 객체(깊은복사)를 가리키도록..
   - `Cloneable` 인터페이스는 약간특이함
     - Cloneable 인터페이스에서 clone 메서드를 제공하지않는다(Object의 protected로 clone메서드가 있다)
     - Cloneable 인터페이스를 구현하지않은 클래스에서 clone을 호출하게되면, CloneNotSupportException을 던진다 (Cloneable을 구현하였다면 해당 객체의 필드들을 복사해준다)
@@ -300,8 +305,192 @@ effective_java_모든객체의공통메서드
       - 근데 이렇게되면 저수준에서 바로 처리할때보다 느리다
       - 그리고 put 사용시 put 메서드는 final이거나 private 이어야한다!
         - 하위클래스에서 오버라이딩 되어있어서 그거 호출하면, clone이 이상해질수있음..
+    - 상속용 클래스는 Cloneable을 구현해서는 안된다
+      - 대신 상속용 클래스에 clone 메서드를 구현하여 protected로 두고 CloneNotSupportedException을 던지도록 해주어, 하위클래스에서 구현하도록 지정하는 방법이 있다
+      - 아예 clone을 막아버리는 방법도 있음
+        ```java
+          @Override
+          protected final Object clone() throws CloneNotSupportedException {
+            throw new CloneNotSupportedException();
+          }
+        ```
+    - Object의 clone 메서드는 스레드 안전에 신경쓰지않았기때문에 별도의 동기화 작업이 필요하다
+      - 즉, super.clone 메서드호출만 한다해도 clone을 재정의하고 동기화해주어야한다
+  - 결론
+    - Cloneable을 이미 구현한 클래스를 확장하는게 아니라면, ***복사생성자***와 ***복사 팩터리***를 사용하자!
+      ```java
+        // 복사생성자
+        public Yum(Yum yum) {
+          ...
+        }
+
+        // 복사팩터리
+        public static Yum newInstance(Yum yum) {
+          ...
+        }
+      ```
+      - 뭐가좋나?
+        - clone은 생성자로 생성하는방식이아닌데, 이는 정상적인 방법인 생성자로 객체를 생성한다
+        - 그로인해 final 이슈도 생기지않는다 (위 내용 참고)
+        - 불필요한 검사예외 던지지않는다(clone 호출시 CloneNotSupportedException 던져야했던거..)
+        - 형변환도 필요없다 (클래스 자신 변환해줄때 캐스팅필요한부분..)
+        - 복사 생성자나 복사 팩토리는 해당 클래스가 구현한 인터페이스 타입의 인스턴스를 인수로 받을 수 있다!
+          - 인터페이스의 타입을 전달받을수 있기에, 원본의 구현타입에 얽매이지않고 복제본의 타입을 직접 선택가능하다
+          - ex. HashSet을 TreeSet으로 변환 
+            ```java
+              public static void main() {
+                HashSet<String> s = new HashSet<>();
+                TreeSet<String> t = new TreeSet<>(s); // 이렇게 복제+변환가능
+              }
+            ```
+          - 그래서 복사 생성자와 복사 팩토리의 좀더 정확한 이름은 ***변환생성자, 변환 팩토리***라고 이야기한다
   - 기타 팁
     - 생성자에서는 재정의될 수 있는 메서드를 호출해서는 안된다
-      
+    - 공변반환 타이핑?
+    - 
+
+---
+
+- item14_Comparable을 구현할지 고려하라
+  - 인터페이스인 Comparable은 compareTo라는 메서드만 가지고있다
+  - Object.eqauls와 단순 동치성을 비교함에 있어서 유사하나, ***순서***까지 비교하고 ***제네릭***하다는 점에서 다르다
+  - Comparable을 구현했다는것은 자연적인 순서가 있음을 뜻함 
+    - 그래서 컬렉션에서 이를 활용하여 검색, 극단값 계산, 자동정렬등이 가능하다
+    - 자바 플랫폼 라이브러리의 모든 값 클래스와 열거타입이 Comparable을 구현.
+    - ***순서가 명확한 값 클래스를 작성한다면 꼭 Comparable을 구현하자!***
+  - compareTo 메서드의 일반규약
+    - 객체가 비교대상 객체보다 작으면, 반대로 비교했을때 커야한다 (첫번째 객체가 두번째 객체보다 작으면, 두번째가 첫번째보다 커야한다)
+    - 객체가 비교대상 객체와 같다면, 반대로 비교했을때도 같아야한다 (첫번째가 두번째와 크기가 같다면, 두번째는 첫번째와 같아야한다)
+    - 첫번째가 두번째보다 크고 두번째가 세번째보다 크다면, 첫번째가 세번째보다 커야한다
+    - 크기가 같은 객체들끼리는 어떤 객체와 비교해도 항상 같아야한다 (이건 선택사항이나 되도록이면 지키자!)
+      - compareTo가 0이면, equals도 true로! (아주 큰 문제는 아니지만, 주의가 필요!)
+        - ex. BigDecimal은 compareTo로 비교시 동일해도, equals가 true가 아닐수 있는데, 그래서 BigDecimal은 사용시 주의가 필요하다 (이를 저장할때 HashSet과 TreeSet의 결과가 다르게 나타날 수 있다)
+          ```java
+            @Test
+            void compareTo로_비교시_동일할때_equals가_true가아니면() {
+                BigDecimal bigDecimal = new BigDecimal("1.0");
+                BigDecimal sameValue = new BigDecimal("1.00");
+
+                assertTrue(bigDecimal.compareTo(sameValue) == 0);
+                assertFalse(bigDecimal.equals(sameValue)); // BigDecimal은 compareTo가 동일하더라도 equals는 다를수있다
+                assertFalse(bigDecimal.hashCode() == sameValue.hashCode()); // 논리적으로 값이 같지만, hashCode또한 다르다
+
+                HashSet<BigDecimal> hashSet = new HashSet();
+                hashSet.add(bigDecimal); 
+                hashSet.add(sameValue); // 결국 hashCode와 equals로 비교해서 진행하기때문에, 위에서 본대로 값이 다르므로 새로이 추가된다
+
+                assertTrue(hashSet.size() == 2);
+
+
+                TreeSet<BigDecimal> treeSet = new TreeSet<>();
+                treeSet.add(bigDecimal);
+                treeSet.add(sameValue);
+
+                assertTrue(treeSet.size() == 1); // 아래 참고
+            }
+
+            // TreeSet.put
+              public V put(K key, V value) {
+                  //...
+
+                  if (key == null)
+                      throw new NullPointerException();
+                  @SuppressWarnings("unchecked")
+                  Comparable<? super K> k = (Comparable<? super K>) key;
+                  do {
+                      parent = t;
+                      cmp = k.compareTo(t.key);
+                      if (cmp < 0)
+                          t = t.left;
+                      else if (cmp > 0)
+                          t = t.right;
+                      else
+                          return t.setValue(value);  // equals에 대한 비교가 아니라 Comparable로 비교하여 크기가 동일한 값(==0)이면 갱신한다
+                  } while (t != null);
+
+                  //...
+              }
+          ```
+    - => 반사성, 대칭성, 추이성을 충족해야함을 의미.. equals와 매우유사하다. 그래서 우회법도 동일하다!(컴포넌트 확장이 필요하다면, 상속보다는 비교가 필요한 대상을 구성으로 가지고있어서 이를 뷰 메서드로 제공해줘라)
+  - compareTo 메서드 작성 요령
+    - Comparable은 타입을 인수로 받는 제네릭 인터페이스이기에, 인수타입은 컴파일 타임에 정해진다. 즉, 입력인수의 타입을 확인하거나 형변환 할 필요가 없다!
+    - *Comparable을 구현하지않은 필드*나 *표준이 아닌 순서로 비교*해야한다면 비교자(Comparator)를 대신 사용하자
+      - Comparator는 `int compare(T o1, T o2);` 를 가진 functional interface 다
+        - 즉, Comparable이 구현되어있는 클래스라도 기존에 구현되어잇는것과 다르게 비교하고자한다면, 이를 사용해서 비교하면된다!
+
+    - 정수 기본타입 비교시에는 박싱도니 기본 타입 클래스들에 추가된 정적메서드는 `compare` 를 사용하자 (자바7부터가능)
+      - 실수에는 Double.compare, Float.compare를 사용하자
+      - compareTo 메서드에서 관계연산자 `>`와 `<`를 사용하는 이전 방식은 거추장스럽고 오류를 유발하니, 이제 추천안함
+        - <span style="color:red">어떤 오류를 유발시킬까?</span>
+    - 클래스에 핵심 필드가 여러개라면 가장 중요한 필드부터 비교해나가자
+      ```java
+        // coreField가 short 이라는 가정..
+        public int compareTo(ClazzContainingCoreFields cccf) {
+          int result = Short.compare(coreField1, cccf.coreField1); // 가장 중요한 필드
+
+          if (result == 0) {
+            result = Short.compare(coreField2, cccf.coreField2); // 그 다음 중요한 필드
+
+            if (result ==0 ) {
+              result = Short.comapre(coreField3, cccf.coreField3); // 그 다음 중요한 필드
+            }
+          }
+
+          return result;
+        }
+
+        // 위와 같으나 읽기좋은 깔끔한 방법 (하지만 성능은 좀 느려짐)
+        // 연쇄방식의 비교자 생성 메서드 사용 (자바 8부터 가능)
+        private static final Comparator<ClazzContainingCoreFields> COMPARATOR = 
+          comparingInt((ClazzContainingCoreFields cccf) -> cccf.coreField1)
+            .thenComparingInt(cccf -> cccf.coreField2)
+            .thenComparingInt(cccf -> cccf.coreField3);
         
+        public int compareTo(ClazzContainingCoreFields cccf) {
+          return COMPARATOR(this, cccf);
+        }
+
+
+        ///////////////////////////////////////////////////////
+        // 비교자 생성 메서드 분석
+        // 아래는 Comparator 인터페이스 내부
+
+        public static <T> Comparator<T> comparingInt(ToIntFunction<? super T> keyExtractor) { // 비교자를 생성 (정적 메서드!)
+            Objects.requireNonNull(keyExtractor);
+            return (Comparator<T> & Serializable)
+                (c1, c2) -> Integer.compare(keyExtractor.applyAsInt(c1), keyExtractor.applyAsInt(c2)); // Integer의 compare를 활용하여 Comparator를 생성
+        }
+
+        default Comparator<T> thenComparingInt(ToIntFunction<? super T> keyExtractor) { // 비교자를 생성 (인스턴스메서드!)
+           return thenComparing(comparingInt(keyExtractor));              // 새로 전달받은 KeyExtractor를 기반으로 Comparator를 생성. 반환할 Comparator는 thenComparing에서 생성
+        }
+
+        default Comparator<T> thenComparing(Comparator<? super T> other) { 
+            Objects.requireNonNull(other);
+            return (Comparator<T> & Serializable) (c1, c2) -> {
+                int res = compare(c1, c2);                        // 기존 인스턴스에 정의된 compare로 비교한 뒤,
+                return (res != 0) ? res : other.compare(c1, c2);  // 두개가 동일하다면, 방금 새로 생성한 comparator로 비교
+            };                                                    // 하는 Comparator를 생성해준다!
+        }
+
+        ///////////////////////////////////////////////////////
+      ```
+    - 값의 차를 가지고 compare(또는 compareTo) 메서드를 만들지말아라!! (추이성위배!)
+      - 아래와 같이 쓰면 정수 오버플로우가 날수도 있으며
+      - 부동소수점 계산방식에 따른 오류를 낼 수 있다
+        - <span style="color:red">HOW?</span>
+      ```java
+        static Comparator<Object> hashCodeOrder = new Comparator<>() {
+          public int compare(Object o1, Object o2) {
+            return o1.hashCode() - o2.hashCode(); 
+          }
+        }
+      ```
+
+  - 기타 팁
+    - Comparator는 `int compare(T o1, T o2);` 외에도 equals를 가지고있는데, 왜 equals 메서드를 가지고있을까? (심지어 그걸 가지고있으므로 구현해야할게 두개인데, 왜 함수형인터페이스가 되는거지..? Object를 상속한 클래스면(모든클래스) 알아서 equals를 가지고 있어서 상관없나)
+      - 예상이 맞음. Object의 public method는 추상메서드로 카운트를안하는데(함수형 인터페이스는 추상메서드가 반드시 하나여야함), 인터페이스의 어떤구현체도 Object의 구현이기때문!
+        - `@FunctionalInterface` 설명
+          - > If an interface declares an abstract method overriding one of the public methods of java.lang.Object, that also does not count toward the interface's abstract method count since any implementation of the interface will have an implementation from java.lang.Object or elsewhere.
+      - Comparator는 왜 equals를 재정의했을까?
       
