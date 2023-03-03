@@ -168,6 +168,13 @@ effective_java_모든객체의공통메서드
       - [AutoValue에 대한 사용방법 및 사용이유 등 나와있음](https://www.baeldung.com/introduction-to-autovalue)
     - 부동소수점
       - <span style="color:red">관련해서 내용추가해보자!</span>
+    - hashCode는 메모리 주소와 관련있나?
+      - Object.hashCode
+        -  > As much as is reasonably practical, the hashCode method defined by class Object does return distinct integers for distinct objects. (The hashCode may or may not be implemented as some function of an object's memory address at some point in time.)
+        - 구글번역
+           - 합리적으로 실용적인 만큼 Object 클래스에 의해 정의된 hashCode 메서드는 개별 개체에 대해 개별 정수를 반환합니다. (hashCode는 특정 시점에서 개체 메모리 주소의 일부 기능으로 구현되거나 구현되지 않을 수 있습니다.)
+        - => hashCode가 메모리 주소를 사용할수도 안할수도있다.. 
+      - [관련내용 정리 굿](https://velog.io/@cieroyou/hashCode%EB%8A%94-%EC%A0%95%EB%A7%90-%EB%A9%94%EB%AA%A8%EB%A6%AC%EC%A3%BC%EC%86%8C%EC%99%80-%EA%B4%80%EB%A0%A8%EC%9D%B4-%EC%9E%88%EC%9D%84%EA%B9%8C)
 
 ---
 
