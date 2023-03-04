@@ -8,7 +8,10 @@ Base64Encoding vs UnicodeEncoding(like UTF-8..)
 - UnicodeEncoding(Decoding)
 	- ~~UTF-8이나 다른 charset을 사용하여 유니코드값을 byte배열이나 String으로 변경해줌! ~~
 	- 컴퓨터는 사람이 사용하는 문자를 알아볼수 없기에, 일종의 수많은 문자와 코드를 매핑시켜놓은 것이 유니코드
-	- 이 유니코드를 사용하기위해서 사람이 알아볼수있는 문자를 유니코드에 맞추어 인코딩하여야하는데, 그 종류로 UTF-8, UTF-16 등이 있는것
+	- 이 유니코드를 몇 bit씩을 기준으로 인코딩을 할것인지에 따라 UTF-8, UTF-16 등이 된다. (즉, 동일한 유니코드지만 UTF-8과 UTF-16은 인코딩되어 나타나는 바이트 수가 다를수 있다..! 당연 bit도 다를수있고.. 예를들어 UTF-8은 한글은 3바이트인데, UTF-16은 2바이트..) 
+      - Unicode Tranformation Format - N-bit 
+	- [유니코드 인코딩 관련 참고하기 좋은사이트](https://luv-n-interest.tistory.com/1369#:~:text=%ED%95%9C%EA%B8%80%EC%9D%B4%203%EB%B0%94%EC%9D%B4%ED%8A%B8%EB%A1%9C,%EB%A9%94%EB%AA%A8%EB%A6%AC%EB%A5%BC%20%EC%A4%84%EC%9D%BC%20%EC%88%98%20%EC%9E%88%EB%8B%A4.)
+	- [나무위키](https://namu.wiki/w/UTF-8)
 
 - 위 둘의 비교자체가 사실 잘못된것이긴한데, Base64의 대상은 바이트자체인것이고, UnicodeEncoding의 대상은 Unicode인것이다!
 
