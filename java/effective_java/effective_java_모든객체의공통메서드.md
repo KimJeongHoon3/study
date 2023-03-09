@@ -155,6 +155,7 @@ effective_java_모든객체의공통메서드
          - `Float.equals` 와 `Double.equals` 를 사용하지않는것은 오토박싱 수반할수있기때문..
        - 배열의 모든 원소를 모두 비교해야하는거면 `Arrays.equals` 사용하자
        - null도 정상값으로 취급하는 참조타입필드가 있다면, `Objects.eqauls(Object, Object)` 를 사용하자. 이는 NullPointerException을 예방해준다!
+       - 비교 비용이 싼것부터 비교하자.. 그리고 핵심필드로부터 나온 파생필드는 굳이 비교할 필요는없지만, 파생필드가 핵심필드들을 잘 나타내주면 캐싱과 같이 활용할 수 있으므로 파생필드로 비교해보자~
 
   - 마지막 주의사항..
     - equals 재정의할때 hashCode도 반드시 재정의하자!
