@@ -57,3 +57,162 @@ effective_java_클래스와_인터페이스
       - 자바 9에서는 모듈이라는 개념이 추가되면서 2가지 암묵적 접근 수준이 추가
         - 모듈은 자신이 가지고 있는 패키지를 외부에 공개(export)할 것인지를 정의할 수 있는데, export하지 않으면, protected나 public으로 선언했을지라도 모듈 외부에서는 접근 할 수 없다
         - 여기서 외부에 공개되지않은 protected, public 이 두가지가 암묵적 접근 수준
+
+---
+
+- 아이템16_public 클래스에서는 public 필드가 아닌 접근자 메서드를 사용하라
+  - public 클래스에서 public 필드를 사용하면 아래와 같은 단점이 있다 (캡슐화의 이점을 다 잃어버림)
+    1. API를 수정하지 않고는 내부 표현을 바꿀수 없다
+    2. 불변식 보장 불가
+    3. 외부에서 필드 접근시 부수작업 수행 불가 
+       - 이로인해 부수작업에 대한 동일한 코드가 여기저기 중복될수 있음..
+  - 패키지 바깥에서 접근할 수있는 클래스(public 클래스)라면 접근자를 제공함으로써 클래스 내부 표현 방식을 언제든 바꿀수 있는 유연성을 가져갈 수 있다
+    - 그러나, public 클래스가 필드도 public으로 공개하면, 이를 사용하는 클라이언트가 생겨나기때문에 내부 표현 방식을 마음대로 바꿀 수 없게된다..
+  - package-private 클래스 혹은 private 중첩클래스면 데이터 필드를 노출한다 해도 문제가 없다
+    - package-private 클래스는 어차피 같은 패키지 내부에서만 노출되므로.. 클라이언트 또한 같은 패키지 내에서만 있게되므로 문제가 없음
+  - 그럼 불변이면 public 필드로 둬도 괜찮나?
+    - 위의 1번과 3번에 대한 단점은 여전히 존재..
+
+---
+
+- 아이템17_변경 가능성을 최소화하라
+  - 불변 클래스: 인스턴스의 내부 값을 수정할 수 없는 클래스
+    - ex
+      - String, 기본 타입의 박싱된 클래스들, BigInteger, BigDecimal
+    - 왜 쓰나?
+      - 불변 클래스는 가변 클래스보다 설계하고 구현하고 사용하기 쉬우며, 오류가 생길 여지도 적고 훨씬 안전!!
+    - 불변으로 만들려면?
+      - 객체의 상태를 변경하는 메서드(변경자)를 제공하지 않는다
+      - 클래스를 확장할 수 없도록 한다
+        - 상속못하도록..
+        - final class..
+        - 생성자를 private이나 protected로 놓고 정적팩터리 제공
+      - 모든 필드를 final로 선언한다
+        - 설계자의 의도를 명확히 드러내는 방법
+        - 멀티스레드에 안전!
+      - 모든 필드를 private으로 선언한다
+        - 클라이언트가 직접 필드로 접근 못하도록..
+        - 만약 불변객체나 기본타입필드를 public final로 제공해도 불변이되지만, 다음 릴리즈에서 내부 표현을 변경할수없으므로 권하지않음
+      - 자신 외에는 내부의 가변 컴포넌트에 접근할 수 없도록 한다
+        - 클라이언트는 내부 가변 객체에 참조를 얻을수 없도록해야한다 (가변 객체를 그대로 getter로 반환해주면안된다..)
+        - 반대로 클라이언트가 제공한 객체 참조를 가리키게 해서도 안된다
+        - 생성자, 접근자, readObject 메서드 모두에서 방어적 복사를 수행해야한다!
+  - 불변 클래스 특징 및 추가로 고려하면좋은점?
+    - 함수형 프로그래밍이여서 자신의 상태값이 변화되는것이 아닌, 새로운 불변객체를 반환해준다
+      - 명령형이나 절차형 프로그래밍은 자신의 상태값을 변경한다
+    - 전치사를 활용!
+      - ex. add 대신 plus
+        - BigInteger나 BigDecimal은 add를 제공해주고있는데, 이는 명명 규칙을 따르지않은 잘못된 예
+    - 불변객체는 생성된 시점부터 파괴되는 시점까지 동일한 모습이다
+    - 불변 클래스는 안심하고 공유할 수 잇으니, 한번 만들면 바로 버리는것보다 재사용할것을 고려하자
+      - 자주쓰이는 값들을 상수(public static final)로 제공
+      - 정적팩토리 활용하여 캐싱하자
+        - 박싱된 기본 타입클래스 전부와 BigInteger는 이를 제공
+        - 이렇게 인스턴스를 공유하게되면 메모리 사용량과 GC 비용이 줄어든다
+        - 추가로 정적팩터리를 사용하면 언제라도 캐시기능을 덧붙일수 있는 장점도 있다
+          - ex
+            ```java
+            @Test
+            void Integer클래스는_마이너스127_에서_128까지는_캐싱된다() {
+                Integer integer = Integer.valueOf(10);
+                Integer integer2 = Integer.valueOf(10);
+                Integer integer3 = new Integer(10);
+
+                assertTrue(integer == integer2);
+                assertFalse(integer == integer3);
+
+                Integer integer4 = Integer.valueOf(128);
+                Integer integer5 = Integer.valueOf(128);
+
+                assertFalse(integer4 == integer5);
+            }
+            ```
+    - 불변객체를 자유롭게 공유할 수 있기에 방어적 복사도 필요없음
+      - clone메서드나 복사생성자를 제공할 필요 없음
+        - String 클래스는 복사생성자를 제공하는데 이는 잘못된 예
+    - 불변 객체끼리 내부데이터 공유가능
+      - 내부 데이터 공유를 위한 생성자는 접근제한자를 package-private이나 private으로 둠
+        ```java
+           // BigInteger 클래스 내부
+          public BigInteger negate() {
+              return new BigInteger(this.mag, -this.signum); // mag는 int[] 을 가리킴. 즉, int[]는 지금 새로만드는 BigInteger에서 공유해서 사용. 이렇게 공유할수있는 BigInteger를 생성할때는 아래와 같이 package-private 생성자를 사용
+          }
+
+          BigInteger(int[] magnitude, int signum) { // package-private 생성자
+              this.signum = (magnitude.length == 0 ? 0 : signum);
+              this.mag = magnitude;
+              if (mag.length >= MAX_MAG_LENGTH) {
+                  checkRange();
+              }
+          }
+        ```
+      - 무튼 이렇게 쓸 수 있는것은 외부에서 내부 필드를 변경할 수 없기때문..
+    - Map이나 Set과 같이 내부에 데이터를 담고있는 상황에서 불변객체를 사용하면, 불변식이 허물어지지않는다
+      - 내부의 데이터가 변경될때마다 Map이나 Set은 구성이 달라지게되는데, 불변객체는 바뀔수가 없으니까..!
+        - <span style="color:red">이렇게 해석하는게 맞나?</span>
+    - 불변객체는 실패 원자성을 제공
+      - 실패 원자성: '메서드에서 예외가 발생한 후에도 그 객체는 여전히 (메서드 호출전과 똑같은) 유효한 상태여야한다' 는 성질.
+        - 불변객체는 내부 상태를 바꾸지않으니 가능
+  - 불변객체의 단점?
+    - 값이 다르면 다 독립된 객체로 만들어야한다. (재사용이 안되니깐..)
+      - 값이 가짓수가 많으면 그만큼 많이 만들어야함
+      - 원하는 객체를 완성하기까지의 단계가 많고, 그 중간 단계에서 만들어진 객체들이 모두 버려진다면 성능문제는 더 커질수밖에..
+    - 이 단점에 대한 해결책?
+      - 다단계 연산들을 예측하여 기본 기능으로 제공
+        - 가변동반 클래스를 활용하여 다단계 연산을 하자
+          - 가변동반 클래스?
+            - 말 그대로 가변 클래스(상태를 바꾼다)이며 불변객체와 동행(companion) 해주는 클래스
+            - ex. MutableBigInteger
+              - 이런 BigInteger의 가변 동반클래스인 MutableBigInteger는 package-private으로 되어있어서 외부 client가 접근할수 없는데, 이는 MutableBigInteger 같은 경우는 클라이언트들이 원하는 복잡한 연산들을 예측할 수 있기때문에 그런듯 (sqrt, multiply, divide 등의 메서드가 있음)
+              ```java
+                // BigInteger 클래스 내부
+
+                public BigInteger sqrt() {
+                    if (this.signum < 0) {
+                        throw new ArithmeticException("Negative BigInteger");
+                    }
+
+                    return new MutableBigInteger(this.mag).sqrt().toBigInteger(); // 이런식으로 mag 값을 가지고 MutableBigInteger 클래스를 생성한뒤 sqrt를 호출하면 내부 상태값이 변경이 되는데(연산에 여러 단계가 있으면 MutalbeBigInteger를 더 많이 사용하며 메서드를 호출하여 상태 변경하는부분이 더 많다), 이를 BigInteger로 마지막에 생성해서 반환해준다
+                }
+              ```
+      - 예측하지 못할 경우는 public으로 client에게 제공
+        - ex. StringBuilder
+  - 불변객체가 확장가능하다면(상속가능하다면) 주의해야할 사항
+    - 이런 인스턴스를 인수로 받는다면 방어적 복사를 사용하자
+    - 불변객체라고 만들었지만 확장 가능하도록 설계해놓았다면, 다른 누군가가 이를 확장(상속)하면서 내부속성을 변경가능하도록 만들어 놨을수 있기에, 이를 방어하기위한 **방어적복사**를 사용해야한다
+      - BigInteger나 BigDecimal은 불변객체이나 확장 가능하도록 설계해놓았다. 그래서 아래와 같은 방어적 복사를 사용하자
+        ```java
+          public static BigInteger safeInstance(BigInteger val) {
+            return val.getClass() == BigInteger.class ? val : new BigInteger(val.toByteArray());
+          }
+        ```
+  - 성능을 위한 규칙 완화..
+    - `모든 필드를 final로 선언한다` => `어떤 메서드도 객체의 상태 중 외부에 비치는 값을 변경할 수 없어야한다`
+      - 즉, 성능을 위해 특정 필드는 계산 비용이 큰 값을 계산해 놓는 필드(캐싱)로 사용될수도 있는데, 이런 필드를 위해 final만 필드에 있어야한다는 제약을 완화하자
+        - 이게 가능한것은 상태값이 기본적으로 변하지않기떄문에 가능한것이다..!
+        - 또한 생성시점에 계산해놓는 필드를 셋팅할수도잇긴하지만, 여기서는 처음 사용될때 셋팅하도록한다는걸 전제
+  - 결론
+    - 클래스는 일단 불변을 디폴트로 해서 만들자
+      - 잠재적 성능저하라는 단점하나 외에 장점이 너무나 많다..
+      - 성능이 치명적이라면, 가변 동반 클래스를 같이 제공하자
+    - 불변으로 만들수 없는 클래스는 변경을 최소화 하자
+      - 기본적으로 private final로 필드를 선언하는게 디폴트로 생각하자 
+      - 가변클래스를 잘 만든예: CountDownLatch
+        - <span style="color:red">CountDownLatch 여기좀더 보자<span>
+  - 기타 팁
+    - 피연산자에 함수를 적용해 그 결과를 반환하지만, 피연산자 자체는 그대로인 프로그래밍 패턴을 함수형 프로그래밍이라한다
+      ```java
+        public class Point { 
+          final int x;
+          final int y;
+        
+          public Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+          }
+
+          public Point plus(Point p) { // 피연산자는 Point. 새로운 불변 객체를 생성해주고, 전달받은 Point나 this의 Point 모두 변하지않는다
+            return new Point(this.x+p.x, this.y+p.y);
+          }
+        }
+      ```

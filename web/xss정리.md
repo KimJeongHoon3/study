@@ -6,3 +6,6 @@ xss란
 - [참고 사이트](https://opentutorials.org/module/411/3961)
 - [xss와 csrf 차이](https://program-developer.tistory.com/99)
   - xss는 Client공격. csrf는 서버공격(서버 공격으로 인해 client가 궁극적으로 피해를 입겠지..)
+- [xss를 막기위한 쿠키의 http only, secure 이해하기](https://nsinc.tistory.com/121)
+  - http only 를 사용하면 쿠키를 js에서 가져다 쓸수 없음
+  - secure를 사용하면 https일때만 쿠키를 전송

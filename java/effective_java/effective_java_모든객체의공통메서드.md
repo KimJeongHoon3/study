@@ -347,7 +347,27 @@ effective_java_모든객체의공통메서드
   - 기타 팁
     - 생성자에서는 재정의될 수 있는 메서드를 호출해서는 안된다
     - 공변반환 타이핑?
-    - 
+      - 변성(variance)이란?
+        - 타입의 계층 관계에서 서로 다른 타입간에 어떤 관계가 있는지 나타내는 개념
+      - 변성의 종류
+        - 공변(covariant)
+          - 배열
+            - Sub 타입이 Super 타입의 하위 타입이라면, `Sub[]` 는 `Super[]` 의 하위타입
+              ```java
+                Sub[] sub;
+                Super[] super = sub;
+              ```
+          - `<? extends Type>` 
+            - 제네릭에서는 한정적 와일드 카드 타입을 통해서 공변을 나타낼 수 있다(반공변도 마찬가지)
+            - 지정한 Type 포함 하위 타입만 허용
+        - 반공변(contravariant)
+          - `<? super Type>` 
+            - 지정한 Type 포함 상위 타입만 허용
+        - 무공변(or 불공변, invariant)
+          - 제네릭은 기본적으로 무공변
+          - 서로 다른 타입 Type1과 Type2가 있을 때, List<Type1>은 List<Type2>의 하위 타입도 아니고 상위 타입도 아니라는 뜻
+          - 상속관계에 상관없이 자기 타입만 허용하는 것
+      - [참고사이트](https://scshim.tistory.com/531)
 
 ---
 
