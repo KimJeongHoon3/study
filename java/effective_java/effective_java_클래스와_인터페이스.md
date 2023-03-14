@@ -216,3 +216,117 @@ effective_java_클래스와_인터페이스
           }
         }
       ```
+
+---
+
+- item18_상속보다는 컴포지션을 사용하라
+  - 상속은 최선이아니다!
+    - (같은 프로그래머가 통제하는 패키지 안에서라면 상속도 괜찮긴함..)
+  - 상속은 캡슐화를 깨뜨린다.
+    - 상위 클래스가 어떻게 구현되느냐에 따라 하위 클래스의 동작에 이상이 생길 수 있다
+    - 상위클래스의 새로운 릴리즈로 인해 하위클래스는 변한게 하나없음에도 오동작 할 수 있다
+      - 그래서 상속을 해도되는 클래스라는 문서화가 중요..!
+    - ex. HashSet 상속시 add와 addAll.. (HashSet의 addAll 호출시에 내부적으로 add를 호출한다.)
+      - addAll이 자신의 메서드인 add를 사용하는것을 "자기사용(self-use)" 라고 부른다
+      - 이러한 정책(자기사용)은 언제라도 변경될 수 있기에, 하위클래스를 만들때 해당 정책을 잘 반영해서 만들었을지라도 언제 오동작할지 알 수 없다
+    - 상위클래스에 메서드가 새로추가된다면?
+      - 이에 맞추어 하위클래스에서 재정의가 계속 필요하다..
+    - 하위 클래스에 그냥 재정의 대신 새로운 메서드를 추가해서 기존 기능을 활용하는것이라면?
+      - 이 방식이 좀더 안전하긴하지만, 상위클래스에서 새로 추가된 메서드와 시그니처가 같고 반환 타입이 다르다면.. 컴파일 조차 되지않는다 (아예 반환타입이 같기라도했으면..오버라이딩이 돼서 컴파일에 문제는 없음.. 하지만 상위클래스의 내용을 그 의미에 맞추어 재정의한게 아니니.. 이 또한 문제)
+  - 이런 상속의 문제점을 어떻게해결?
+    - 구성(Composition)을 사용하자
+      - 새로운 클래스를 만들고 private 필드로 기존 클래스의 인스턴스를 참조하게 하는 방식
+      - 기존 클래스가 새로운 클래스의 구성요소로 쓰인다는 뜻에서 구성!
+        - 기존 클래스를 새로운 클래스가 감싸고 있기때문에 래퍼(Wrapper) 클래스 라고 부름
+        - 또한 대개 기존클래스의 기능을 추가하는 부분이 있기에 데코레이터 패턴이라고 부름
+        - 또한 기존클래스를 대신해서 계속 호출해주는 구조이기에 넓은 의미로 위임(delegation) 이라고도 부름
+          - 원래 엄밀히 따지면 래퍼 객체가 내부객체에 자기자신의 참조를 넘기는 경우에만 위임 이라고 한다함..
+      - 새로운 클래스는 기존 클래스의 메서드를 대신 호출에서 그 결과를 반환해주는데, 이러한 방식을 전달(forwarding) 이라하며, 새 클래스의 메서드들을 전달 메서드(forwarding method) 라고 부른다
+        - 전달 메서드로만 이루어진 클래스를 전달 클래스 라고 부른다. (이런 클래스는 새로운 클래스를 만들때 재사용이 가능하다!)
+          ```java
+            // 래퍼 클래스(데코레이터 패턴)
+            public class InstrumentedSet<E> extends ForwardingSet {
+                private int addCount = 0;
+
+                public InstrumentedSet(Set<E> set) {
+                    super(set);
+                }
+
+                @Override
+                public boolean add(Object o) {
+                    addCount++;
+                    return super.add(o);
+                }
+
+                @Override
+                public boolean addAll(Collection c) {
+                    addCount += c.size();
+                    return super.addAll(c);
+                }
+            }
+
+            // 전달클래스
+            public class ForwardingSet<E> implements Set<E> {
+
+                private final Set<E> s;
+                
+                public ForwardingSet(Set<E> set) {
+                    this.s = set;
+                }
+
+                @Override
+                public int size() {
+                    return s.size();
+                }
+
+                @Override
+                public boolean isEmpty() {
+                    return s.isEmpty();
+                }
+
+                //...    
+            }
+          ```
+      - 그로 인해서 새로운 클래스는 기존 클래스의 구현방식에서 얽매여있지 않을 수 있게되고, 기존 클래스가 다음릴리즈때 새로운 메서드를 추가해도 전혀 영향을 받지 않게된다!
+  - Wrapper 클래스는 단점이 거의 없으나, 래퍼 클래스가 콜백(callback) 프레임워크와는 어울리지 않는다는 점을 주의해야한다
+    - 보통 콜백 프레임워크에서 자기자신의 참조를 다른 객체에 넘겨서 콜백으로 자신을 호출할 수 있도록 하는데, 자기 자신을 넘길때 당연히 해당 내부객체는 래퍼 클래스인지 알 길이 없다.. 그래서 래퍼클래스로 감싸여져있다하더라도, 결국 그냥 내부객체를 호출하게되는데, 이를 SELF 문제라고한다
+      - https://stackoverflow.com/questions/28254116/wrapper-classes-are-not-suited-for-callback-frameworks
+  - 전달 클래스를 만드는게 귀찮을 수는 있지만, 인터페이스당 하나씩만 만들어두면 데코레이터패턴을 통해 추가 기능의 클래스들을 잘 만들수 있다
+    - "구아바"는 모드 컬렉션 인터페이스용 전달 메서드를 구현해두었다함
+  - 그럼 상속은 언제 써야하나?
+    - 클래스B가 클래스A와 is-a 관계일 때만 클래스A를 상속해야한다
+      - "B가 정말 A인가?" 꼭 물어보자
+    - 컴포지션대신 상속시에 꼭 자문할것
+      - 확장하려는 클래스의 API에 아무런 결함없나?
+      - 결함이 있다면 이 결함이 내가 확장해서 만들려는 클래스의 API까지 전파되도 상관없나?
+        - 컴포지션은 결함을 숨기는 새로운 API 개발가능
+        - 상위 클래스의 API를 그대로 가져오기때문에 결함또한 그대로 가져옴
+    - 잘못된 예
+      - `class Stack<E> extends Vector<E>`
+        - => stack은 vector가 맞나? => 아니다
+      - `class Properties extends Hashtable<Object,Object>`
+        ```java
+            @Test
+            void testProperties() {
+                Properties p = new Properties();
+                p.setProperty("hi","jh");
+
+                assertTrue("jh".equals(p.getProperty("hi")));
+
+                p.put("hi",new PropAbnormalValue("shit")); // Properteis 클래스의 불변식을 깨뜨리는 포인트.. Properties가 HashTable<Object,Object>를 상속하여서, HashTable의 메서드들이 노출되고있다. 즉, 원래 String 값만 들어가야하는데 Object가 들어가도록 허용이 되는게 문제..
+                
+                assertNull(p.getProperty("hi")); // 정상적이지 않은게 들어왔으니.. null을 반환함..
+            }
+        ```
+  - 컴포지션을 써야하는 상황에서 상속을쓰면..
+    - 내부 구현을 불필요하게 노출하는꼴..
+      - API가 내부 구현에 묶인다
+        - 기존 상위클래스의 만든 기능에 묶인다는뜻?
+      - 클래스의 성능도 영원히 제한 
+        - 상위클래스에 묶여있어서 그런듯..?
+      - 클라이언트가 노출된 내부에 직접 접근 가능
+        - 기존 상위클래스의 메서드 접근가능.. 
+          - 상위클래스의 메서드를 직접 접근하기때문에 하위클래스의 특정 메서드를 통해서만 상위클래스의 메서드를 호출하고자한것이었다면 망한것..
+            - 원래 제공하고자한 하위클래스의 불변식을 해칠수 있다
+
+      
