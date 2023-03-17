@@ -115,6 +115,8 @@
             - 그렇기떄문에 생성자에 파라미터가있어도 가능
         - 참고 : https://junit.org/junit5/docs/current/user-guide/#extensions  
 
+- [junit5 parameterized 테스트코드 예제 굿](https://www.baeldung.com/parameterized-tests-junit-5)
+
 ---
 
 - Mockito

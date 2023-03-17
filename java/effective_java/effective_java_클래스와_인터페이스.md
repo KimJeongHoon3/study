@@ -164,6 +164,7 @@ effective_java_클래스와_인터페이스
             - 말 그대로 가변 클래스(상태를 바꾼다)이며 불변객체와 동행(companion) 해주는 클래스
             - ex. MutableBigInteger
               - 이런 BigInteger의 가변 동반클래스인 MutableBigInteger는 package-private으로 되어있어서 외부 client가 접근할수 없는데, 이는 MutableBigInteger 같은 경우는 클라이언트들이 원하는 복잡한 연산들을 예측할 수 있기때문에 그런듯 (sqrt, multiply, divide 등의 메서드가 있음)
+                - 여기서 client는 BigInteger가 될 수 있겠지.. 이런 BigInteger가 원하는 복잡한 연산은 정해져있다.. sqrt, multiply, divide 등등..
               ```java
                 // BigInteger 클래스 내부
 
@@ -329,4 +330,161 @@ effective_java_클래스와_인터페이스
           - 상위클래스의 메서드를 직접 접근하기때문에 하위클래스의 특정 메서드를 통해서만 상위클래스의 메서드를 호출하고자한것이었다면 망한것..
             - 원래 제공하고자한 하위클래스의 불변식을 해칠수 있다
 
-      
+---
+
+- item19_상속을 고려해 설계하고 문서화하라. 그러지 않았다면 상속을 금지하라
+  - 상속을 고려한 설계와 문서화?
+    - 상속용 클래스는 재정의할 수 있는 메서드들을 내부적으로 어떻게 이용하는지(자기사용) 문서로 남겨야한다.
+      - HashSet은 상속용 클래스가 아니지만, 이를 만약 상속용 클래스로 만든다면, addAll메서드를 호출시 add(자기사용)를 호출한다는걸 남겨야한다는뜻
+    - API 맨 하단에 "Implementataion Requirements" 으로 시작하는곳에 메서드 내부 동작 방식을 설명해준다
+      - ![Implementataion Requirements](2023-03-17-18-18-22.png)
+      - remove 쓸때 주의해야할점을 설명(iterator의 remove메서드를 활용한다함..)
+  - 상속용 클래스 잘 만드는방법
+    - 클래스의 내부 동작 과정 중간에 끼어들 수 있는 훅(hook)을 잘 선별하여 protected 메서드 형태로 공개
+      - AbstractList.removeRange
+        ```java
+          // AbstractList 내부
+          public void clear() {
+              removeRange(0, size());
+          }
+
+          protected void removeRange(int fromIndex, int toIndex) {
+              ListIterator<E> it = listIterator(fromIndex); // listIterator를 구하고,
+              for (int i=0, n=toIndex-fromIndex; i<n; i++) {  // 계속 fromIndex와 toIndex까지 계속 지우게됨
+                  it.next();
+                  it.remove();                  // ListIterator의 remove 시간복잡도가 O(N)이면, 루프안에 루프가 되므로 시간복잡도는 O(N^2)
+              }
+          }
+
+          => 결국 removeRange는 clear 메서드 호출시 성능향상을 위해서 만들어놓은것.. 즉, 성능개선이 필요하다면 removeRange를 적절하게 하위클래스에서 오버라이딩 하라!
+          그에 대한 예시가 아래 ArrayList 내부의 removeRange
+          간략하게 설명하면, ArrayList에서 SubList를 반환하였을때, 해당 Sublist로 clear를 호출하면 오버라이딩된 removeRange가 수행된다(참고로 subList를 clear 수행하면 원본 ArrayList에도 데이터 날아감)
+          만약 subList.claer 호출시 SubList에 removeRange를 별도로 오버라이딩하지않았다면, ListIterator의 remove가 호출될것인데, 이렇게되면 계속해서 root(원본 ArrayList)의 remove가 수행될것이다. 그렇게되면 배열을 제거하고 계속 빈 공간을 없애기위해 계속 배열을 새로 생성하는구조가 된다. 하지만, 아예 removeRange를 오버라이딩하여, 아래와같이 shiftTailOverGap 메서드를 호출하게되면 단 한번의 배열 복사만 이루어진다..!
+
+          // ArrayList 내부
+          protected void removeRange(int fromIndex, int toIndex) {
+              if (fromIndex > toIndex) {
+                  throw new IndexOutOfBoundsException(
+                          outOfBoundsMsg(fromIndex, toIndex));
+              }
+              modCount++;
+              shiftTailOverGap(elementData, fromIndex, toIndex);
+          }
+
+          private void shiftTailOverGap(Object[] es, int lo, int hi) {
+              System.arraycopy(es, hi, es, lo, size - hi);
+              for (int to = size, i = (size -= hi - lo); i < to; i++)
+                  es[i] = null;
+          }
+
+          // ArrayList.Sublist 내부
+          private static class SubList<E> extends AbstractList<E> implements RandomAccess {
+            private final ArrayList<E> root;
+            //...
+
+            protected void removeRange(int fromIndex, int toIndex) {  // 위의 removeRange를 재정의.. 물론 it.re
+                checkForComodification();
+                root.removeRange(offset + fromIndex, offset + toIndex);
+                updateSizeAndModCount(fromIndex - toIndex);
+            }
+
+            public E remove(int index) {
+                Objects.checkIndex(index, size);
+                checkForComodification();
+                E result = root.remove(offset + index);
+                updateSizeAndModCount(-1);
+                return result;
+            }
+
+             public ListIterator<E> listIterator(int index) {
+                checkForComodification();
+                rangeCheckForAdd(index);
+
+                return new ListIterator<E>() {
+                    int cursor = index;
+                    int lastRet = -1;
+                    int expectedModCount = SubList.this.modCount;
+
+                    public boolean hasNext() {
+                        return cursor != SubList.this.size;
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    public E next() {
+                        checkForComodification();
+                        int i = cursor;
+                        if (i >= SubList.this.size)
+                            throw new NoSuchElementException();
+                        Object[] elementData = root.elementData;
+                        if (offset + i >= elementData.length)
+                            throw new ConcurrentModificationException();
+                        cursor = i + 1;
+                        return (E) elementData[offset + (lastRet = i)];
+                    }
+
+                    public void remove() {
+                        if (lastRet < 0)
+                            throw new IllegalStateException();
+                        checkForComodification();
+
+                        try {
+                            SubList.this.remove(lastRet);
+                            cursor = lastRet;
+                            lastRet = -1;
+                            expectedModCount = SubList.this.modCount;
+                        } catch (IndexOutOfBoundsException ex) {
+                            throw new ConcurrentModificationException();
+                        }
+                    }
+
+                };
+            }
+          }
+        ```
+    - protected로 노출할지는 뭐로 결정?
+      - 하위 클래스 **직접 만들어**보면서.. 심사숙고해서 결정해라..
+      - protected로 노출되면 영원히 책임져야하니까.. 더욱 심사숙고해라
+    - 상속용 클래스의 생성자는 재정의 가능메서드(protected로 제공될놈)를 호출해서는 안된다
+      - 하위클래스에 재정의한 메서드를 생성자에서 호출하게되면, 하위클래스 생성자가 호출되기 전에 먼저 호출되어서 예상치 못한 오류를 유발시킬수있음
+        - 하위클래스에서 재정의한 메서드가 하위클래스 생성자에 셋팅한 값을 기반으로 움직인다면.. 에러
+        ```java
+          class Super {
+              public Super() {
+                  overrideMe();
+              }
+
+              protected void overrideMe() {
+              }
+          }
+
+          class Sub extends Super {
+              private final LocalDateTime now;
+              public Sub() {
+                  now = LocalDateTime.now();
+              }
+
+              @Override
+              protected void overrideMe() {
+                  System.out.println(now); // final이니 null이 생길수 없어야하는데, 상위클래스에서 하위 클래스 생성자가 호출되기 전에 먼저 호출하게되니 null
+              }
+          }
+        ```
+    - Cloneable이나 Serializable 를 구현한 클래스는 되도록 상속할 수 있도록 하지말자
+      - 하지만 그럼에도 이를 구현한 클래스를 상속해야한다면, 재정의 가능한 메서드는 clone과 readObject에 넣지말아라 (위의 이유와 동일)
+    - Serializable을 구현한 상속용 클래스가 readResolve나 writeReplace 메서드를 갖는다면 이 메서드들은 private이 아닌 protected로 선언해야한다..
+      - 이를 private으로 놓으면 하위클래스에서 무시됨.. 이로인해 공개하지말아야할 내부 구현을 클래스 API로 공개하게됨..(바람직 하지않음..)
+  - 결론
+    - 상속용 클래스로 설계되지않은 클래스는 상속하지말아라!!    
+    - 그래도 정말 굳이 써야한다면?
+      - 재정의 가능 메서드를 호출하는 자기 사용코드를 제거해라!
+      - 세부방법?
+        - 재정의 가능 메서드는 자신의 본문 코드를 private 도우미 메서드로 옮기고, 이 도우미 메서드를 호출하도록!
+        - 예를들면, HashSet의 addAll 메서드를 호출할때 add가 아닌, add의 기능과 동일한 코드를 private 도우미 메서드로 옮기고 그걸 호출하도록..
+
+  - 기타 팁
+    - 좋은 API문서란 '어떻게' 가 아닌 '무엇'을 하는지 설명해야한다
+      - 그러나 상속용 클래스는 무엇을 하는지 설명해주어야함..
+    - private, final, static 메서드는 재정의가 불가능하니 생성자에서 안심하고 호출해도된다
+    - 상속을 금지하는방법
+      - 클래스를 final로 선언
+      - 모든 생성자를 private이나 package-private으로 선언하고 정적 팩터리를 public으로 제공
