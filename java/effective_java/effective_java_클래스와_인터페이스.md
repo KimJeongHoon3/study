@@ -488,3 +488,154 @@ effective_java_클래스와_인터페이스
     - 상속을 금지하는방법
       - 클래스를 final로 선언
       - 모든 생성자를 private이나 package-private으로 선언하고 정적 팩터리를 public으로 제공
+
+---
+
+- item20_추상 클래스보다는 인터페이스를 우선하라
+  - 다중 구현 메커니즘은 인터페이스와 추상 클래스
+    - 둘의 가장 큰 차이는 추상 클래스가 정의한 타입을 구현하는 클래스는 추상 클래스의 하위 클래스가 되어야 한다는것
+      - 그로인해 추상 클래스는 새로운 타입 정의가 어렵..
+  - 인터페이스 장점?
+    - 기존 클래스에 손쉽게 새로운 인터페이스를 구현해 넣을 수 있다
+    - 믹스인(mixin)정의에 좋음
+      - 믹스인: 대상 타입의 주된 기능에 선택적 기능을 혼합(mixed in)한다고 해서 믹스인
+      - 클래스는 두 부모를 가질 수 없는데, 인터페이스는 가능. 즉, 선택적 기능을 계속 넣어줄 수 있음
+      - ex. Comparable
+    - 계층구조가 없는 타입 프레임워크를 만들 수 있다
+      - 계층을 정의하기 애매한 내용들은(그냥 타입이 혼합되어잇는것일뿐인..) 인터페이스로 굿
+        - ex. Singer, Songwriter가 잇을때, 이 둘을 모두 가능한 SingerSongwriter
+        ```java
+            interface Singer {
+                AudioClip sing(Song s);
+                void dance();
+            }
+
+            interface Songwriter {
+                Song compose(int chartPosition);
+            }
+
+            interface SingerSongwriter extends Singer, Songwriter {
+                void actSensitive();
+            }
+        ```
+      - 위와 같은 구조를 클래스로 만들면 조합 폭발(combinatorial explosion)을 경험..
+        - 속성 n개라면 지원해야할 조합의 수는 2^n 가 된다함
+          - SingerSongwriter를 클래스로 만들려면 Singer의 2개, Songwriter의 1개인 토탈3개 이므로, 2^3 개 조합의 수가 만들어진다는 의미인가?
+            - 이 조합의 수는 SingerSongwriter가 만들어질 수 있는 클래스의 갯수를 의미하는걸까?
+            - ***질문하자***
+        - 또한 공통 기능을 정의해놓은 타입이 없으니, 매개변수 타입만 다른 메서드들을 수없이 많이 가진 거대 클래스가 생성가능..
+          - 상속이 안되니 중복이 많아진다는 의미인듯
+    - 래퍼클래스(인터페이스 구성)로 기능추가가 상속으로 기능 추가하는 것보다 훨씬 수월
+      - 상속으로 기능 추가하려면 하위클래스에서 확장해야함..
+    - 구현방법이 명확하다면 디폴트 메서드로 제공해주자
+      - 이 메서드를 제공할때는 확장하는 사람(재정의하는사람)이 있을 수 있으니 동작방식을 제공해주어야한다 (Implementataion Requirements)
+      - equals와 hashCode같은 Object의 메서드를 디폴트 메서드로 제공해서는 안됨 (인터페이스에서 선언을 해줄수있음. ex. Comparator)
+    - 인터페이스와 추상 골격구현 클래스의 조합
+      - 인터페이스로는 타입제공 + 필요하면 디폴트 메서드도 제공
+      - 골격 구현 클래스는 나머지 메서드들까지 구현
+      - 이렇게 셋팅하면, 골격구현을 확장하는 것으로 인터페이스를 구현하는데 있어서 필요한 일이 대부분 완료..
+        - => 이러한 구조를 템플릿 메서드 패턴이라고함
+      - 관례상 이름은 `Abstract[인터페이스 이름]` 으로 만든다
+      - 골격 구현을 확장하지 못하는 처지라면? (ex. 이미 하위클래스..)
+        - 인터페이스만이라도 가져오는방법(여기서 디폴트메서드의 이점을 누릴수도있음)
+        - 골격구현을 private inner class로 확장하여, 각 메서드 호출을 내부 클래스의 인스턴스에 전달(래퍼 클래스와 유사하게~)
+          - 이를 simulated multiple inheritance (시뮬레이트한 다중상속) 라고 부른다함
+      - 골격 구현은 반드시 동작 방식을 잘 정리해 문서로 남겨야한다.. (상속해서 사용하는걸 가정하므로..)
+      - 복잡한 인터페이스라면 수고를 덜어주는 골격 구현을 함께 제공하자!!!
+        - 되도록 인터페이스에서 디폴트 메서드로 제공해주면 좋지만(인터페이스 구현은 하위클래스도 자유롭게 사용할 수 있으니~), 인터페이스에서는 제약이 따르기때문에 많은 경우 골격 구현 클래스로 제공된다
+          - ex. Object의 메서드들..
+      - ex
+        - AbstractCollection, AbstractMap, AbstractList, AbstractSet 등
+        ```java
+            // AbstractCollection 내부 구조
+            public abstract class AbstractCollection<E> implements Collection<E> {
+                // ...
+                public boolean contains(Object o) { // Collection 인터페이스에서 정의한 내용을 여기서(골격구현 클래스) 구현해줌
+                    Iterator<E> it = iterator();
+                    if (o==null) {
+                        while (it.hasNext())
+                            if (it.next()==null)
+                                return true;
+                    } else {
+                        while (it.hasNext())
+                            if (o.equals(it.next()))
+                                return true;
+                    }
+                    return false;
+                }
+                // 위의 contains는 미리 구현되어있고(template), iterator만 하위클래스에서 구현해주면되는데, 이렇게 알고리즘의 골격을 정의하며, 알고리즘의 여러단계중 일부는 서브클래스에서 구현하도록 만드는 패턴이 템플릿 메서드 패턴이라 부른다
+
+                // ...
+
+                public abstract Iterator<E> iterator(); // Iterable 인터페이스에서 정의한 메서드는 AbstractCollection을 사용하는 client가 반드시 구현하도록 만들어놓음. 이렇게 재정의가 필요한 몇몇 부분만 클라이언트가 만들게되면, AbstractCollection에서 제공해주는 여러 기능들을 빠르게 사용가능
+
+                // ...
+
+                public String toString() { // 골격 구현 클래스에서 toString을 재정의해야한다.. 인터페이스에서 default 메서드로 Object의 메서드를 재정의해서는 안된다
+                    Iterator<E> it = iterator();
+                    if (! it.hasNext())
+                        return "[]";
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.append('[');
+                    for (;;) {
+                        E e = it.next();
+                        sb.append(e == this ? "(this Collection)" : e);
+                        if (! it.hasNext())
+                            return sb.append(']').toString();
+                        sb.append(',').append(' ');
+                    }
+                }
+            }
+
+            // Collection
+            public interface Collection<E> extends Iterable<E> {
+                // ...
+                boolean contains(Object o);
+
+                // ...
+            }
+            
+            // Iterable
+            public interface Iterable<T> { 
+                // ...
+                Iterator<T> iterator(); // 기반 메서드.. (골격구현 클래스인 AbstractCollection의 추상메서드)
+
+                // ...
+            }
+
+
+        ```
+  - 기타 팁
+    - 인터페이스 제약사항
+      ```java
+        interface A {
+            public static String a = null; // protected, private 컴파일에러, 인스턴스 필드 가질 수 없음
+            String b = null; // 없으면 public static 붙은거와 동일
+
+            public void pubInstanceMethod();
+        //    public static void pubStaticMethod(); 컴파일에러.. static은 항상 body 필요
+
+            public static void aab() {
+                privateStaticMethod();
+
+        //        privateInstanceMethod(); 컴파일 에러
+            }
+
+            default void defaultMethod() {
+                privateStaticMethod();
+                privateInstanceMethod();
+            }
+
+        //        default boolean equals(Object o) { // 컴파일에러
+        //            return true;
+        //        }
+
+            private static void privateStaticMethod() {}
+
+            private void privateInstanceMethod() {}
+
+        //    protected void protectedInstanceMethod() {} 컴파일에러.. protected 불가
+        }
+      ```
+        
