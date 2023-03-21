@@ -639,3 +639,59 @@ effective_java_클래스와_인터페이스
         }
       ```
         
+---
+
+- item21_인터페이스는 구현하는 쪽을 생각해 설계하라
+  - 자바 8부터 디폴트 메서드를 사용할 수 있게 되었는데, 이를 활용하여 코드 품질이 높고 범용적으로 잘 적용하는 메서드를 만들 수 있지만, 기존의 불변식을 해칠 수 있는 위험이 내재되어있다
+    - Collection 인터페이스의 removeIf라는 디폴트 메서드는 동기화 작업을 수행하는게 없다. 그렇기때문에 이전에 만들어져있던 *아파치의 SynchronizedCollection*은 java8 이상에서 사용하게되면 removeIf라는 메서드를 호출할 수 있지만, 이를 동기화되어있진않다. 즉, 기존의 불변식을 해치게된다..
+    - 자바 플랫폼 라이브러리도 이런 문제를 해결하기 위해 아래와 같이 작업을 수행(재정의)
+        ```java
+            
+            // Collections.SynchronizedCollection
+            static class SynchronizedCollection<E> implements Collection<E>, Serializable {
+                @SuppressWarnings("serial") // Conditionally serializable
+                final Collection<E> c;  // Backing Collection
+                @SuppressWarnings("serial") // Conditionally serializable
+                final Object mutex;     // Object on which to synchronize
+
+                SynchronizedCollection(Collection<E> c) {
+                    this.c = Objects.requireNonNull(c);
+                    mutex = this;
+                }
+                
+                // ...
+
+                @Override
+                public boolean removeIf(Predicate<? super E> filter) {
+                    synchronized (mutex) {return c.removeIf(filter);} // 동기화가 필요하기때문에 래퍼 클래스로 감싸고 동기화 작업을 수행하도록 removeIf를 재정의
+                }
+
+                // ...
+            }
+
+            // Collection 인터페이스
+            public interface Collection<E> extends Iterable<E> {
+
+                // ...
+                default boolean removeIf(Predicate<? super E> filter) {
+                    Objects.requireNonNull(filter);
+                    boolean removed = false;
+                    final Iterator<E> each = iterator();
+                    while (each.hasNext()) {
+                        if (filter.test(each.next())) {
+                            each.remove();
+                            removed = true;
+                        }
+                    }
+                    return removed;
+                }
+                // ...
+            }
+        ```
+  
+  - 기존 인터페이스에 디폴트 메서드로 새 메서드를 추가하는 일은 꼭 필요한 경우가 아니면 피하도록..
+    - 추가하려는 디폴트 메서드가 기존 구현체들과 충돌하지는 않을지 심사숙고..
+    - 새로 만드는 인터페이스라면 적극 디폴트 메서드를 활용하자
+  - 디폴트 메서드는 인터페이스로부터 메서드를 제거하거나, 기존 메서드의 시그니처를 수정하고자 하는 용도로 사용하면 안된다!!
+    - 이렇게 변경하게되면 기존 클라이언트를 망가뜨린다..
+  - 결론은.. 디폴트 메서드라는 좋은 도구가 있더라도, 인터페이스 만들때 세심한 주의를 기울이자..
