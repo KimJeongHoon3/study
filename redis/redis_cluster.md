@@ -6,6 +6,7 @@
     - ![redis_cluster](./redis_cluster.png)
     - 모든 노드가 클러스터 구성 정보(슬롯 할당 정보)를 가지고 있음.
       - 클라이언트는 어느 노드든지 접속해서 클러스터 구성 정보(슬롯 할당 정보)를 가져와서 보유하며, 입력되는 키(key)에 따라 해당 노드에 접속해서 처리
+        - 클라이언트는 서버와 동일한 hash 함수를 가지고 있으며, 마스터 서버에 접속해서 각 서버에 할당된 슬롯 정보를 가지고 있다. 키가 입력되면 hash 함수를 적용해서 어느 마스터에 저장할지 판단해서 해당 마스터에 저장한다.
       - 일부 노드가 다운되어도 다른 노드에 영향을 주지않지만, 과반수 이상의 노드가 다운되면 레디스 클러스터는 멈추게됨.
         - 만약 하나의 Master와 그와 연계된 Slave 노드가 다운되면..?
   - 키-노드 할당 방식
@@ -27,7 +28,6 @@
     - 노드 추가, 삭제 시 레디스 클러스터 전체를 중지할 필요 없고, 키 이동 시에만 해당 키에 대해서만 잠시 멈출 수 있음
   - 클라이언트가 서버에 접근하는 방식 (slot에 저장하는 방식)
     - 하나의 서버(노드)에는 여러개의 slot이 셋팅된다. 노드들은 각 노드들의 slot에 대한 정보들을 가지고있고, 클라이언트는 각 서버에 할당된 slot 정보를 가져올 수 있다. 그리고 셋팅하고자하는 key를 계산하여 어떤 slot으로 가야하는 놈인지를 보고, 해당 slot을 가지고있는 서버로 접근해서 데이터를 저장/조회한다 
-
   - 클러스터를 구성하기위해서는 레디스 노드는 최소 3개 이상을 지정해야한다
     - 노드추가 순서
       - Step 1 : 레디스 준비, port 7003
@@ -135,8 +135,49 @@
 ---
 
 - redis server
-
-
+  - 디스크에 데이터를 저장하는 방법
+    - RDB
+      - snapshot 개념
+    - AOF (append only file)
+      - 조회 명령 제외하고 입력/수정/삭제 명령을 디스크에 저장
+    - => 대부분의 경우 AOF에 everysec를 선택하는 것이 적합
+  - 5 Data Types
+    - 레디스는 5개 데이터 타입 중에서 하나만 key-value 방식이고, 다른 4개는 키 하나에 여러 개 값을 관리하는 방식이다. 소트 기능, 필드-값 기능도 있으므로 key-value만 제공하는 다른 key-value 데이터베이스보다 활용도가 높다.
+    - 종류
+      - Strings 문자열
+        - 내부데이터 구조
+          - http://redisgate.kr/redis/configuration/internal_string.php
+            - SDS 관련 설명 나옴!
+      - Lists 리스트
+      - Sets 셋
+      - SortedSets 소트셋
+      - Hashes 해시
+  - 성능테스트
+    - 서버사양
+      - Redis Server : Version 3.0.1
+      - OS : CentOS 7
+      - H/W Model: HP DL320e Gen8 v2
+      - Processor : Intel Xeon E3-1231V3.3 3.4GHz
+      - Main Memory: DDR3 8GB RAM
+      - Disk 1: SSD 256GB
+      - Disk 2: SATA3 1TB
+    - 결과
+      - SET, INCR, LPUSH 같은 대표적인 명령들이 초당 26만회 정도 처리
+      - 1KB 의 데이터를 set하였을때..
+        - 94250.71 requests per second <- aof on everysec
+  - Key관리 내부구조 (http://redisgate.kr/redis/configuration/internal_key_hashtable.php)
+    - 키 관리에 hash table 을 사용
+    - 10KB 의 데이터를 set하였을때..
+      - 31486.14 requests per second <- aof on everysec
+      - 93196.65 requests per second <- aof no
+    - 그림으로설명
+      - ![get 명령 flow](2023-03-22-10-53-30.png)
+        - 문자열을 저장하는데 SDS(Simple Dynamic Strings) 구조체를 사용
+          - ![SDS 구조](2023-03-22-11-16-45.png)
+        - dictEntry에는 key의 주소값, 즉 SDS의 주소를 가지고있다.. 이 SDS에는 문자열이 들어있으니 이를 통해서 key가 맞는지 확인한다
+        - 또한 dictEntry의 val은 redisObject를 가리키고있는데, redisObject의 type이 STRING, LIST, SET, SORTED SET, HASH 총 5개가 된다.. 
+          - ![redisObject 구조](2023-03-22-11-19-29.png)
+      - ![레디스 데이터 구조 전반](2023-03-22-11-20-44.png)
 - redis module 중에 hibernate를 활용해서 redis 자체적으로 db에 알아서 저장해주는 기능도 있다
   - hibernate 활용
   - xml으로 설정 (connector, data mapping)

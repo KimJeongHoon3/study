@@ -340,9 +340,10 @@ effective_java_클래스와_인터페이스
       - ![Implementataion Requirements](2023-03-17-18-18-22.png)
       - remove 쓸때 주의해야할점을 설명(iterator의 remove메서드를 활용한다함..)
   - 상속용 클래스 잘 만드는방법
-    - 클래스의 내부 동작 과정 중간에 끼어들 수 있는 훅(hook)을 잘 선별하여 protected 메서드 형태로 공개
+    - 클래스의 내부 동작 과정 중간에 끼어들 수 있는 훅(hook)을 잘 선별하여 protected 메서드 형태로 공개 
       - AbstractList.removeRange
         ```java
+          // 성능을 위해 hook 을 잘 활용하자.. removeRange는 hook 메서드인데, 이는 성능위해서 만들어진 내부에서만 사용하는 메서드(public으로 제공된게아님)
           // AbstractList 내부
           public void clear() {
               removeRange(0, size());
@@ -520,9 +521,11 @@ effective_java_클래스와_인터페이스
         ```
       - 위와 같은 구조를 클래스로 만들면 조합 폭발(combinatorial explosion)을 경험..
         - 속성 n개라면 지원해야할 조합의 수는 2^n 가 된다함
-          - SingerSongwriter를 클래스로 만들려면 Singer의 2개, Songwriter의 1개인 토탈3개 이므로, 2^3 개 조합의 수가 만들어진다는 의미인가?
-            - 이 조합의 수는 SingerSongwriter가 만들어질 수 있는 클래스의 갯수를 의미하는걸까?
-            - ***질문하자***
+          - 속성을 클래스라고 볼때, 속성 2개라면 조합의 수는 아예아무것도 없는것 제외하면 2^2-1 = 3 이다
+          - 이런 조합에서 클래스와같은 경우, 다중상속이 안되므로 결국 중복되는 메서드가 엄청 많아질것이다..
+          ~~- SingerSongwriter를 클래스로 만들려면 Singer의 2개, Songwriter의 1개인 토탈3개 이므로, 2^3 개 조합의 수가 만들어진다는 의미인가?~~
+            ~~- 이 조합의 수는 SingerSongwriter가 만들어질 수 있는 클래스의 갯수를 의미하는걸까?~~
+            ~~- ***질문하자***~~
         - 또한 공통 기능을 정의해놓은 타입이 없으니, 매개변수 타입만 다른 메서드들을 수없이 많이 가진 거대 클래스가 생성가능..
           - 상속이 안되니 중복이 많아진다는 의미인듯
     - 래퍼클래스(인터페이스 구성)로 기능추가가 상속으로 기능 추가하는 것보다 훨씬 수월
@@ -695,3 +698,150 @@ effective_java_클래스와_인터페이스
   - 디폴트 메서드는 인터페이스로부터 메서드를 제거하거나, 기존 메서드의 시그니처를 수정하고자 하는 용도로 사용하면 안된다!!
     - 이렇게 변경하게되면 기존 클라이언트를 망가뜨린다..
   - 결론은.. 디폴트 메서드라는 좋은 도구가 있더라도, 인터페이스 만들때 세심한 주의를 기울이자..
+
+
+---
+
+- 아이템22_인터페이스는 타입을 정의하는 용도로만 사용하라
+  - 클래스가 어떤 인터페이스를 구현한다는것은 자신의 인스턴스로 무엇을 할 수 있는지를 클라이언트에게 얘기해주는 것
+    - 나는 ~~타입(인터페이스)이니깐 XX를 할 수 있게돼
+  - 상수 인터페이스는 안티패턴
+    - 정규화된 이름을 쓰는걸 피하고자 이런 상수 인터페이스를 쓴다함 (no 공감)
+    - 이렇게 사용하면, 내부구현을 클래스 API로 노출하는꼴.. 
+      - 상수라 할지라도 무튼 인터페이스의 멤버변수는 public이므로 노출.. 이를 본 client는 이게 뭐지..? 싶을것임 혹여 클라이언트가 이를 가져다쓸수도있기에.. 다음 릴리즈때 빼지도못함
+    - 잘못된 예
+      ```java
+        // ObjectStreamConstants 는 아래와같이 다 상수로 구성되어있는 인터페이스
+
+        public interface ObjectStreamConstants {
+
+          /**
+          * Magic number that is written to the stream header.
+          */
+          static final short STREAM_MAGIC = (short)0xaced;
+
+          /**
+          * Version number that is written to the stream header.
+          */
+          static final short STREAM_VERSION = 5;
+
+          // ...
+        }
+
+        // ObjectInputStream은 ObjectStreamConstants를 구현해서 위의 상수를 사용한다..
+        public class ObjectInputStream extends InputStream implements ObjectInput, ObjectStreamConstants {
+          // ...
+           protected void readStreamHeader() throws IOException, StreamCorruptedException {
+              short s0 = bin.readShort();
+              short s1 = bin.readShort();
+              if (s0 != STREAM_MAGIC || s1 != STREAM_VERSION) { // STREAM_MAGIC, STREAM_VERSION
+                  throw new StreamCorruptedException(
+                      String.format("invalid stream header: %04X%04X", s0, s1));
+              }
+           }
+
+          // ...
+
+        }
+      ```
+    - 상수 공개의 바람직한 방법?
+      - 특정 클래스나 인터페이스에 강하게 연관된 상수라면 클래스나 인터페이스 자체에 추가할것
+        - Integer.MIN_VALUE, Integer.MAX_VALUE
+      - 열거 타입으로 만들어 공개
+      - 인스턴스화 할 수 없는 유틸리티 클래스에 담아 공개
+
+---
+
+- 아이템23_태그 달린 클래스보다는 클래스 계층구조를 활용하라
+  - 하나의 클래스에서 두가지 이상의 의미를 표현할수있으며, 현재 표현하는 의미를 태그값으로 알려주는 클래스는 쓰지말자 
+    - 상속을 활용하여 계층구조 클래스로 바꾸자!!
+  ```java
+    static class BadFigure { // 두가지 이상의 의미를 표현 할 수 있고, 현재의 의미를 표현해주는 태그달린 클래스
+        enum Shape {RECTANGLE, CIRCLE}
+
+        final Shape shape;  // 이게 태그필드
+
+        double length;
+        double width;
+
+        double radius; // RECTANGLE을 만드는 상황이면 쓰지 않지만 초기화는 되기에.. 메모리 낭비.. + 내가 만들고자하는 인스턴스에 불필요한 필드..
+
+        public BadFigure(double radius) {
+            this.shape = Shape.CIRCLE;
+            this.radius = radius;
+        }
+
+        public BadFigure(double length, double width) {
+            this.shape = Shape.RECTANGLE;
+            this.length = length;
+            this.width = width;
+        }
+
+        double area() {
+            switch (shape) { // shape가 늘어나는곳마다 switch문을 계속 수정해줘야한다.. 혹여 다른곳에서도 switch문이 있다면 일일이 수정이 필요하고, 실수로 수정못하면 런타임에 에러..
+                case RECTANGLE:
+                    return length * width;
+                case CIRCLE:
+                    return Math.PI * (radius * radius);
+                default:
+                    throw new AssertionError(shape);
+            }
+        }
+    }
+
+    // 이런 클래스는 타입만으로는 현재 나타내는 의미를 알 길이 전혀없다.. 이게 RECTANGLE인지.. CIRCLE인지..
+    // 즉, 태그달린 클래스는 장황하고, 오류내기쉽고, 비효율적.. => 계층구조 클래스로 표현하라(상속)
+
+
+    static abstract class GoodFigure { // 루트가 되는 추상클래스
+        abstract double area(); // 공통으로 쓰이니깐 추상메서드로 빼준다. 상태값(태그값)에 따라 분기처리되는 구간을 추상메서드로 빼주면 될듯
+        // 태그 값에 상관없이 동작이 일정한 메서드들은 여기에 구현해주자..(ex. 템플릿)
+        // 데이터 필드를 공통으로 사용하는게 있다면 당연 여기 루트 클래스로~
+    }
+
+    static class Circle extends GoodFigure {
+        final double radius;
+
+        Circle(double radius) {
+            this.radius = radius; // 컴파일러가 생성시에 반드시 필요한 값을 넣도록 체크해주기때문에 필수값 누락될일도없다
+        }
+
+        public void specialMethod() {} // 하위 클래스만의 특정 메서드(혹은 변수)를 받을수도잇음
+
+        @Override
+        double area() { // 이로인해 switch 문 없다~ 또한 컴파일러가 area 메서드를 를 구현해야하는것을 알려준다
+            return Math.PI * (radius * radius);
+        }
+    }
+
+    static class Rectangle extends GoodFigure {
+        final double length;
+        final double width;
+
+        Rectangle(double length, double width) {
+            this.length = length;
+            this.width = width;
+        }
+
+        @Override
+        double area() {
+            return length * width;
+        }
+    }
+
+    static class Square extends Rectangle { // 이런 계층구조로 정사각형 만드는거 개꿀
+
+        Square(double side) {
+            super(side, side);
+        }
+    }
+  ```
+
+---
+
+- 아이템24_멤버 클래스는 되도록 static으로 만들어라
+  - 
+  - 기타 팁
+    - 클래스의 Member란 필드와 메서드 모두를 총칭..
+      - member 변수에는 static변수와 인스턴스변수가 있을수 있다.
+      - 지역변수는 member 변수가 아닌변수.. 즉, 파라미터(매개변수)나 메서드 내부에서 사용되는 변수를 이야기함
