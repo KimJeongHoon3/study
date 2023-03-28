@@ -840,7 +840,151 @@ effective_java_클래스와_인터페이스
 ---
 
 - 아이템24_멤버 클래스는 되도록 static으로 만들어라
-  - 
+  - 중첩 클래스(nested class)란 다른 클래스 안에 정의된 클래스를 말한다
+  - 중첩 클래스 종류
+    - 정적 멤버 클래스 (=정적 중첩 클래스)
+      - 다른 클래스 안에 선언되고, 바깥 클래스의 private 멤버 접근할 수 있다는것 제외하곤 일반 클래스와 동일
+      - 바깥 클래스와 함께 쓰일 때만 유용한 public 도우미 클래스로 사용
+        - ex. Calculator.Operation.MINUS 
+          - 여기서 Operation은 열거타입
+      - 바깥 인스턴스와 독립적으로 존재한다면 정적 멤버 클래스로 만들어라..!
+    - inner class
+      - (비정적) 멤버 클래스
+        - 바깥 클래스의 인스턴스와 암묵적으로 연결됨
+          - 정규화된 this(클래스명.this)를 사용하여 바깥 인스턴스의 메서드를 호출가능
+          - 당연 바깥 클래스의 인스턴스를 가지고 있어야하므로, 정적멤버클래스보다 메모리공간도 많이차지하고 생성시간도 더 걸림
+        - 어댑터(뷰)를 정의할 때 많이 사용됨
+          - 실질적인 내용을 한번 감싸줌.. (아마 좀더 보기 편하도록 혹은 접근하기 편하게 하기위해 전용 컨테이너로 감싸서 보여주는 느낌인듯.. 그러고보니 DB의 뷰와 개념적으로 비슷한느낌..?)
+          - ex. Map.keySet()은 Entry의 key를 Set으로 감싸놓은형태.., Set이나 List의 iterator() 도 내부의 데이터를 Iterator 구현체로 감싸놓은형태
+        - 바깥 인스턴스에 접근할일이 있다면 이를 사용. (반대로 바깥인스턴스 접근할 필요가없다면 정적멤버클래스를 사용해야한다는것!!)
+          - 정적중첩 클래스는 그냥 클래스 안에 있는 독립적인 클래스이기때문에 바깥 클래스의 인스턴스 메서드나 필드를 참조할 수 없음 (물론, 바깥클래스의 static멤버는 참조가능)
+        - 멤버클래스를 사용하게되면, GC가 바깥 클래스의 인스턴스를 수거하지 못하는 경우가 있을수 있으니 주의가필요 - 메모리누수 (아이템7에 정리해놓은것 참고)
+      - 익명 클래스
+        - 익명 클래스는 바깥 클래스의 멤버가 아님
+          - 이에 대한 접근이 이루어지는 시점에(쓰이는 시점)에 선언과 동시에 인스턴스가 만들어진다!
+        - 비정적 문맥에서 사용될떄만 바깥 클래스의 인스턴스 참조가능 (당연한말..)
+        - 정적 문맥에서 사용될때에도 정적 멤버를 가질 수 없음 (final static으로 선언된 상수변수는 가능)
+          - 하지만 클라이언트가 사용하진 못한다.. (익명 클래스는 상속한 하위클래스와 같은데, 하위 클래스의 이름(타입)이 없기때문에 익명 클래스 내부에서 새로이 선언한 메서드나 필드 즉, 어떠한 멤버도 참조할 수 없다)
+        - 제약사항
+          - 이름이 없으니 클래스의 이름이 필요한 작업 수행 불가
+          - 여러 인터페이스 구현 불가 + 구현과 상속 같이 사용못함.. 딱 하나만!
+          - 익명 클래스를 사용하는 클라이언트는 그 익명 클래스가 상위타입에서 상속한 멤버 외에는 호출 불가
+            - 위 클라이언트가 사용하지 못하는것과 같은 이유
+          - 표현식 중간에 등장하게되니, 짧지않으면 가독성 떨어짐.. (10줄 이내로작성할것..)
+      - 지역 클래스
+        - 가장 드물게 사용
+        - 지역변수 사용하는 곳과 동일하게 사용할 수 있으며, 유효범위가 지역변수와 같음
+        - 위의 클래스의 제약사항과 유사(잘 생각해보면.. 당연한것들)
+          - 멤버 클래스처럼 이름이 있고 반복사용가능
+          - 익명 클래스처럼 비정적 문맥에서 사용될때만 바깥 인스턴스 사용
+          - 정적 멤버는 가질 수 없으며, 가독성을 위해서 짧게 작성필요
+  - 코드로 보자
+    ```java
+    public class NestedClassAnalysis {
+        private int privateField_outer;
+        int instanceField_outer;
+        static int staticField_outer;
+
+        void instanceMethod_outer() { }
+
+        static void staticMethod_outer() { }
+
+        void 익명클래스_비정적문맥() {
+            int localVar = 3;
+            localVar = 5;
+
+            StaticMemberClass anonymousClass = new StaticMemberClass() { // 익명 클래스는 쓰이는 시점에 인스턴스 만들어짐
+    //            static int staticVar = 3; // 컴파일 에러.. 정적멤버 가질 수 없음
+                final static int finalStaticVar = 3;  // 상수는 가질수 있음
+                int a = 5;
+                void newMethod() {
+                    instanceField_outer++;
+                    int a = instanceField_outer;
+                    int b = super.memberField;
+                    super.method(); // 상위타입 멤버 호출가능
+
+                    int c = staticField_outer;
+                    staticMethod_outer();
+
+    //                int d = localVar; // 컴파일에러.. localVar이 final 일때만 가능.. 로직상 중간에 변경하는 부분 없으면 알아서 final로 가져감
+                }
+
+    //            static void staticMethod() {} // 컴파일에러.. static 멤버 가질수없음
+            };
+
+        }
+
+        static void 익명클래스_정적문맥() {
+            int localVar = 3;
+            localVar = 5;
+
+            StaticMemberClass anonymousClass = new StaticMemberClass() { // 익명 클래스는 쓰이는 시점에 인스턴스 만들어짐
+    //            static int staticVar = 3; // 컴파일 에러.. 정적멤버 가질 수 없음
+                public final static int finalStaticVar = 3;  // 상수는 가질수 있음
+
+                int a = 5;
+                void newMethod() {
+    //                int a = instanceField_outer; // 컴파일에러.. static 메서드안에서 사용되었으므로, 바깥 클래스의 인스턴스 변수 가질수 없음 (인스턴스와 static 간의 초기화 시점이다르니..)
+                    int b = super.memberField;
+                    super.method(); // 상위타입 멤버 호출가능
+
+                    int c = staticField_outer;
+                    staticMethod_outer();
+
+    //                int d = localVar; // 컴파일에러.. localVar이 final 일때만 가능.. 로직상 중간에 변경하는 부분 없으면 알아서 final로 가져감
+                }
+
+    //            static void staticMethod() {} // 컴파일에러.. static 멤버 가질수없음
+
+            };
+
+    //        anonymousClass.newMethod(); // 컴파일에러.. 익명클래스 자신의 메서드의 인스턴스는 호출불가.. 익명클래스가 구현한 상위클래스만 사용가능
+            anonymousClass.method(); // StaticMemberClass로 타입을 가지고있으니 어찌보면 당연한것..
+        }
+
+        void 지역클래스() {
+            class LocalClass { // 유효범위가 지역변수와 동일함, 클래스이름이 있음
+    //            static int staticVar = 3; // 컴파일 에러.. 정적멤버 가질 수 없음 (멤버변수, 멤버메서드 모두)
+                final static int finalStaticVar = 3;  // 상수는 가질수 있음
+                int localClassMemberField = 5;
+                int localClassMemberField2 = instanceField_outer;
+
+                public void localClassMethod() {
+                    NestedClassAnalysis.this.instanceMethod_outer();
+                    NestedClassAnalysis.staticMethod_outer();
+                }
+
+            }
+
+            LocalClass localClass = new LocalClass();
+        }
+
+        static class StaticMemberClass { // 클래스 내부에 있다는 점과 다르고, 거의 일반 클래스와 동일
+            static int staticMemberField = 0;
+            int memberField = 0;
+
+            void method() {
+                int a = new NestedClassAnalysis().privateField_outer; // 바깥클래스의 private 필드 접근가능
+    //            int b = instanceField_outer; // 컴파일에러 바깥클래스 인스턴스 변수 참조불가 (인스턴스 메서드도 마찬가지)
+                int c = staticField_outer; // 당연 static은 모두 접근가능
+            }
+        }
+
+        class NonStaticMemberClass {
+            //        static int staticMemberField = 5; 컴파일에러.. static을 사용하기위해서는 final 로 선언해야함
+            final static int staticMemberField = 0;
+            int memberField;
+
+            void method() {
+                NestedClassAnalysis.this.instanceMethod_outer();
+                int a = NestedClassAnalysis.this.instanceField_outer;
+                int b = NestedClassAnalysis.staticField_outer;
+            }
+        }
+    }
+    ```
+  - 결론
+    - 메서드 밖에서도 사용해야하거나 한 메서드 안에 정의하기에 너무 길면 멤버 클래스를 고려하자. 바깥 클래스의 인스턴스를 참조하고 있지않으면 정적 멤버 클래스를 사용하자. 한 메서드 안에서만 사용될거라면 익명 클래스를 사용하자(함수형 인터페이스라면, 람다로 대체하자) 
   - 기타 팁
     - 클래스의 Member란 필드와 메서드 모두를 총칭..
       - member 변수에는 static변수와 인스턴스변수가 있을수 있다.
