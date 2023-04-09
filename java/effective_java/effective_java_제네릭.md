@@ -95,27 +95,216 @@ effective_java_제네릭
         - `String.class`, `Class<String>`
           - 타입 토큰과 클래스 리터럴과의 관계?
             - String.class가 String 클래스 리터럴인데, 이를 타입토큰으로 사용한다고 이해하면될듯..
+            - 타입토큰은 런타임시에 타입정보를 알 수 없는 제네릭에 도움을 주기 위함이다
+              - 이 타입 토큰은 `Class<T>` 객체를 활용..
+                ```java
+                  static class MyClass<T> {
+                      Class<T> tClass; // 타입토큰.. 런타임시에 <T>는 소거되지만, tClass에 클래스에 대한 정보를 가지고 있기때문에, 아래 get 메서드에서 cast 해줄수 있다. 즉 타입토큰을 통해서 런타임시에도 안정적으로 캐스팅 가능!
+
+                      public MyClass(Class<T> tClass) {
+                          this.tClass = tClass;
+                      }
+
+                      public T get(Object obj){
+                          return tClass.cast(obj);
+                      }
+                  }
+                ```
       
     - 오류는 언제나 가능한 한 발생 즉시, 이상적으로는 컴파일 타임에 발견하는게 좋다!
 
 
-  ---
+---
 
-  - 아이템27_비검사 경고를 제거하라
-    - **제네릭을 사용하게되면** 여러 비검사 경고를 볼 수 있다
-      - 비검사 형변환 경고
-      - 비검사 메서드 호출 경고
-      - 비검사 매개변수화 가변인수 타입 경고
-      - 비검사 변환 경고
-      - 등..
-    - 할 수 있는한 모든 비검사 경고를 제거하자!!
-      - 그렇게 되었을때 타입 안정성이 보장!
-        - 즉, 런타임에 ClassCastException이 발생할 일이 없다는것!
-    - 만약 경고를 제거할 수는 없지만 타입 안전하다고 확신할 수 있다면 `@SuppressWarings("unchecked")` 에너테이션을 달아 경고를 숨기자
-      - 타입 안전한 부분인데 이런 경고를 내버려두면, 나중에 진짜 경고를 놓치기 쉽다..
-      - `@SuppressWarings("unchecked")`은 항상 가능한 한 좁은 범위에 적용하자
-        - 이는 개별 지역변수부터 클래스 전체에 선언할 수 있는데(선언부에), 클래스 전체에 선언하게되면 심각한 경고를 놓칠수 있으니 범위는 최소한으로..
-      - 그리고 이를 사용할때에는 비검사 경고를 무시해도 안전한 이유를 항상 주석으로 남겨야한다!
+- 아이템27_비검사 경고를 제거하라
+  - **제네릭을 사용하게되면** 여러 비검사 경고를 볼 수 있다
+    - 비검사 형변환 경고
+    - 비검사 메서드 호출 경고
+    - 비검사 매개변수화 가변인수 타입 경고
+    - 비검사 변환 경고
+    - 등..
+  - 할 수 있는한 모든 비검사 경고를 제거하자!!
+    - 그렇게 되었을때 타입 안정성이 보장!
+      - 즉, 런타임에 ClassCastException이 발생할 일이 없다는것!
+  - 만약 경고를 제거할 수는 없지만 타입 안전하다고 확신할 수 있다면 `@SuppressWarings("unchecked")` 에너테이션을 달아 경고를 숨기자
+    - 타입 안전한 부분인데 이런 경고를 내버려두면, 나중에 진짜 경고를 놓치기 쉽다..
+    - `@SuppressWarings("unchecked")`은 항상 가능한 한 좁은 범위에 적용하자
+      - 이는 개별 지역변수부터 클래스 전체에 선언할 수 있는데(선언부에), 클래스 전체에 선언하게되면 심각한 경고를 놓칠수 있으니 범위는 최소한으로..
+    - 그리고 이를 사용할때에는 비검사 경고를 무시해도 안전한 이유를 항상 주석으로 남겨야한다!
 
-      - 예제에서는 ArrayList.toArray 를 소개해주고, 메서드레벨에 위의 어노테이션을 선언하지말고 지역변수로 선언하라고 하였는데, 실제 그렇게 구현되어있진않음.. 그리고 경고를 무시해도 안전한 이유가 별도로 적혀있지도않음..
-        - ![ArrayList.toArray의 docs와 구현부](2023-04-01-14-49-41.png)
+    - 예제에서는 ArrayList.toArray 를 소개해주고, 메서드레벨에 위의 어노테이션을 선언하지말고 지역변수로 선언하라고 하였는데, 실제 그렇게 구현되어있진않음.. 그리고 경고를 무시해도 안전한 이유가 별도로 적혀있지도않음..
+      - ![ArrayList.toArray의 docs와 구현부](2023-04-01-14-49-41.png)
+
+
+---
+
+- 아이템28_배열보다는 리스트를 사용하라
+  - 배열과 리스트의 차이
+    - 배열은 공변(함께변한다라는 뜻)이고 제네릭을 불공변이다
+      - Sub가 Super의 하위타입일떄, `Sub[]`는 `Super[]`의 하위타입이다
+      - Sub가 Super의 하위타입일떄, `List<Sub>` 과 `List<Super>` 는 아무런 관계가 없다
+      - => 이에 따라 배열과 같은 공변은 타입캐스팅 관련하여 컴파일타임에는 인지하지못하고, 런타임에 에러가 유발될수있다..
+        ```java
+          Object[] objectArray = new Long[1];
+          objectArray[0] = "이건 컴파일 타임에 안잡힌다"; // 런타임에 오류
+        ```
+    - 배열은 실체화(reify)되나, 제네릭은 타입정보가 런타임에 소거
+      - 배열은 런타임에도 자신이 담기로 한 원소의 타입을 인지하고 확인한다
+        - 그래서 런타임에 타입을 체크하기에 잘못된 타입이면 예외를 던진다..!
+      - 제네릭은 타입정보가 런타임에 소거되는데, 즉, 타입을 컴파일타임에만 검사하며 런타임에는 알 수 없다
+        - 이런 소거정책은 자바5가 제네릭으로의 전환을 순조롭게 하기위함..
+    - => 이로인해 배열과 제네릭은 잘 어우러지지못함
+      - ex. 배열은 제네릭 타입, 매개변수화 타입, 타입 매개변수로 사용불가. (`new List<E>[]`, `new List<String>[]`, `new E[]`)
+        - <span style="color:red">근데 (T[]) 이런식으로 캐스팅은 가능.. List의 toArray 참고</span>
+          - 그럼 결국 T는 소거되니깐, 컴파일 타임에만 보장해주는 그런건가..
+        - 왜 그렇게 막았나?
+          - 타입에 안전하지않기떄문..! 즉, 런타임에 ClassCastException이 발생! 이를 컴파일 타임에 막아보자로 제네릭을 만들었는데, 아래와 같은 상황이 생기면 런타임에 ClassCastException 예외발생할수 있음..! 그래서 아예 생성부터 안되게 막은것!!
+            ```java
+              List[] listArr = new List<String>[1];   // new List<String>이 가능해지면, 배열의 공변성질로 인해 이렇게 받을 수 있게되고..
+              List<Integer> intList = Arrays.asList(1); // 사용자의 실수시작..
+              listArr[0] = intList;              // 이게 될것이고.. 
+              List<String> strList = (List<String>)listArr[0];  // 이렇게 캐스팅해도 문제가 없다고 생각할수 있을것이며
+              String s = strList.get(0);                // 런타임시에 클래스 ClassCastException 예외 발생..! 
+
+              // 아래는 이펙티브 책 예제 (위 내용과 비슷)
+              List<String>[] stringLists = new List<String>[1];
+              List<Integer> intList = List.of(42);
+              Object[] objects = stringLists; // 배열의 공변성질로 가능
+              objects[0] = intList;   // 컴파일타임에는 당연 에러없을것이고, 런타임에는 List<String>은 List가 되고, List<Integer>도 List가 되기떄문에 문제안생김
+              String s = stringList[0].get(0); // ClassCastException 발생!
+            ```
+        - 제네릭 타입, 매개변수화 타입, 타입 매개변수은 실체화 불가 타입이라하는데, 실체화가 안되기때문에 런타임에는 컴파일타임보다 타입 정보를 적게 가지는 타입이된다 (런타임시에 타입이 소거되므로..!)
+          - 예외가 있는데, 비한정적 와일드카드일 경우에는 매개변수화 타입가운데 실체화될 수 있다
+            - 어차피 비한정적 와일드카드 타입은 타입을 알아야 할 수 있는동작(ex. List의 add)은 불가하고, 런타임시에 타입이 소거되어도 원래부터가 어떤 타입이던 상관없는 것이기에(컴파일 타임과 런타임에 타입 정보가 동일) 실체화 되었다고 표현한건가??
+            - <span style="color:red"> 좀더 찾아보고 정리해보자</span>
+          - 또한 그렇기에 배열을 비한정적 와일드카드 타입으로 만들수 있다 
+            - `List<?>[] lists = new List<?>[3];`
+  - 제네릭 배열 불가로 인해 나타나는 상황
+    - 제네릭 컬렉션에서 자신의 원소타입을 담은 배열을 반환하는것은 보통 불가..
+      - 하지만 이를 가능하게 할 수 있는데, 아이템 33에서 소개해준다함 (타입토큰 사용인듯)
+    - 제네릭 타입과 가변인수 메서드를 함께 사용하는 경우 경고메세지 발생..
+      - 가변인수 메서드를 호출하면, 가변인수 매개변수를 담을 배열이 하나 만들어지는데, 그 배열의 원소가 실체화불가 타입이라면 경고 발생
+      - `@SafeVarargs` 선언하면 가능
+  - 배열로 형변환할때 제네릭 배열 생성 오류나 비검사 형변환 경고가 뜨면, 배열인 `E[]` 대신 `List<E>` 를 사용해보자
+    - 코드가 조금 복잡해지고, 성능이 살짝 나빠질 수도 있지만, 타입안정성과 상호운용성이 좋아짐
+    ```java
+      static class ChooserWithoutGeneric {
+          private final Object[] choiceArray;
+
+          public ChooserWithoutGeneric(Collection choices) {
+              this.choiceArray = choices.toArray();
+          }
+
+          public Object choose() { // 이를 호출하면 클라이언트가 형변환을 계속 해주어야함.. 잠재적 형변환 오류 발생구역.. => 제네릭을 사용하자!!
+              ThreadLocalRandom rnd = ThreadLocalRandom.current();
+              return choiceArray[rnd.nextInt(choiceArray.length)];
+          }
+      }
+
+      static class ChooserApplyGeneric_1<T> {
+          private final T[] choiceArray;
+
+          public ChooserApplyGeneric_1(Collection<T> choices) {
+              this.choiceArray = (T[])choices.toArray(); // 컴파일에러는 없지만, unchecked cast 경고가 있음(런타임에 잠재적으로 ClassCastException 만날수있다는뜻) -> 즉, 컴파일러가 안전을 보장못한다는뜻.. 안전한게 확실하면 @SuppressWarnings("unchecked")를 달면되지만, 되도록 근본적인 해결로 경고를 없애자.
+          }
+
+          public T choose() {
+              ThreadLocalRandom rnd = ThreadLocalRandom.current();
+              return choiceArray[rnd.nextInt(choiceArray.length)];
+          }
+      }
+
+      static class ChooserApplyGeneric_complete<T> {
+          private final List<T> choiceArray;
+
+          public ChooserApplyGeneric_complete(Collection<T> choices) {
+              this.choiceArray = new ArrayList<>(choices); // 비검사형 경고를 완전히 제거하기위해 배열대신 아예 리스트로! 조금 더 느릴 수 있지만 런타임에 ClassCastException 만날리 없다~~
+          }
+
+          public T choose() {
+              ThreadLocalRandom rnd = ThreadLocalRandom.current();
+              return choiceArray.get(rnd.nextInt(choiceArray.size()));
+          }
+      }
+    ```
+  - 결론
+    - 배열(공변, 실체화)은 런타임에 안전하고, 제네릭(불공변, 타입소거)은 컴파일 타임에 안전하다. 그래서 둘을 섞어쓰기는 쉽지않다. 하지만 둘을 섞어쓰다가 컴파일 오류나 경고를 만나면, 배열을 리스트로 대체하는 방법을 적용해보자
+      - 컴파일 타임에 안전한거를 택하라는 뜻인듯..
+  
+  - 기타 팁
+    - intellij에서 -Xlint:unchecked 옵션 적용하는방법?
+      - 질문하자
+
+---
+
+- 아이템29_이왕이면 제네릭 타입으로 만들라
+  - 클라이언트가 직접 형변환을 해야하는 일반 클래스가 있다면, 제네릭으로 전환하여 클라이언트가 직접 형변환을 할 필요없도록 하자!
+  - 어떻게 하면되나?
+    - 클래스 선언에 타입 매개변수 추가 (보통 E를 사용) 
+    - 컴파일오류 나면 적절하게 처리하자
+      - 특히, 실체화 불가타입은 배열을 만들수 없으니, 필요한곳에 적절한 형변환 필요
+        - 파라미터 타입을 사용한 형변환시에 비검사예외가 발생할 수 있는데(런타임시에 파라미터 타입은 Object가 되므로) 그럴때 여러 테스트를 통해서 확실하게 캐스팅 가능한곳에 @SuppressWarnings("unchecked")를 선언해주자
+      - 실체화 불가 타입으로 배열만들때 해결책
+        - 제네릭 배열 생성을 금지하는 제약을 대놓고 우회
+          - Object 배열을 생성한 다음 제네릭 배열로 형변환 (초기 배열을 생성할때 제네릭 배열로 캐스팅하므로, 멤버필드에 `Object[]`가 아닌, `E[]` 이렇게..)
+          - ex. `elements = (E[]) new Object()[DEFAULT_INITIAL_CAPACITY] // 멤버변수에 "E[] elements" 로 선언`
+          - 장점
+            - 배열의 타입이 E[]로 선언되기때문에, E타입 인스턴스만 받는다는걸 확실히 보여줄 수 있음
+            - 아예 배열을 생성할때 캐스팅을 해버리기떄문에 아래방법보다 코드가 짧다 
+          - 단점
+            - 배열의 런타임 타입이 컴파일 타임 타입과 달라 힙 오염을 일으킨다
+              - Runtime시에 타입파라미터(E)는 모두 Object로 변환될텐데, E를 Object로 선언한게 아닌이상 런타임과 컴파일타임에 타입이 달라진다.
+        - elements 필드의 타입을 E[]에서 Object[]로 놓고, 캐스팅 필요한곳에 적절히 형변환 할것
+          - ex. stack구조
+          ```java
+            // Stack 내부
+            class Stack<E> extends Vector<E> { // Vector를 상속한다..
+                public synchronized E pop() {
+                    E       obj;
+                    int     len = size();
+
+                    obj = peek();
+                    removeElementAt(len - 1);
+
+                    return obj;
+                }
+
+                public synchronized E peek() {
+                    int     len = size();
+
+                    if (len == 0)
+                        throw new EmptyStackException();
+                    return elementAt(len - 1);
+                }
+            }
+
+            // Vector 내부
+            public synchronized E elementAt(int index) {
+                if (index >= elementCount) {
+                    throw new ArrayIndexOutOfBoundsException(index + " >= " + elementCount);
+                }
+
+                return elementData(index);
+            }
+
+            @SuppressWarnings("unchecked") // ClassCastException이 일어날곳이 아니기에, 어노테이션을 선언해서 컴파일 경고메세지를 제거
+            E elementData(int index) {
+                return (E) elementData[index]; // elementData는 Object[] 이다.. 필요한곳에 elementData를 E로 캐스팅하고있다..
+            }
+          ```
+          - 장점
+            - 위의 단점과 반대로 Object배열을 멤버변수에 받으므로 런타임과 컴파일 타임에 타입이 다르지않다(힙오염을 일으키지않는다).
+          - 단점
+            - 배열에서 원소를 읽을때마다 형변환을 해주어야한다
+  - 제네릭 타입은 타입 매개변수에 아무런 제약을 두지 않는다 (단, 기본타입은 사용할 수 없다)
+    - `Stack<Object>, Stack<int[]>, Stack<List<String>>, Stack`
+    - 기본타입 못쓰는거는 박싱된 기본타입으로~
+    - 매개변수에 제약을 두는것도 가능
+      - `class DelayQueue<E extends Delayed> implements BlockingQueue<E>`
+        - E를 한정적 타입매개변수라고함
+        - Delayed의 하위타입만 받음(Delayed 도 포함)
+
+---
+
+- 아이템30_이왕이면 제네릭 메서드로 만들라
+  - 
