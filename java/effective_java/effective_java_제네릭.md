@@ -307,4 +307,126 @@ effective_java_제네릭
 ---
 
 - 아이템30_이왕이면 제네릭 메서드로 만들라
-  - 
+  - 제네릭 메서드 어디서 많이보이나?
+    - 매개변수화 타입(ex.`List<String>`)을 받는 정적 유틸리티 메서드
+      - ex. Collections.binarySearch, sort
+        ```java
+          // Collections 내부
+          public static <T extends Comparable<? super T>> void sort(List<T> list) {
+              list.sort(null);
+          }
+        ```
+  - 어떻게만드나?
+    - 타입 매개변수 목록을 선언해주어야함
+      - 메서드의 제한자와 반환 타입 사이에 온다
+    - 위 sort 제네릭 메서드 참고 (`<T extends Comparable<? super T>>` 이게 타입 매개변수 목록)
+  - 제네릭 싱글턴 팩터리?
+    - 제네릭은 소거 정책으로 인해, 런타임시에 타입이 유지되지않는다. 달리말하면, 하나의 객체를 어떤 타입으로든 매개변수화 할 수 있다.(제네릭은 실체화가 되지않으니 가능한것..) 이를 위해 타입 매개변수에 맞게 매번 그 객체의 타입을 바꿔주는게 정적 팩터리가 필요한데, 이를 제네릭 싱글턴 팩토리 라고 한다
+    ```java
+      // Collections 내부
+      @SuppressWarnings("unchecked") // (1)
+      public static <T> Comparator<T> reverseOrder() { // 제네릭 싱글턴 팩토리
+          return (Comparator<T>) ReverseComparator.REVERSE_ORDER; // (2)
+      }
+
+      private static class ReverseComparator implements Comparator<Comparable<Object>>, Serializable { // (3)
+          // ...
+
+          static final ReverseComparator REVERSE_ORDER = new ReverseComparator(); // 이건 여러번 생성될 필요가 없으니.. 싱글턴으로..
+
+          public int compare(Comparable<Object> c1, Comparable<Object> c2) { // Comparator(Functional Interface) 구현부
+              return c2.compareTo(c1);
+          }
+
+          // ...
+      }
+
+      (1) (Comparator<T>) 로인해 비검사 경고가 뜨나, 캐스팅해도 문제가되지않으므로 해당 어노테이션을 사용하여 비검사 형변환 경고를 없애자
+      (2) 타입 매개변수에 맞게 매번 해당 객체의 타입으로 캐스팅해준다. 하지만 이를 사용하는 클라이언트가 Comparable를 구현한 구현체가 아닌걸 넣어도 여기서는 확인할 방법이없음.. 만약 Comparable 구현체가 아닌게 들어가서 비교하기 시작하면, 런타임에 compare 메서드를 호출할때 ClassCastException 떨어짐.
+      => 이는 재귀적 타입한정을 사용했으면 해결되었을듯.. ex. <T extends Comparable<T>>
+      (3) 여기 Comparator를 해석하면, Comparable을 구현한 Object를 비교하는 Comparator라고 읽을 수 있겠다.. 하지만, 런타임시에 <Comparable<Object>> 는 소거되고, 오직 Comparator만 남게된다. 컴파일러도 신경쓰는것은 Compartor일뿐, 소거되는 타입 파라미터인 Comparable<Object>는 구현부(ReverseComparator.compare)에서만 신경쓸뿐이다. 그래서 Comparator에 어떤 객체의 타입도 받아 줄 수 있게되었지만, 해당 객체가 Comparable의 구현체 인지까지는 확인못하여, 런타임시에 위에서 이야기한 ClassCastException이 나타날 수 있는것이다..
+
+
+      ///////////////////////////////////
+      // 위 사용 예시
+      public static void main(String[] args) {
+          Comparator<Temp> objectComparator = Collections.reverseOrder(); // Temp는 Comparable를 구현하게 아닌데도, 에러 안남
+          Temp temp1 = new Temp();
+          Temp temp2 = new Temp();
+
+          int compare = objectComparator.compare(temp1, temp2); // 런타임시에 temp1, temp2는 Comparable이 아니기때문에 ClassCastException이 떨어짐
+          System.out.println(compare);
+
+          // 위의 문제를 아래로 개선가능..
+          // Comparator<Temp> comparator = GenericMethod.reverseOrder(); // 컴파일에러.. Temp는 Comparable을 구현하지않았다..
+          Comparator<ComparableTemp> comparator2 = GenericMethod.reverseOrder();
+      }
+
+      static class Temp { }
+
+      static class ComparableTemp implements Comparable<ComparableTemp> {
+          @Override
+          public int compareTo(ComparableTemp o) {
+              return 0;
+          }
+      }
+
+      public static <T extends Comparable<T>> Comparator<T> reverseOrder() { // 재귀적 타입한정을 통해서 컴파일 타임에 타입파라미터에 제한을 둘 수 있다
+          return (Comparator<T>) ReverseComparator.REVERSE_ORDER;
+      }
+
+      private static class ReverseComparator
+              implements Comparator<Comparable<Object>>, Serializable { 
+
+          static final ReverseComparator REVERSE_ORDER
+                  = new ReverseComparator();
+
+          public int compare(Comparable<Object> c1, Comparable<Object> c2) {
+              return c2.compareTo(c1);
+          }
+
+          @Override
+          public Comparator<Comparable<Object>> reversed() {
+              return Comparator.naturalOrder();
+          }
+      }
+    ```
+    - 이렇게 쓰는이점?
+      - 제네릭을 사용하여 타입선언만 하면, 적어도 컴파일타임에 타입을 지켜준다.. (추가적인 확장없이도..!)
+      - 컴파일 타임에 타입정보를 계속 지켜낼 수 있다.. 중간중간에 사용자가 직접 캐스팅해서 실수를 범할 필요없이!
+      - 팩토리 메서드에서 제네릭을 사용하는건데, 클라이언트는 타입선언만 해줌으로써 컴파일 타임에 리턴받은 인스턴스에 타입에 대한 안전성을 보장할 수 있다. 그래서 보통 제네릭 싱글턴 팩토리 내부에는 선언된 타입에 맞춰 캐스팅하는 로직이 있을것이며(이게 하나의 인스턴스를 가지고 캐스팅하여 사용함으로써, 선언한 파라미터 타입들을 컴파일 타임에 지켜주도록해줌), 매개변수화 타입은 Object로 선언되어있을 것이다.
+  - 재귀적 타입한정
+    - 자기 자신이 들어간 표현식을 사용하여, 타입 매개변수의 허용 범위를 한정가능
+    - 주로 타입의 자연적 순서를 정하는 Comparable 인터페이스와 함께쓰이는 경우가 많음
+      ```java
+        // 러프하게 보는 Collections.max
+        public static <E extends Comparable<E>> E max(Collection<E> c) { // 타입파라미터인 E는 비교할수있는 대상(Comparable을 구현한놈들)으로 한정한다고 해석가능. (타입 파라미터를 Comparable 구현체로 한정한다)
+          //...
+        }
+
+        // Collections 실제 내부
+        public static <T extends Object & Comparable<? super T>> T max(Collection<? extends T> coll) { 
+            Iterator<? extends T> i = coll.iterator();
+            T candidate = i.next();
+
+            while (i.hasNext()) {
+                T next = i.next();
+                if (next.compareTo(candidate) > 0)
+                    candidate = next;
+            }
+            return candidate;
+        }
+
+        // 내용 확인
+        public static void main(String[] args) {
+            // Collections.max 또한 재귀적 타입한정을 사용하여 타입 파라미터에 Comparable을 구현한 구현체가 아니면 타입파라미터에 못들어 오게하였다. 
+            List<Integer> integers = Arrays.asList(3, 1, 5, 2, 10);
+            Integer max = Collections.max(integers);
+
+            List<Temp> temps = Arrays.asList(new Temp(), new Temp(), new Temp());
+            // Temp max1 = Collections.max(temps); // 컴파일에러.. Temp는 Comparable을 구현하지않았기때문..
+        }
+      ```
+    - 재귀적 타입한정을 또 사용하는 예
+      - 와일드 카드를 사용한 번형 (아이템31)
+      - <span style="color:red">시뮬레이트한 셀프 타입 관용구 (아이템2)</span>
