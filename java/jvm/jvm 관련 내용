@@ -119,6 +119,7 @@ Old영역에 있는 참조가 없는 객체들을 표시하고 그 해당 객체
         https://sehun-kim.github.io/sehun/JVM/#:~:text=Runtime%20Constant%20Pool-,%2D%20PC%20Register,%EC%9C%84%ED%95%9C%20%EC%9A%A9%EB%8F%84%EB%A1%9C%20%EC%82%AC%EC%9A%A9%ED%95%9C%EB%8B%A4.
         https://toma0912.tistory.com/2
         심도있게 JVM 분석 : https://d2.naver.com/helloworld/1230
+          바이트코드 지시자 : https://en.wikipedia.org/wiki/List_of_Java_bytecode_instructions
         https://stophyun.tistory.com/37
         
 

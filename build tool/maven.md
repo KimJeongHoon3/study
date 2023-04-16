@@ -49,6 +49,8 @@ maven
    - gradle 충돌인데, 나중에 필요하면 사용해보자..
      - https://velog.io/@mu1616/spring-dependency-management%EB%A1%9C-%EC%9D%B8%ED%95%9C-gradle-%EB%B2%84%EC%A0%84-%EC%B6%A9%EB%8F%8C%EB%AC%B8%EC%A0%9C
 
+- [scope](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#dependency-scope)
+
 - [parent를 통한 boot 의존성관리 설명](https://recordsoflife.tistory.com/393)
 - [모듈구성시참고](https://eblo.tistory.com/144)
 - [maven 간단정리](https://thalals.tistory.com/345)

@@ -430,3 +430,260 @@ effective_java_제네릭
     - 재귀적 타입한정을 또 사용하는 예
       - 와일드 카드를 사용한 번형 (아이템31)
       - <span style="color:red">시뮬레이트한 셀프 타입 관용구 (아이템2)</span>
+
+---
+
+- 아이템31_한정적 와일드카드를 사용해 API 유연성을 높여라
+  - 파라미터화 타입은 불공변이니, 이를 유연하게 사용할 수 있도록 하기위해 한정적 와일드카드를 사용한다
+    ```java
+      // Stack 클래스에 
+      class Stack<E> {
+        // ...
+        public void pushAll(Iterable<E> src) { // Iterable<E> "E의 Iterable" 이라는 뜻
+          for (E e : src) {
+            push(e);
+          }
+        }
+
+        public void pushAll_비한정적와일드카드사용(Iterable<? extends E> src) { // Iterable<? extends E>은 "E의 하위타입의 Iterable" 이라는 뜻 (E 포함)
+          for (E e : src) {
+            push(e);
+          }
+        }
+
+        public void popAll(Collection<E> dst) { // Collection<E> "E의 Collection" 이라는 뜻
+          while (!isEmpty()) {
+            dst.add(pop());
+          }
+        }
+
+        public void popAll_비한정적와일드카드사용(Collection<? super E> dst) { // Collection<? super E>은 "E의 상위타입의 Collection" 이라는 뜻 (E 포함)
+          while (!isEmpty()) {
+            dst.add(pop());
+          }
+        }
+        // ...
+      }
+
+      public static void main() {
+        Stack<Number> stack;
+        List<Integer> intList;
+        stack.pushAll(intList); // 컴파일에러 Number는 Integer보다 상위 타입이므로 논리적으로는 가능해야할것 같지만, 제네릭은 불공변이기에 안된다!
+        stack.pushAll_비한정적와일드카드사용(intList); // 가능! Number의 하위타입인 Integer의 Iterable이므로 가능!
+
+        List<Object> objectList;
+        stack.popAll(objectList); // 컴파일에러. Object는 Number보다 상위타입이므로 논리적으로는 가능해야할 것 같지만, 제네릭은 불공변이기에 안된다!
+        stack.pushAll_비한정적와일드카드사용(objectList); // 가능! Number의 상위타입인 Object의 Collection 이므로 가능!
+
+      }
+      
+    ```
+  - 유연성을 극대화하기위해서는 원소의 생산자나 소비자용 입력 매개변수에 와일드 카드 타입을 사용하자!
+    - 하지만 입력매개변수가 생산자와 소비자 역할을 동시에 한다면 와일드카드 타입을 써도 좋을게없다.. 타입을 정확히 지정해야하는 상황이다!
+      - <span style="color:red">예시가 뭐가있을까?</span>
+    - PECS로 외우자!
+      - Producer - Extends (`<? extends T>`)
+        - 파라미터화 타입 T가 생산자(제공자) 역할을 할때 (ex. Stack의 pushAll 메서드 - 인자로 넘겨주는 파라미터화 타입이 Stack에게 E인스턴스를 제공해준다, 생산해준다)
+      - Consumer - Super (`<? super T>`)
+        - 파라미터화 타입 T가 소비자 역할을 할때 (ex. Stack의 popAll 메서드 - 인자로 넘겨주는 파라미터화타입이 Stack으로부터 E인스턴스를 모조리 가져온다, 소비한다)
+      - 사용하는 메서드 혹은 클래스의 주체로 부터 생산자인지 소비자인자를 파악하자..!
+    - **반환타입에는 한정적와일드카드를 쓰면안된다!!**
+      - 클라이언트코드에서 와일드카드 타입을 써야하기때문!
+    - 클라이언트코드에서는 와일드카드 타입이 쓰였다는 사실조차 의식못하는게 베스트~
+      - 클래스 사용자가 와일드카드 타입을 신경써야한다면 해당 API에 문제가 있을 가능성이 크다
+    - PECS 두번 사용한 사례..
+      - ex. 직접 구현한 다른 타입을 확장한 타입이 있을때, 이를 지원하기위해 와일드카드를 아래와 같이 사용가능..
+        - Delay : `Comparable<T>`를 직접구현
+        - ScheduledFuture : Delay를 확장
+        - ![ScheduledFuture와 Comparable<T>의 관계 다이아그램](2023-04-15-14-14-37.png)
+          ```java
+              public static void main(String[] args) {
+                  // 타입 파라미터 E 가 생산자(producer - 제공자) 역할이면 extend ( PE )
+                  // 타입 파라미터 E 가 소비자(consumer) 역할이면 super ( CS )
+
+                  List<ScheduledFuture<?>> list = null;
+
+          //        E e = max_PECS적용안함(list); // 컴파일에러.. ScheduledFuture가 Comparable인데, ScheduledFuture에 직접 Comparable을 구현한게아닌, 이를 구현한 Delayed를 상속받아서 Comparable이 된다.. 그러나 제네릭에서는 PECS를 적용안하게되면 ScheduledFuture가 직접 Comparable을 구현해야만 컴파일 에러가 나지않는다(제네릭 특성인 불공변때문..)
+                  ScheduledFuture<?> scheduledFuture = max_PECS적용(list); // Comparable<? super E> 이기때문에 가능.
+
+                  List rawtypeList = new ArrayList();
+
+                  swap(rawtypeList,1,2);
+              }
+
+              static <E extends Comparable<E>> E max_PECS적용안함(List<E> list) {
+                  return null;
+              }
+
+              static <E extends Comparable<? super E>> E max_PECS적용(List<? extends E> list) {
+                  // 파라머터로 넘겨받는 list는 E를 제공해주는 생산자 역할이므로 extends
+                  // Comparable<E>는 E를 소비하는 역할이므로 super를 사용하여, Comparable<? super E>
+                  // <E extends Comparable<? super E>> 라는 것은 E 라는 타입은 Comparable 타입으로 한정하는데, 이 Comparable은 E 포함해서 상위 타입이면 된다는 뜻. 즉, E포함 상위타입중 Comparable 타입이 있으면 된다는것!
+                    // ~~컴파일러가 super 키워드가 있으면, 재귀로 상위를 찾을듯..~~
+                  return null;
+              }
+
+              /* max_PECS적용 static 메서드 바이트코드
+                static <E extends java.lang.Comparable<? super E>> E max_PECS적용(java.util.List<? extends E>);
+                  descriptor: (Ljava/util/List;)Ljava/lang/Comparable;
+                  flags: ACC_STATIC
+                  Code:
+                    stack=1, locals=1, args_size=1
+                      0: aconst_null
+                      1: areturn
+                    LineNumberTable:
+                      line 29: 0
+                    LocalVariableTable:
+                      Start  Length  Slot  Name   Signature
+                          0       2     0  list   Ljava/util/List;
+                    LocalVariableTypeTable:
+                      Start  Length  Slot  Name   Signature
+                          0       2     0  list   Ljava/util/List<+TE;>;
+                  Signature: #35                          // <E::Ljava/lang/Comparable<-TE;>;>(Ljava/util/List<+TE;>;)TE;
+
+
+                  // 마지막 Signature 부분의 chatGPT 설명
+                  설명하자면:
+                      1. <E::Ljava/lang/Comparable<-TE;>;>: 타입 매개변수 E를 정의하는 부분입니다. 여기서 E는 Comparable 인터페이스를 구현한 타입으로 제한되어 있습니다. Comparable 인터페이스는 -TE를 통해 하한 와일드카드(? super E)를 사용하여 표현되어 있습니다. 이는 E 타입 또는 그 하위 타입이 Comparable 인터페이스를 구현해야 함을 나타냅니다. // 하위타입이 아니라 상위타입인듯..
+                      2. (Ljava/util/List<+TE;>;): 메서드의 매개변수를 나타냅니다. 이 경우 List를 매개변수로 받는데, 리스트의 요소 타입은 +TE로 표현됩니다. 이는 상한 와일드카드(? extends E)를 사용하여 E 타입 또는 그 상위 타입으로 지정됩니다. // 상위타입이 아니라 하위타입인듯..
+                      3. TE;: 메서드의 리턴 타입입니다. 여기서는 E 타입을 반환한다는 것을 나타냅니다.
+                      // T는 그냥 컴파일러가 붙여주는거 같은데, 리턴타입이 E가 아닌 TE라고 기록하는지 모르겠음.. 챗gpt가 이상하게 설명해준건지도 확인해봐야할듯.. (공식문서보자..)Signature
+
+              */
+          ```
+  - 메서드 선언에 **타입 매개변수가 한번만 나오면** 와일드 카드로 대체하자
+    - 신경써야할 타입 매개변수가 없다!
+    - 비한정적 타입 파라미터면 비한정적 와일드카드로 교체하고, 한정적 타입 파라미터라면 한정적 와일드카드로 교체하자
+    - 코드로 보자
+      ```java
+        public static <E> void swap_별로임(List<E> list, int i, int j) {
+            list.set(i, list.set(j, list.get(i)));
+        }
+
+        public static void swap_wildcard사용(List<?> list, int i, int j) { // public api를 사용한다면 이렇게 작성하자
+        //  list.set(i, list.set(j, list.get(i))); // 컴파일에러.. 와일드카드 타입일때 null 이외에는 set 불가. 이를 위해 swap_별로임 메서드를 private 도우미 메서드를 활용
+            swap_별로임(list, i, j); // 추후 실제로 만들게되면 이 도우미 메서드는 private으로 변경되어야한다
+        }
+
+        public static void main(String[] args) {
+            List<String> list = new ArrayList<>();
+            ChangingToWildcard.<String>swap_별로임(list, 1, 3);
+            // ChangingToWildcard.swap_별로임(list, 1, 3); 이것도 가능
+            ChangingToWildcard.swap_wildcard사용(list, 1, 3);
+        }
+      ```
+    - 이건 그렇게 이점이 있는지 모르겠음.. 자바8부터는 명시적 타입인수가 필요한것도 아니기에 "swap_별로임" 메서드와 "swap_wildcard사용" 메서드를 클라이언트 입장에서 큰 차이가 있는것 같지않음..
+      - 물론, "swap_별로임" 메서드를 자동완성으로 볼때 `List<Object>`로 타입이 보이긴함..
+  - 기타 팁
+    - 명시적 타입 인수
+      - ex. `Collections.<Integer>max(integers) // 제네릭 메서드에서 타입을 명시함`
+    - 매개변수(parameter) vs 인수(argument)
+      - 매개변수는 메서드 선언에 정의한 변수
+      - 인수는 메서드 호출시 넘기는 실제값
+      ```java
+        class Set<T> {...} // T는 타입 매개변수(타입 파라미터)
+        Set<Integer> s= ...; // Integer는 타입인수
+      ```
+    - **Comparable과 Comparator는 언제나 소비자다**
+      - 즉, `Comparable<? super T>`, `Comparator<? super T>`로 사용하자!
+
+---
+
+- 아이템32_제네릭과 가변인수(varagrs)를 함께 쓸 때는 신중하라
+  - 가변인수 메서드를 호출하면 가변인수를 담기 위한 배열이 자동으로 만들어지는데, 이때에 제네릭이나 매개변수화 타입이 포함되면 컴파일 경고가 나타나게된다
+    - 즉, 실체화불가타입(제네릭 타입, 매개변수화 타입, 타입파라미터)으로 가변인수 매개변수를 선언하면 경고가나타난다
+    - varagrs 매개변수로 실체화 불가타입을 선언했을때 나타나는 컴파일 경고와 위험성
+      ```java
+        static void dangerous(List<String> ... stringLists) { // Possible heap pollution from parameterized vararg type java.util.List<java.lang.String>
+            Object[] objects = stringLists; // 배열은 공변이니 가능
+            List<Integer> integers = Arrays.asList(1, 2);
+            objects[0] = integers; // 힙 오염
+
+            String s = stringLists[0].get(0); // ClassCastException 발생 (컴파일러가 String으로 자동 타입캐스팅이 이루어짐..)
+        }
+
+        public static void main(String[] args) {
+            dangerous(Arrays.asList("hi")); // 컴파일러가 제네릭 가변인수 메서드를 호출하는 쪽에서도 경고를 준다. => java: unchecked generic array creation for varargs parameter of type java.util.List<java.lang.String>[]
+        }
+      ```
+  - 제네릭 배열을 직접 생성하지는 못하는데, 제네릭 varargs 매개변수를 받는 메서드를 선언 할 수 있도록 하는 이유?
+    - 제네릭이나 매개변수화 타입의 varargs 매개변수를 받는 메서드가 실무에서 유용하기때문에 이 모순을 수용하기로..
+    - ex. `Arrays.asList(T... a), Collections.addAll(Collection<? super T> c, T... elements), Enumset.of(E first, E... rest)`
+    - `@SafeVarargs` 추가 (이건 주요이유는 아니고, 이를 통해서 좀 더 사용하기가 좋아졌다 정도로 이해하면될듯)
+      - 제네릭 가변인수를 가진 메서드에서 경고가 나타는것뿐아니라, 사용하는 사용자에게도 항상 경고를 보여주었는데, 해당 어노테이션을 통해서 클라이언트에게 컴파일러의 경고를 숨길 수 있게됨
+      - 그렇기에 더욱 확실히 문제없을때만 사용하도록..
+  - 제네릭 배열을 만드는 제네릭 varargs 매개변수를 가진 메서드를 어떻게 안전하게 사용할 수 있을까?
+    - 해당 메서드가 제네릭 배열에 아무것도 저장하지않고 (그 매개변수들을 덮어 쓰지않고 - 위의 dangerous 메서드 예처럼쓰면안됨..)
+    - 그 배열의 참조가 밖으로 노출되지 않는다면 안전
+    - 즉, varargs 매개변수 배열이 **인수들을 전달하는 역할**만 한다면 문제없다!
+    - 위험한 코드..
+      - 제네릭 varargs 매개변수 배열에 다른 메서드가 접근하도록 허용하면 안전하지않다
+      ```java
+
+        static <T> T[] toArray(T ... args) { // T가 Object이면 Object 배열로 생성된 args가 오고, T가 String이면 String 배열로 생성된 args가 넘어온다. 물론 런타임에 T는 Object이나 args는 나 자신의 구체적인 배열타입을 알고 있다
+            return args; // 제네릭 배열의 참조가 밖으로 노출..
+        }
+
+        static <T> T[] pickTwo(T a, T b, T c) {
+            switch(ThreadLocalRandom.current().nextInt(3)) {
+                case 0: return toArray(a, b); // 여기서 toArray는 T라는 타입을 알 수 없으니 모두 받을 수 있또록 varargs는 Object[] 을 생성하게된다.. 즉, pickTwo는 항상 Object[]를 반환.. 그렇게되니, T가 String이라면 picktwo를 호출하는 코드에 String[]로 캐스팅하도록 컴파일러가 만들어줄텐데, 그때에 Object[]을 String[]로 캐스팅할 수 없으므로 캐스팅 에러가나게되는것!
+                case 1: return toArray(a, c);
+                case 2: return toArray(b, c);
+            }
+
+            throw new AssertionError();
+        }
+
+        public static void main(String[] args) {
+            String[] strings = pickTwo("a", "b", "c"); // 런타임에러.. cast 할 수 없다고함..
+        }
+      ```
+      - 하지만, 아래 상황에서는 또 안전하다
+        - `@SafeVarargs`로 제대로 애노테이트된 또 다른 varargs 메서드에 넘기는것은 안전
+        - 그저 이 배열 내용의 일부함수를 호출만 하는(varargs를 통짜로 받지않는) 일반 메서드에 넘기는 것도 안전
+        - 안전하게쓴 예제 코드
+          ```java
+             @SafeVarargs
+              static <T> List<T> flatten(List<? extends T>... lists) { // 제네릭 varargs 매개변수를 안전하게 사용하는 메서드
+                  List<T> result = new ArrayList<>();
+                  for (List<? extends T> list : lists) {
+                      result.addAll(list);
+                  }
+                  
+                  return result;
+              }
+
+              static <T> List<T> flatten_list반환버전(List<List<? extends T>> lists) { // List로 변환하였기때문에 직접 @SafeVarargs를 선언할 필요없다. 물론, 타입 안전하다~. 다만 클라이언트 코드가 약간 지저분해질수있고(List.of()와 같은걸로 한번 묶어줘야..) 속도가 조금 느려질 수 있다
+                  List<T> result = new ArrayList<>();
+                  for (List<? extends T> list : lists) {
+                      result.addAll(list);
+                  }
+
+                  return result;
+              }
+          ```
+  - 기타 팁
+    - 힙 오염 (heap pollution) : 매개변수화 타입의 변수가 타입이 다른 객체를 참조하는것
+    - 가변인수는 자신이 알 수 있는 가장 구체 타입의 배열을 만들어 주는듯..
+      - ex. `Serializable[] serializables = toArray("a", "b", 1); // int와 문자열이 동시에 있으니, 이들의 공통중에 가장 구체타입인 Serializable로 배열을 만들어준다`
+    - 배열간의 형변환
+      ```java
+          Object obj1 = "a";
+          Object obj2 = "a";
+          Object obj3 = "a";
+          Object[] objects = toArray(obj1, obj2, obj3);
+
+          // obj1의 class String이 맞으나, obj1,obj2,obj3을 기반으로 Object배열을 생성햇을때, 이를 String 배열로 캐스팅은 안된다! 
+          // (String[]) new Object[]{obj1, obj2, obj3} - 런타임에러
+          // 어찌보면 당연히 안되는것.. 배열또한 하나의 클래스로 생성된것인데, 배열안에 담긴 내용물이 같다고해서 캐스팅이 되어야하는건 말이안됨.. (헷갈리지말자;)
+
+          // String[] strings = (String[]) objects; // 런타임에러
+          System.out.println((String) objects[0]); // 이렇게 캐스팅은 당연 문제없음
+          String[] strings = toArray("a","b","c");
+          Object[] o = strings;  // 배열은 공변이기에 이것도 문제없음
+
+      ```
+
+---
+
+- 아이템33_타입 안전 이종 컨테이너를 고려하라
