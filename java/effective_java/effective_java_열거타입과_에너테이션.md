@@ -160,4 +160,108 @@ effective_java_열거타입과_에너테이션
     - 열거타입은 values라는 정적메서드를 통해서 자신안에 정의된 상수들을 배열로 반환해준다  
       - 값들은 선언된 순서대로 저장
     
-      
+---
+
+- 아이템35_ordinal 메서드 대신 인스턴스 필드를 사용하라
+  - 모든 열거 타입은 해당 상수가 그 열거 타입에서 몇번째 위치인지를 반환하는 ordinal 메서드를 제공
+  - ordinal을 활용해서 뭔가를 만들지마라!!
+    - 상수의 순서가 변경되면 예상치 못한 오동작이 발생할 수 있을 뿐만아니라, 기대하는 정수의 값을 만들기위해 불필요한 수고를 해야한다..
+    - API 문서에서도 프로그래머가 사용할게아닌, EnumSet과 EnumMap같은 열거타입 기반의 범용자료구조에 쓸 목적으로 설계되었다고 나와있다!
+
+---
+
+- 아이템36_비트 필드 대신 EnumSet을 사용하라
+  - 집합 개념을 활용하기 위해서는 비트 필드를 사용하기도한다
+    ```java
+        static class Text { // 구닥다리 기법
+            public static final int STYLE_BOLD = 1 << 0;
+            public static final int STYLE_ITALIC = 1 << 1;
+            public static final int STYLE_UNDERLINE = 1 << 2;
+            public static final int STYLE_STRIKETHROUGH = 1 << 3;
+            private String str;
+
+            public void applyStyles(int styles) { 
+                if ((styles & STYLE_BOLD) != 0) { // STYLE_BOLD 면
+                    applyBold();
+                }
+
+                if ((styles & STYLE_ITALIC) != 0) { // STYLE_BOLD 면
+                    applyItalic();
+                }
+
+                // ...
+
+            }
+
+            private void applyItalic() {
+                System.out.println("italic 적용");
+            }
+
+            private void applyBold() {
+                System.out.println("bold 적용");
+            }
+
+        }
+
+        public static void main(String[] args) {
+            Text text = new Text();
+            text.applyStyles(Text.STYLE_BOLD | Text.STYLE_ITALIC); // 이런식으로 집합개념 사용가능. 위의 applyItalic 메서드, applyBold 메서드 호출
+        }
+    ```
+  - 하지만, EnumSet을 활용하여 집합을 더욱 효율적으로 다룰 수 있다
+    - EnumSet의 내부는 비트 벡터로 되어있으니 성능상에서도 불리할게 없다
+    - enum의 원소가 64개 이하면, EnumSet 전체를 long 변수하나로 표현(long은 64비트까지 표현가능하니..)하여 비트 필드에 비견되는 성능을 보여줌
+      - enum의 ordinal을 활용
+    - 코드로 확인
+    ```java
+
+        // RegularEnumSet 내부 (해당 enum의 상수 갯수가 64개 이하일 경우)
+
+            // ...
+
+            public boolean add(E e) {
+                typeCheck(e);
+
+                long oldElements = elements;
+                elements |= (1L << ((Enum<?>)e).ordinal()); // enum의 ordinal을 사용하여 element와 OR 비트연산을 하여 enum의 상수를 저장한다 (long을 사용하니 64비트까지만..)
+                return elements != oldElements;
+            }
+
+            // ...
+
+            public boolean retainAll(Collection<?> c) {
+                if (!(c instanceof RegularEnumSet<?> es))       // RegularEnumSet 즉, 64개 이하의 EnumSet이 아니라면~
+                    return super.retainAll(c);
+
+                if (es.elementType != elementType) {            // element는 Class<T> 인데, 위의 예에서는 Style.class로 보면됨. 즉, 다른 타입이면~
+                    boolean changed = (elements != 0);
+                    elements = 0;
+                    return changed;
+                }
+
+                long oldElements = elements;
+                elements &= es.elements;                        // AND(&) 비트 연산을 사용하여 파라미터로받은 c의 elements들과 같은것들만 남기도록.. 만약 중복된게 없으면 빈값이됨..
+                return elements != oldElements;
+            }
+         
+        /////////////////////////////
+
+        @Test
+        void testEnumSet() {
+            EnumSet<EnumSetAnalysis.Style> enumSet = EnumSet.of(BOLD, ITALIC);
+            System.out.println(enumSet);
+
+            enumSet.retainAll(EnumSet.of(BOLD)); // 중복된 BOLD만 남음
+            assertThat(enumSet)
+                    .hasSize(1)
+                    .containsOnly(BOLD);
+
+
+            enumSet.retainAll(EnumSet.of(UNDERLINE, ITALIC));
+            assertThat(enumSet)
+                    .isEmpty(); // 중복되는게 없으니, 암것도없음
+        }
+
+    ```
+  - 결론
+    - 집합개념을 사용하기위해서 EnumSet이 아닌, 비트필드를 사용하는 어리석은 짓을 하지말자..
