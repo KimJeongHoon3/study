@@ -72,4 +72,5 @@ Transaction Management
   - 클래스 레벨에 사용하는 어노테이션은 선언하는 클래스(하위클래스도)의 모든 메소드에 적용할 기본값을 나타낸다
     - 하위클래스에 적용한게 상위클래스에 적용되진않음
   - `TransactionManager` 는 항상 필수로 등록되어야한다!!!!!!@!@!
+    - 당연 `@EnableTransactionManagement` 해당 어노테이션도 `@Configuration` 에 같이 등록되어야함!
   - `public` 메서드만 적용가능.. protected나 private 을 사용하고싶으면 정상동작안하기에 여기에 트랜잭션을 먹이고싶으면 AspectJ를 사용해야함

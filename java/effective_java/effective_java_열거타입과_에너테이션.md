@@ -1,6 +1,6 @@
 effective_java_열거타입과_에너테이션
 
-- item34_int 상수 대시 열거 타입을 사용하라
+- item34_int 상수 대신 열거 타입을 사용하라
   - 열거타입?
     - 일정 개수의 상수값을 정의한 다음, 그 외의 값은 허용하지 않는 타입
     - 완전한 형태의 **클래스**!
@@ -265,3 +265,193 @@ effective_java_열거타입과_에너테이션
     ```
   - 결론
     - 집합개념을 사용하기위해서 EnumSet이 아닌, 비트필드를 사용하는 어리석은 짓을 하지말자..
+
+---
+
+- 아이템37_ordinal 인덱싱 대신 EnumMap을 사용하라
+  
+  - 열거 타입을 키로 사용하도록 설계한 아주 빠른 Map 구현체가 EnumMap
+    - ordinal 왜 직접 사용안하는게 좋나?
+      - 클라이언트가 ordinal을 직접 사용하여, 배열의 인덱스와같은 구조로 사용하게된다면, 컴파일러는 ordinal과 배열 인덱스의 관계를 알 수 없으니, 실수를 유발할 가능성이 매우 높아진다(유지보수시에 ordinal 사용하는 곳을 잘 살펴야한다.. - "해당 ordinal의 정수값이 원래 계획한대로 잘 쓰이고있는가?" 를 확인해야함)
+    - EnumMap 내부적으로 ordinal을 배열의 인덱스로 활용하고 있어서 성능 좋음
+      ```java
+        // enumMap 내부
+        public V put(K key, V value) {
+            typeCheck(key);
+
+            int index = key.ordinal(); // vals(Object 배열)의 index로 ordinal을 사용
+            Object oldValue = vals[index];
+            vals[index] = maskNull(value);
+            if (oldValue == null)
+                size++;
+            return unmaskNull(oldValue);
+        }
+      ```
+    - 유지보수에 용이
+      - Map을 사용하여 타입안전(제네릭)
+    - EnumMap 내부 좀더 살펴보자
+      ```java
+        public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V> implements java.io.Serializable, Cloneable {
+            // ...
+            public EnumMap(Class<K> keyType) { // 한정적 타입토큰 (Enum만 받도록..)을 사용하여 런타임시에 제네릭 타입에 대한 정보를 알 수 있음
+                this.keyType = keyType;
+                keyUniverse = getKeyUniverse(keyType);  // keyUniverse가 해당 Enum의 모든 상수정보를 참조하고있음... 이를통해 Entry의 key에 대한 정보를 알 수 있음
+                vals = new Object[keyUniverse.length];
+            }
+
+            // ...
+        }
+      ```
+  - 다차원관계 표현에 유리 (중첩맵으로!)
+    - ex. 액체(LIQUID)에서 고체(SOLID)로의 전이는 응고(FREEZE)가되고, 액체(LIQUID)에서 기체(GAS)로의 전이는 기화(BOIL)
+      ```java
+         // 상전이 맵
+          public enum Phase {
+              SOLID, LIQUID, GAS;
+
+              public enum Transition {
+                  MELT(SOLID, LIQUID),
+                  FREEZE(LIQUID, SOLID),
+                  BOIL(LIQUID, GAS),
+                  CONDENSE(GAS, LIQUID),
+                  SUBLIME(SOLID, GAS),
+                  DEPOSIT(GAS, SOLID);
+
+                  private final Phase from;
+                  private final Phase to;
+
+                  Transition(Phase from, Phase to) {
+                      this.from = from;
+                      this.to = to;
+                  }
+
+                  private static final Map<Phase, Map<Phase, Transition>> transitionMap // 다차원관계를 위한 중첩 Map
+                          = Arrays.stream(values())
+                          .collect(groupingBy(
+                                          t -> t.from
+                                          , () -> new EnumMap<>(Phase.class)
+                                          , toMap(t -> t.to, Function.identity(), (v1, v2) -> v2, () -> new EnumMap<>(Phase.class))
+                                  )
+                          );
+
+                  public static Transition from(Phase from, Phase to) {
+                      return transitionMap.get(from).get(to);
+                  }
+              }
+          }
+      ```
+
+---
+
+- 아이템38_확장할 수 있는 열거 타입이 필요하면 인터페이스를 사용하라
+  - 열거타입은 확장 불가..
+    - 사실 대부분 상황에서 열거 타입을 확장하는건 좋지않은 생각
+    - but 연산코드와같은 기본 연산외 사용자 확장 연산을 추가할 수 있도록 확장을 열여주어야하는 경우가 있는데, 이때는 **인터페이스**를 사용하자!
+  - 열거타입끼리 구현 상속 불가 (상호간에 extends 가 안되므로..)
+    - 그에 따라 필연적으로 발생할 수 있는 중복코드는 어떻게 처리?
+      - 아무상태에도 의존하지않는다면, 인터페이스의 디폴트 메서드 구현을 통해 공통으로 사용할 메서드를 정의가능
+      - 상태에 의존하는 경우(symbol(String)에 따라 enum 상수를 리턴해줘야하는.. - 이미 만들어진 map 또는 상수에 의존)에는, 중복코드제거를 위해 별도의 도우미 클래스나 정적 도우미 메서드로 분리하자
+        - ex. BasicOperation과 ExtendedOperation에 fromString 메서드를 통해서 enum 상수를 리턴해주는 메서드는 중복이 발생.. 그때 공통으로 사용하는 Operation 인터페이스에 아래와 같은 정적 도우미 메서드를 사용할 수도 있겠다..
+          ```java
+             interface Operation {
+                Map<String, Operation> map =
+                        Stream.of(BasicOperation.values(), ExtendedOperation.values())
+                                .flatMap(arr -> Arrays.asList(arr).stream())
+                                .collect(Collectors.toMap(op -> op.toString(), Function.identity())); // 정적 도우미 메서드를 사용하기위한 정적 멤버변수.. Operation이 추가되면, 여기를 신경써야하긴함..
+
+                double apply(double x, double y);
+                static Optional<Operation> fromString(String symbol) { // Operation을 구현하는 enum들에 중복을 막기위한 정적 도우미 메서드
+                    return Optional.ofNullable(map.get(symbol));
+                }
+            }
+          ```
+  - 인터페이스 활용하여 확장가능하도록 만든 열거타입을 코드로보자
+    ```java
+      enum BasicOperation implements Operation {
+          PLUS("+") {
+              @Override
+              public double apply(double x, double y) {
+                  return x + y;
+              }
+          },
+          MINUS("-") {
+              @Override
+              public double apply(double x, double y) {
+                  return x - y;
+              }
+          };
+
+          private final String symbol;
+
+          BasicOperation(String symbol) {
+
+              this.symbol = symbol;
+          }
+
+          @Override
+          public String toString() {
+              return symbol;
+          }
+
+          //        public abstract double apply(double x, double y); // 인터페이스에 선언되어있기때문에 별도의 추상메서드 필요없음
+      }
+
+      enum ExtendedOperation implements Operation {
+          REMAINDER("%") {
+              @Override
+              public double apply(double x, double y) {
+                  return x % y;
+              }
+          };
+
+          private final String symbol;
+
+          ExtendedOperation(String symbol) {
+
+              this.symbol = symbol;
+          }
+
+          @Override
+          public String toString() {
+              return symbol;
+          }
+
+      }
+
+      public static void main(String[] args) {
+          double x = 10;
+          double y = 3;
+
+          test(ExtendedOperation.class, x, y);
+          test(BasicOperation.class, x, y);
+          test2(Arrays.asList(ExtendedOperation.values()), x, y);
+
+      }
+
+      private static <T extends Enum<T> & Operation> void test(Class<T> opEnumType, double x, double y) { // class 리터럴은 한정적 타입토큰역할.. 이를 활용하여 코드의 변경없이 어떤 enum을 넘겨주느냐에따라 BasicOperation을 사용할수도, ExtendedOperation을 사용할수도있다
+          for (Operation o : opEnumType.getEnumConstants()) {
+              System.out.printf("%f %s %f = %f%n",
+                      x, o, y, o.apply(x, y));
+          }
+      }
+
+      private static void test2(Collection<? extends Operation> opSet, double x, double y) { // 좀더 유연한 버전
+          for (Operation o : opSet) {
+              System.out.printf("%f %s %f = %f%n",
+                      x, o, y, o.apply(x, y));
+          }
+      }
+    ```
+  - 결론
+    - 열거 타입인데 인터페이스를 구현하고있고, API가 기본열거타입을 직접 명시한게아닌 인터페이스 기반으로 작성되었다면, 이는 확장가능하다는 의미이며, 확장한 열거타입의 인스턴스로 대체해 사용할수있다는뜻!
+
+---
+
+- 아이템39_명명 패턴보다 애너테이션을 사용하라
+  - ㅇ
+  - 기타 팁
+    - 메타애너테이션(meta-annotation): 애너테이션 선언에 다는 애너테이션
+      - ex. `@Retention`, `@Target`
+    - 마커(marker) 애너테이션: 아무 매개변수 없이 단순히 대상에 마킹(marking) 한다
+    - 
+    

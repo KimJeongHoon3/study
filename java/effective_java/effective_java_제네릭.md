@@ -90,7 +90,7 @@ effective_java_제네릭
       - 한정적 타입 매개변수 (bounded type parameter)
         - `<E extends Number>`
       - 재귀적 타입 한정 (recursive type bound)
-        - `<T extends Comparable<T>`
+        - `<T extends Comparable<T>>`
       - 타입토큰 
         - `String.class`, `Class<String>`
           - 타입 토큰과 클래스 리터럴과의 관계?
