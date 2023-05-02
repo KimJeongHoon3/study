@@ -448,10 +448,151 @@ effective_java_열거타입과_에너테이션
 ---
 
 - 아이템39_명명 패턴보다 애너테이션을 사용하라
-  - ㅇ
+  - 명명패턴
+    - ex. junit3에서는 테스트 메서드 이름을 test로 시작해야한다
+    - 단점
+      - 오타나면안됨
+      - 올바른 프로그램 요소에서만 사용되리라 보증x
+        - ex. 메서드에서만 사용하길 의도했으나, 사용자가 클래스에서 사용해버림.
+      - 프로그램 요소를 매개변수로 전달할 마땅한 방법이 없음
+        - ex. 테스트코드에 특정 예외를 던져야 통과할때, 명명규칙으로는 특정클래스를 어떻게 지정할 것인가?
+    - => 애너테이션은 이 모든 문제를 해결해준다
+  - 애너테이션 사용의 의미
+    - 대상 코드의 의미는 그대로 둔 채 그 애너테이션에 관심 있는 도구에서 특별한 처리를 할 기회를 주는것
+      - 그렇기때문에 대상코드에 이런저런 지저분한 코드가 붙지않고 명확하게 핵심로직을 볼 수 있다!
+      - 애너테이션이 있다는것은 해당 애너테이션을 기반으로 그 의미에 맞게 수행하는 로직이 반드시 있게된다!
+  - 애너테이션을 활용한 단순 junit 만들어보기
+    ```java
+          /***
+         * 테스트 메서드임을 선언하는 애너테이션
+        * 매개변수 없는 정적 메서드 전용이다. // (컴파일 타임에 정적메세드가 아닌곳에 선언하는걸 잡으려면 애너테이션 처리기를 구현하여야함)
+        */
+        @Retention(RetentionPolicy.RUNTIME) // 메타어노테이션. Runtime시에도 유지되는 어노테이션. 이렇게 선언해야 Runtime시에 @Test를 인식할수있다..
+        @Target(ElementType.METHOD) // 메타어노테이션. Method에만 달수있는 어노테이션이라는뜻
+        public @interface Test { // 단순히 대상에 마킹만 하는 마커 어노테이션
+
+        }
+
+        @Retention(RetentionPolicy.RUNTIME)
+        @Target(ElementType.METHOD)
+        public @interface ExceptionTest {
+            Class<? extends Throwable>[] value(); // 한정적 타입 토큰 활용. Throwable 포함 하위클래스로 제한.. 즉, 모든 예외(와 오류) 타입을 수용하는것
+            // 여러개 사용할때는 제네릭 배열을 사용할 수 있다!
+        }
+
+        static class Sample {
+            @Test
+            public static void m1() {
+            }
+
+            @Test
+            @ExceptionTest(RuntimeException.class)
+            public static void m2() { // 실패. 예외를 던지지않음
+            }
+
+            @Test
+            @ExceptionTest(RuntimeException.class)
+            public static void m3() {
+                throw new RuntimeException("성공");
+            }
+
+            @Test
+            public static void m4() {
+                throw new RuntimeException("실패");
+            }
+
+            @Test
+            public void m5() { // 실패
+            } // 잘못사용.. 정적메서드아님
+
+            public static void m6() {
+            }
+
+            @Test
+            @ExceptionTest(value = {ArithmeticException.class, IllegalArgumentException.class})
+            public static void m7() {
+                throw new IllegalArgumentException("성공");
+            }
+
+            public static void m8() {
+            }
+        }
+
+        public static void main(String[] args) throws ClassNotFoundException {
+            int tests = 0;
+            int passed = 0;
+
+            Class<?> testClass = Class.forName(Sample.class.getName());
+
+            for (Method m : testClass.getDeclaredMethods()) {
+                if (m.isAnnotationPresent(Test.class)) {
+                    tests++;
+
+                    try {
+                        m.invoke(null);
+                        if (m.isAnnotationPresent(ExceptionTest.class)) {
+                            System.out.println(m + " 실패 : 예외를 던지지않음");
+                            continue;
+                        }
+                        passed++;
+                    } catch (InvocationTargetException wrappedEx) { // (1)
+                        Throwable realEx = wrappedEx.getCause();
+                        if (m.isAnnotationPresent(ExceptionTest.class)) {
+                            int oldPass = passed;
+
+                            Class<? extends Throwable>[] exs = m.getAnnotation(ExceptionTest.class).value();
+                            for (Class<? extends Throwable> ex : exs) {
+                                if (ex.isInstance(realEx)) {
+                                    passed++;
+                                    break;
+                                }
+                            }
+
+                            if (oldPass == passed) {
+                                System.out.println(m + " 실패 : " + realEx);
+                            }
+                        } else {
+                            System.out.println(m + " 실패 : " + realEx);
+                        }
+
+                    } catch (Exception e) { // (2)
+                        e.printStackTrace();
+                        System.out.println("잘못 사용한 @Test: " + m);
+                    }
+                }
+            }
+
+            System.out.printf("성공: %d, 실패: %d%n", passed, tests - passed);
+        }
+
+        /*
+            (1) - @Test 선언한 메서드가 예외를 던지면 리플렉션 메커니즘이 InvocationTargetException으로 감싸서 다시 던진다.. 그래서 getCause 메서드를 통해 메서드 호출시 발생한 진짜 에러를 꺼내와야한
+                - 여기를 탔다는것은 @Test를 사용한것 자체는 이상 없다는것! 즉, @Test 선언한 메서드 내부에서 발생한 예외!
+
+            (2) - 여기를 타게되는것은 @Test 애너테이션을 잘못사용했을때인데, 인스턴스 메서드, 매개변수가 있는 메서드, 호출할 수 없는 메서드 등에 달았을때 나타날 수 있다
+        */
+
+    ```
+    - @Repeatable 메타애너테이션
+      - java8 에서는 배열매개변수를 사용하는대신(위의 @ExceptionTest 에서 여러개의 value를 받을 수 있도록 하는것) 애너테이션에 @Repeatable 애너테이션으로 사용가능
+      - 주의점
+        - @Repeatable을 단 애너테이션을 반환하는 "컨테이너 애너테이션"을 하나 더 정의하고, @Repeatable에 이 컨테이너 애너테이션의 class 객체를 매개변수로 전달
+        - 컨테이너 애너테이션은 내부 애너테이션(@Repeatable을 단 애너테이션) 타입의 배열을 반환하는 value 메서드를 정의
+        - 컨테이너 애너테이션 타입에는 적절한 보존정책(@Retention)과 적용대상(@Target)을 명시해야한다
+        - => 위 3개 안지키면 컴파일 안됨
+      - 가독성이 개선될 수 있으나, 코드 양이 늘어나고, 특히 처리 코드가 복잡해져 오류 유발가능성 높아짐
+        - 그냥 @ExceptionTest 처럼 배열로 받는게 더 직관적일듯..
+      - 사용시 p244, p245 참고
+  - 결론
+    - 애너테이션으로 할 수 있는일을 명명패턴으로 처리할 이유는 없다!!!
   - 기타 팁
     - 메타애너테이션(meta-annotation): 애너테이션 선언에 다는 애너테이션
       - ex. `@Retention`, `@Target`
     - 마커(marker) 애너테이션: 아무 매개변수 없이 단순히 대상에 마킹(marking) 한다
-    - 
+    - TypeNotPresentException: 클래스가 컴파일 타임에는 존재했으나, 런타임에는 존재하지않을때 (unchecked Exception)
+      - ClassNotFoundException: TypeNotPresentException과 유사하나, checked Exception..
+      - ClassNotFoundException vs NoClassDefFoundError
+        - ClassNotFoundException: classpath에 해당 클래스 없을때
+        - NoClassDefFoundError: 클래스는 있으나, 클래스 생성시 오류날때 ex. static 초기화시 에러발생한 클래스를 또 new 키워드로 생성하려할때
+        - [참고사이트](https://parkadd.tistory.com/111)
     
