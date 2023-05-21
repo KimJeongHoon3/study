@@ -193,7 +193,7 @@ effective_java_람다와_스트림
     - 코드 블록에서는 메서드 선언에 명시된 검사 예외(checked exception)를 던질 수 있다
     - 람다는 위 코드블록이 가능한것을 다 못한다. 즉, 위와 같은 작업이 필요하다면, 스트림에서 쓰기가 어렵기때문에 for-loop를 사용해야한다
     - 람다 객체를 사용한 스트림을 쓰기 좋은 상황은?
-      - 워노들의 시퀀스를 일관되게 변환
+      - 원소들의 시퀀스를 일관되게 변환
       - 원소들의 시퀀스 필터링
       - 원소들의 시퀀스를 하나의 연산을 사용해 결합 (더하기, 연결하기, 최솟값구하기 등)
       - 원소들의 시퀀스를 컬렉션에 모은다 (공통된 속성을 기준으로 묶어가며?)
@@ -212,4 +212,108 @@ effective_java_람다와_스트림
     - 람다에서는 타입이름이 자주 생략되기때문에, 매개변수 이름을 잘 지어야한다! 그래야 스트림 파이프라인의 가독성이 유지
     - 도우미 메서드를 활용하는것이 스트림 파이프라인에서 가독성도 높여주고 타입 정보(람다에서는 타입정보가 자주생략..)를 유추하기도 쉽다
     - 스트림을 반환하는 메서드 이름은 원소의 정체를 알려주는 **복수 명사**로 쓰자
-      
+
+---
+
+- 아이템46_스트림에서는 부작용 없는 함수를 사용하라
+  - 스트림이 제공해주는 표현력, 속도, 병렬성을 얻기위해서는 스트림 API에 대한 숙지와 더불어 함수형 프로그래밍에 기초한 패러다임을 받아들여야한다
+    - 이 패러다임은 계산을 일련의 **변환**으로 재구성하는게 핵심인데, 각 변환 단계는 이전 단계의 결과를 받아 처리하는 **순수함수**여야한다
+      - 순수함수란 오직 입력만이 결과에 영향을 주는 함수를 말한다 (즉, 입력이 같으면 결과는 항상 같은 것)
+        - => 다른 가변상태를 참조하지도않고, 함수 스스로도 상태를 변경하지않는 함수 (외부 가변객체 참조 안함 + 넘겨받는 파라미터 객체의 상태변경안함)
+    - 패러다임을 잘 이해하지 못한 채 API만 사용한코드
+    - 코드로 보자
+      ```java
+        void 바람직하지않은_stream사용() throws FileNotFoundException { // 패러다임을 잘 이해하지 못한 채 API만 사용한코드
+            File file = null;
+            Map<String, Long> freq = new HashMap<>();
+
+            try(Stream<String> words = new Scanner(file).tokens()) {
+                words.forEach(word -> {
+                    freq.merge(word, 1L, Long::sum); // 상태를 수정하고 있음. 즉, 순수함수가 아니다!
+                });
+            }
+        }
+
+        void 바람직한_stream사용() throws FileNotFoundException {
+            File file = null;
+            Map<String, Long> freq;
+
+            try(Stream<String> words = new Scanner(file).tokens()) {
+                freq = words.collect(groupingBy(String::toLowerCase, counting()));
+            }
+
+            //  try(Stream<String> words = StreamUtils.asStream(new Scanner(file))) { // java 8 일때..
+            //      freq = words.collect(groupingBy(String::toLowerCase, Collectors.counting()));
+            //  }
+        }
+
+        static class StreamUtils {
+            public static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
+                return asStream(sourceIterator, false);
+            }
+
+            public static <T> Stream<T> asStream(Iterator<T> sourceIterator, boolean parallel) {
+                Iterable<T> iterable = () -> sourceIterator;
+                return StreamSupport.stream(iterable.spliterator(), parallel);
+            }
+        }
+      ```
+  - 수집기(Collector)
+    - 스트림을 사용하는데 꼭 필요한 개념
+    - Collectors 클래스는 축소(reduction)전략을 캡슐화한 블랙박스 객체라고 볼 수 있음
+      - 블랙박스 객체란 객체의 내부동작을 외부에서(사용자) 알 필요없이 인터페이스만을 제공하는 객체
+        - Collectors를 통해서 (이쁘게 만들어진)Collector 인터페이스를 제공해주기때문~ 
+      - 축소란 스트림의 원소들을 객체 하나에 취합한다는뜻 (보통 수집기가 생성하는 객체는 Collection)
+      - Collectors의 메서드는 39개 (자바 10에서는 4개가 더늘어 총 43개)
+        - **toList**, **toSet**, toCollection
+          ```java
+            List<String> 가장흔한단어10개뽑아내기(Map<String, Long> freq) {
+                return freq.keySet().stream()
+                        .sorted(comparing(freq::get).reversed()) // 한정적 메서드 참조
+                        .limit(10)
+                        .collect(toList());
+            }
+          ```
+        - **toMap**
+          - 스트림의 각 원소가 고유한 키에 매핑되어있을때 사용
+          - 스트림의 원소가 같은 키로 매핑하려한다해도, 적절한 merge 함수만 사용한다면 문제없음 (만약 merge함수 사용안하면 예외던져짐)
+            ```java
+                void toMap_예제_앨범들중에서_음악가의_베스트앨범() {
+                    List<Album> albums = null;
+
+                    Map<Artist, Album> collect = albums.stream()
+                            .collect(Collectors.toMap(Album::getArtist, v -> v, maxBy(comparingInt(Album::getSales)))); // albums에 동일한 artist는 여럿 있을수 있다. 즉, 같은 key로 매핑이 될텐데, maxBy라는 병합함수를 통해서 key가 중복될때 무엇을 선택할지 명시해주고있다. maxBy는 BinaryOperator의 디폴트 메서드. 최대값인 대상으로 병합하라고 알려주는것
+                    
+                }
+            ```
+        - **groupingBy**
+          - 입력으로 분류 함수(classifier)를 받고, 출력으로는 원소들을 카테고리별로 모아 놓은 맵을 담은 수집기(Collector)를 반환해준다
+          - 인자로 분류함수 하나만 받는 경우에는, Map의 value는 toList가 된다. 즉, toMap은 원소하나에 value 하나가 mapping 되는데, groupingBy는 이름처럼 지정한 분류함수대로 N개의 값이 나올 수 있기에 default가 List
+          - List외의 값을 갖도록(ex. Set) 하기위해서는 다운스트림 수집기도 명시해야한다 (인자로 두개 받는 메서드)
+            - `public static <T, K, A, D> Collector<T, ?, Map<K, D>> groupingBy(Function<? super T, ? extends K> classifier, Collector<? super T, A, D> downstream) { ... }`
+            - Collectors.counting()을 downstream 수집기에 지정하면, 분류함수로 지정한 카테고리(key)에 속하는 원소의 갯수를 값(value)으로하는 Map을 얻을수 잇다
+        - partitioningBy
+          - 분류 함수자리에 predicate를 받고 키가 Boolean인 맵을 반환
+        - counting
+          - 다운스트림 수집기 전용으로 보면됨
+          - Stream에 count가 있기때문에, `collect(Collectors.counting())` 이런식으로 쓸일은 없다
+        - summing, averaging, summarizing
+          - 위 각각이 int, long, double 스트림용으로 하나씩 존재
+        - reducing, filtering, mapping, flatMapping, collectingAntThen
+          - 대부분 프로그래머는 이들의 존재를 몰라도 상관없음
+          - 설계 관점에서 보면, 이 수집기들은 스트림 기능의 일부를 복제하여 다운스트림 수집기를 작은 스트림처럼 동작하게 한것
+            - 주로 Collectors 내부적으로 사용하기위한것으로 보임..
+            - ![](2023-05-21-21-28-02.png)
+              - reducing 관련 Doc 설명에 따르면, groupingBy나 partitioningBy의 downstream 수집기에서 사용하는 용도라고함. 그냥 단순 reduction할꺼면 Stream.reduce 사용하라함
+              - => 그냥 downstream Collector 사용하는곳에서 쓰고자 만든것으로보임..
+        - minBy, maxBy
+          - Collectors에 정의되어있지만, "수집"과는 별 관련없음
+          - Stream 인터페이스의 min과 max 메서드를 살짝 일반화한것. BinaryOperator의 minBy나 maxBy의 수집기 버전으로 이해하자 (위와 유사한듯.. downstream 수집기에서 사용하기위함인듯..)
+        - **joining**
+          - Collectors에 정의되어있지만, "수집"과는 별 관련없음
+          - 원소들을 연결하는 수집기를 반환
+          - CharSequence 인스턴스(ex. String)의 스트림에만 적용가능
+  - 기타 팁
+    - forEach 연산은 스트림 계산 결과를 보고할 때만 사용하고, 계산하는데는 쓰지말자! (출력이나 로깅에서나 사용하자!!)
+      - 가끔은 스트림 계산 결과를 기존 컬렉션에 추가하는 등의 다른 용도로 사용하기도한다함
+    
