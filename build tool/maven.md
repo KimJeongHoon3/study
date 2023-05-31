@@ -56,3 +56,10 @@ maven
 - [maven 간단정리](https://thalals.tistory.com/345)
 - [dependencyManagement와 dependecies 차이점](https://darkstart.tistory.com/238)
   - dependencyManagement를 쓰면 그냥 dependencies에서 의존성을 추가할때 dependencyManagement에 정의된 의존성이라면, 버전명시를 안해도 dependencyManagement에 있는 버전을 가져옴.. dependencyManagement 여기에 있는 모든 의존성을 가져오진않음
+
+- [maven 기초내용](https://javacan.tistory.com/129)
+  - Maven은 clean, build (default), site의 세 가지 라이프사이클을 제공하고 있다. 각 라이프사이클은 순서를 갖는 단계(phase)로 구성된다. 또한, 각 단계별로 기본적으로 실행되는 플러그인(plugin) 골(goal)이 정의되어 있어서 각 단계마다 알맞은 작업이 실행된다. 
+  - ![](2023-05-30-16-35-14.png)
+  - 기본적으로 라이프사이클의 특정 단계를 실행하면 그 단계의 앞에 위치한 모든 단계가 실행된다. 예를 들어 test 단계를 실행하면 test 단계를 실행하기에 앞서 'generate-sources' 단계부터 'test-compile' 단계까지 각 단계를 순서대로 실행한다. 각 단계가 실행될 때는 각 단계에 묶인 골(goal)이 실행된다.
+    - 플러그인 골을 직접 명시한 경우에는 해당 플러그인만 실행되기 때문에 라이프사이클의 단계가 실행되지는 않는다.
+      - ex. `mvn surefire:test` 라고 명령하면, 위 표의 test phase이전의 모든 단계가 실행되지않고, 딱 해당 단계의 플러그인말 실행. 
