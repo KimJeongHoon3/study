@@ -144,3 +144,250 @@ effective_java_메서드
         - 사용자가 다루는 개념의 추상화 수준에 맞게 조절해야하고,
         - 특정 조합의 패턴이 상당히 자주 사용되거나 최적화하여 성능을 크게 개선할 수 있다면 직교성이 낮아지더라도 편의기능으로 제공필요
       - => 직교성을 절대적인 가치라기보다는, 철학과 원칙을 가지고 일관되게 적용하는게 중요!
+
+---
+
+- 아이템52_다중정의는 신중히 사용하라
+  - **어느 메서드를 호출할지는 컴파일타임에 결정된다!** (컴파일 타임에 결정된다는것은 실제 생성된 인스턴스의 타입이 무엇이냐는 상관없다는 말.. 반대로 런타임에 결정된다는것은 실제 생성된 인스턴스의 타입을 신경쓴다는 말..)
+    - 그래서 다중정의시 부모자식간의 관계에 있는 매개변수타입이라면, 오버라이딩때 기대하던대로 동작하지 않을 수 있다
+      - 오버라이딩은 하위타입 인스턴스를 생성하고 상위타입으로 선언되어있더라도, 런타임시에 알아서 오버라이딩된 하위타입의 메서드를 호출해준다..
+        - **오버라이딩 메서드는 동적으로 선택된다** (**오버로딩한 메서드는 정적으로 선택**)
+      - 이에 대한 해결책..
+        - 가장 상위타입을 매개변수타입으로 놓고, `instanceof` 를 활용하여 분기를 태워 적절한 동작을 수행
+  - 그래서 다중정의는 혼동을 일으킬 수 있기때문에, 피할 수 있으면 피해야한다
+    - 특히, 가변인수를 사용하는 메서드라면, 다중정의를 아예하지 말아야한다
+    - 대안
+      - 메서드 이름을 아예 다르게 만들자!
+      - 좋은예: 
+        - ObjectOutputStream
+          - 다중정의보다, 메서드에 이름을 다르게 지음(write)
+          - ![](2023-06-09-15-56-32.png)
+  - 그럼 생성자는 어떻게?
+    - 생성자는 이름을 다르게 지을수는 없으니, 정적 팩터리를 활용하자
+    - 무튼 그래도 여러 생성자가 같은 수의 매개변수를 받을 경우 어떡하나?
+      - 매개변수 중 하나 이상이 "근본적으로 다르다(radically different)" 면 문제될게 없음
+        - 근본적으로 다르다는것은 두 타입의 (null이 아닌)값을 서로 어느 쪽으로든 **형변환 할 수 없다**는 것!
+        - 참고
+          - Object 외의 클래스 타입과 배열타입은 근본적으로 다르다
+          - Serializable과 Cloneable 외의 인터페이스 타입과 배열타입도 근본적으로 다르다
+          - => 배열은 Object의 하위타입이고, Serialiable과 Cloneable 의 구현체인듯
+      - 형변환 할 수 없으면, 기대와다른 메서드로 갈 일이 없다..
+      
+  - 다중정의로 인한 혼란 예시
+    - java5의 오토박싱으로인한 다중정의시 혼란
+      - ex. List.remove(Object), List.remove(int)로 인한 혼란
+        ```java
+            Set<Integer> set = new TreeSet<>();
+            List<Integer> list = new ArrayList<>();
+
+            for (int i = -3; i < 3; i++) {
+                set.add(i);
+                list.add(i);
+            }
+
+            //  for (int i = 0; i < 3; i++) { // 이렇게하면 list는 -2,0,2 남음
+            //      set.remove(i);
+            //      list.remove(i);
+            //  }
+
+            for (Integer i = 0; i < 3; i++) { // 이렇게해야 -3, -2, -1 남는다..
+                set.remove(i);
+                list.remove(i);
+            }
+
+            System.out.println("set: "+set);
+            System.out.println("list: "+list);
+
+            // List의 remove가 int를 받는것과 Object를 받는것으로 다중정의되어있기때문에 혼란스러움.....
+        ```
+    - 자바 8에서 도입한 람다와 메서드참조로 인한 다중정의시 혼란
+      - 참조된 메서드와 호출한 메서드 양쪽 다 다중정의시 컴파일 에러..
+        - 참고로 다중정의해소(resolution: 적절한 다중정의 메서드를 찾는 알고리즘) 라는 복잡한 동작이 다중정의된 메서드를 찾을때 수행된다함..
+        ```java
+          new Thread(System.out::println).start(); // 문제없음
+          // Thread에는 Runnable밖에 없기때문에 문제없음
+          
+          // Executors.newCachedThreadPool().submit(System.out::println); // 컴파일 에러
+          // submit(호출한 메서드)도 다중정의되어있고, println(참조한메서드)도 다중정의되어있기때문에 컴파일러가 제대로 못찾음..(다중정의 메서드 찾는 알고리즘수행한다함..)
+
+          Runnable r = System.out::println;
+          Executors.newCachedThreadPool().submit(r); // 이건 가능. 아마 정확하게 Runnable로 명시하기때문에 문제없는듯함 
+        ```
+      - **메서드를 다중정의할때, 서로 다른 함수형 인터페이스도 같은 위치의 인수로 받아서는 안된다!!**
+        - 즉, 서로 다른 함수형 인터페이스라도 서로 근본적으로 다르지않다는것! (연관이 있으니, 컴파일러가 제대로 못찾겠지..)
+        - ex. submit(Callable), submit(Runnable)
+    - 그래도 다중정의를 써야겠다면?
+      - 어떤 다중정의 메서드가 불리는지 몰라도, 기능이 똑같다면 신경쓸게 없음!
+        - 이렇게하는 가장 일반적인 방법은 상대적으로 더 특수한 다중정의 메서드에서 덜 특수한(더 일반적인) 다중정의 메서드로 일을 넘겨버리는것(forward)
+      - 좋은예
+        - String.contentEquals
+        ```java
+          // String class 내부
+          public boolean contentEquals(StringBuffer sb) {
+              return contentEquals((CharSequence)sb); // 더 일반적인 오버로딩 메서드를 호출
+          }
+
+          public boolean contentEquals(CharSequence cs) {
+             // ...
+          }
+        ```
+      - 안좋은예
+        - String.valueOf(char[]) 와 String.valueOf(Object)
+        ```java
+          // 아래 두개는 다르게 동작한다.. 다중정의 사용의 혼란으로 인한 예..
+          Object obj = null;
+          String s1 = String.valueOf(obj);
+          System.out.println(s1); // null
+
+          char[] chars = null;
+          String s2 = String.valueOf(chars); // NullPointerException
+          System.out.println(s2);
+
+          /////////////////////////////////////
+          // String class 내부를 보면, 하는일도 다름..
+          public static String valueOf(Object obj) {
+              return (obj == null) ? "null" : obj.toString();
+          }
+
+          public static String valueOf(char data[]) {
+              return new String(data);
+          }
+        ```
+  
+  - 결론
+    - 매개변수의 갯수가 같을때, 다중정의는 될 수 있으면 피하라 (메서드 이름달리해~)
+    - 생성자는 이를 따르기 쉽지않을 수 있으니..
+      - 형변환을해서 정확한 메서드(혹은 필요에 맞는 동작)를 선택할 수 있도록 해야한다
+      - 또는 같은 객체를 입력받는 다중 정의 메서드들이 모두 동일하게 동작하도록 만들어야한다!(위의 `String.contentEquals` 참고)
+
+---
+
+- 아이템53_가변인수는 신중히 사용하라
+  - 가변인수(varargs)메서드는 명시한 타입의 인수를 0개 이상 받을 수 있다
+  - 가변인수 메서드를 호출하면, 인수의 개수와 길이가 같은 **배열을 만들고**, **인수들을 이 배열에 저장**하여 가변인수 메서드에 건네준다
+  - 예제
+    ```java
+      static int sum(int... args) {
+          int sum = 0;
+          for (int arg : args) {
+              sum += arg;
+          }
+          
+          return sum;
+      }
+    ```
+  - 인수가 필수적으로 1개 이상일때는 어떻게?
+    - 매개변수2개 받도록 하면됨
+      - 첫번째로는 평범한 매개변수, 두번째는 가변인수를 받으면된다
+      ```java
+        static int min(int firstArg, int... remainingArgs) {
+            int min = firstArg;
+            for (int remainingArg : remainingArgs) {
+                if (min > remainingArg) {
+                    min = remainingArg;
+                }
+            }
+            
+            return min;
+        }
+      ```
+  - 자바에서 가변인수를 활용한 대표적인 예
+    - printf
+      - ![](2023-06-10-15-51-11.png)
+    - 리플렉션
+  - 성능에 민감한 상황이라면?
+    - 가변인수 호출시에는 배열을 계속 새롭게 만들기때문에 성능에 좋지않다
+    - 이때 최적화를 위해서 다중정의를 이용한다
+      ```java
+        public void foo() {}
+        public void foo(int a1) {}
+        public void foo(int a1, int a2) {}
+        public void foo(int a1, int a2, int a3) {}
+        public void foo(int a1, int a2, int a3, int... rest) {}
+      ```
+    - 예시
+      - EnumSet.of
+        - ![](2023-06-10-15-54-33.png)
+
+---
+
+- 아이템54_null이 아닌, 빈 컬렉션이나 배열을 반환하라
+  - 컬렉션이나 배열같은 컨테이너가 비었을때, null을 반환하는 메서드를 사용할 떄면 항시 클라이언트는 null체크와같은 방어코드를 넣어주어야한다
+  - 일반적으로 빈 컬렉션을 리턴하는방법
+    - ex. list 컨테이너를 요소로 가졌을때 List 반환 예
+      ```java
+        public List<Cheese> getCheeses() {
+          return new ArrayList<>(cheeseInStock); // cheeseInStock은 List<Cheese>. cheeseInStock이 empty이면 ArrayList가 새로이 생성은되나, 내부적으로 비어잇는 배열을 가지고있는다(이 배열은 static으로 가지고있음. 아래 arrayList와 arrayList2 참고)
+        }
+
+        // ArrayList를 새로 생성하긴하니.. 성능 최적화를 위해서는 아래와같이 Collections에서 제공하는 "불변 컬렉션"을 반환
+        public List<Cheese> getCheeses_성능최적화() {
+          return cheeseInStock.isEmpty() ? Collections.emptyList() : new ArrayList<>(cheeseInStock); 
+        }
+
+        ////////////////////////
+        // Collections.emptyList는 불변컬렉션이자 항상 동일한 빈 List를 반환
+        List<String> emptyList = Collections.emptyList();
+        List<String> emptyList2 = Collections.emptyList();
+        System.out.println(emptyList == emptyList2); // true
+
+        // ArrayList에 빈 list를 매개변수로 전달하면, 항상 동일한 elementData를 가진다
+        ArrayList<String> arrayList = new ArrayList<>(emptyList);
+        ArrayList<String> arrayList2 = new ArrayList<>(emptyList);
+        // arrayList.elementData와 arrayList2.elementData는 동일한 배열을 가리킨다
+      ```
+  - 배열은 null대신 길이가 0인 배열을 반환하라~
+    - 보통은 단순히 정확한 길이의 배열을 반환하면 되는데, 요소가 없을때는 길이가 0인 배열을 반환하면 되는것뿐..
+    - ex. list 컨테이너를 요소로 가졌을때 배열 반환 예
+      ```java
+        static class ListWrapper {
+            List<String> list = new ArrayList<>();
+            private static final String[] EMPTY_ARRAY = new String[0];
+
+            public String[] toArray일반() {
+                return list.toArray(new String[0]); // 이렇게 되면 항상 내부적으로 전달받은 배열을 사용하는게 아닌, 새로운 배열을 생성하게됨. 즉, 저기서 길이 0짜리 배열을 전달해주는것은 우리가 원하는 반환 타입을 알려주는 역할정도라고 생각하면됨 (만약 list size가 0이면 매개변수로 전달한 new String[0] 그대로 전달해줌).
+            }
+
+            public String[] toArray최적화() {
+                return list.toArray(EMPTY_ARRAY); // 성능 최적화를 위해 new String[0]을 계속 만들지않고 정적변수로 관리..
+            }
+
+            public String[] toArray최적화아님() {
+                return list.toArray(new String[list.size()]); // 최적화가 안된다함.. 그냥 new String[0]을 파라미터로 넘겨주어 새로 배열만드는게 더 성능상 좋은듯..
+            }
+        }
+
+        ///////////////////////
+        // ArrayList.toArray 테스트
+        List<String> list = new ArrayList<>() {{
+            add("a");
+            add("b");
+        }};
+
+        String[] emptyStringArr = new String[0];
+        String[] array = list.toArray(emptyStringArr);
+        System.out.println(array == emptyStringArr); // false => list의 요소 수보다 배열의 크기가 더 작기때문에 새로운 array 만들어서 반환
+
+        String[] emptyStringArr2 = new String[10];
+        String[] array2 = list.toArray(emptyStringArr2);
+        System.out.println(array2 == emptyStringArr2); // true => list의 요소 수보다 배열의 크기가 더 크기때문에 전달받은 배열 사용 (이게 성능이 별로라함..)
+
+
+        /////////////////////////
+        // ArrayList 내부
+        public <T> T[] toArray(T[] a) {
+            if (a.length < size)
+                // Make a new array of a's runtime type, but my contents:
+                return (T[]) Arrays.copyOf(elementData, size, a.getClass());
+            System.arraycopy(elementData, 0, a, 0, size);
+            if (a.length > size)
+                a[size] = null;
+            return a;
+        }
+        ////////////////////////
+
+      ```
+  - 결론
+    - null을 반환하지마라. 빈 배열이나 빈 컬렉션을 반환해라.. null을 반환하면 사용자는 이를 처리해야하는 코드를 별도로 만들어야하고, 성능이 좋은것도 아니다..
+  - 기타 팁 
+    - **최적화가 필요하다고 판단되면, 수정전과 후의 성능을 반드시 측정하고 실제로 성능이 개선되는지 확인하자!!**
