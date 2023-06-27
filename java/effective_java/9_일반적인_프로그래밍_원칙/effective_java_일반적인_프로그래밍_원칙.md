@@ -106,3 +106,53 @@ effective_java_일반적인_프로그래밍_원칙
       - [java10 릴리즈노트의 신규기능](https://www.oracle.com/java/technologies/javase/10-relnote-issues.html#NewFeature)
       - java.lang, java.util, java.io 는 잘 숙지하자!
 
+---
+
+- 아이템60_정확한 답이 필요하다면 float과 double은 피하라
+  - float과 double은 부동소수점 연산에 쓰이며, 넓은 범위의 수를 빠르게 정밀한 **근사치**로 계산하도록 설계되었음
+  - 따라서 정확한 결과가 필요할때는 사용하면안된다!
+    - 금융 관련 계산과 맞지않음!!
+      - 금융 계산에서는 BigDecimal, int나 long을 사용해한다
+        - BigDecimal은 기본타입보다 쓰기가 훨씬 불편(메서드를 사용해서 더하고 빼고를 해야함..)하고, 느리다(내부적으로 long을 사용하여 더하고 빼고는 하지만, 하나의 컨테이너이기에 값을 가져오는것도 그렇고, 계산결과를 위해 새로운 불변 객체(BigDecimal)을 만든다..)
+          - 하지만, 8가지 반올림 모드를 제공해주기때문에, 반올림을 완벽히 제어가능하다.. 법으로 정해진 반올림을 수행해야하는 경우라면 개꿀~
+        - 결국, 빨라야하거나 계산편의를 위해서 기본자료형을 사용해야한다면, int나 long으로..
+          - 또한, 숫자가 너무 크지 않아야.. int를 사용하면 아홉자리 십진수까지.. long은 열여덟자리 십진수.. 이거 넘어가면 BigDecimal로 가야지..
+            - 참고로.. int는 8바이트로 음수포함일때 양수는 최대 2^31 - 1 의 값인데, 대략 2^10이 십진수 3자리(1024) 이므로 대략 9자리정도로 볼 수 있다~
+        
+    
+  - float/double 관련 테스트 코드 (아이템10에서 테스트한 코드)
+    ```java
+      @Test
+      void test() {
+          assertFalse(1.1 + 0.1 == 1.2); // 소수점 기본타입은 double
+          assertTrue(1.1f + 0.1f == 1.2f);
+          assertFalse(1.1f + 0.2f == 1.3f); // float 끼리 더한다고 항상 같지않음 (가수부 범위 넘어가면 반올림이 있기때문에 무한소수일경우는 기대했던 계산 결과가 나오지않을수있다)
+          assertFalse(1.1f + 0.1f == 1.2d);
+
+          assertTrue(1.25f == 1.25d); // 가수부가 길지않기에 (23bit보다 적기에) 문제발생안함
+          assertFalse((float)0.1 == 0.1);
+          assertFalse(Double.compare(0.1f, 0.1) == 0);
+
+          System.out.printf("1.1f 의 이진수: %32s%n",Integer.toBinaryString(Float.floatToIntBits(1.1f))); // 가수부분 저장시 잘려나가는 데이터가있는 경우 반올림해서 저장(마지막이 1100으로 끝나야할것 같은데 1101로 저장되는이유)
+          System.out.printf("0.1f 의 이진수: %32s%n",Integer.toBinaryString(Float.floatToIntBits(0.1f)));
+          System.out.printf("1.2f 의 이진수: %32s%n",Integer.toBinaryString(Float.floatToIntBits(1.2f))); // float 끼리 더하면 항상 맞으려나..?
+          System.out.printf("1.2d 의 이진수: %64s%n",Long.toBinaryString(Double.doubleToLongBits(1.2d)));
+          System.out.printf("(double)1.2f 의 이진수: %64s%n",Long.toBinaryString(Double.doubleToLongBits(1.2f))); // 가수부는 그냥 double 크기에 맞추어 0 더 붙인거일뿐.. 그렇기에 1.2d와 같지가 않다..
+
+          System.out.println();
+
+          System.out.printf("1.1f 의 이진수: %32s%n",Integer.toBinaryString(Float.floatToIntBits(1.1f)));
+          System.out.printf("0.2f 의 이진수: %32s%n",Integer.toBinaryString(Float.floatToIntBits(0.2f)));
+          System.out.printf("1.3f 의 이진수: %32s%n",Integer.toBinaryString(Float.floatToIntBits(1.3f)));
+
+          System.out.println();
+
+          System.out.printf("1.25f 의 이진수: %32s%n",Integer.toBinaryString(Float.floatToIntBits(1.25f)));
+          System.out.printf("0.1f 의 이진수: %32s%n",Integer.toBinaryString(Float.floatToIntBits(0.1f)));
+          System.out.printf("0.1d 의 이진수: %64s%n",Long.toBinaryString(Double.doubleToLongBits(0.1d)));
+              // 0.1d 의 이진수
+              // 0    01111111011   1001100110011001100110011001100110011001100110011010
+              // 부호  지수부          가수부 (무한소수일 경우에는 double이나 float 같은 경우 가수부 범위가 넘어서면 잘리기때문에 오차가 발생)
+
+      }
+    ```
