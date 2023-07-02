@@ -156,3 +156,85 @@ effective_java_일반적인_프로그래밍_원칙
 
       }
     ```
+
+---
+
+- 아이템61_박싱된 기본 타입보다는 기본 타입을 사용하라
+  - 기본타입에 대응 되는 참조타입이 하나씩 있는데, 이를 **박싱된 기본 타입** 이라한다
+    - ex. int -> Intger
+  - 자바는 기본적으로 오토박싱과 오토언박싱으로 두 타입을 구분하지않고 사용할 수 있는데, 기본타입과 참조타입간에는 차이점이 있기에 주의해야한다
+    - 기본타입 vs 박싱된 기본타입 (참조타입)
+      - 기본 타입은 값만 가지고 있은, 박싱된 기본 타입은 값과 식별성(identity)을 추가로 갖는다
+        - 즉, 박싱된 기본타입의 두 인스턴스는 식별성이 있기에 값이 같아도 다르게 식별할 수 있다
+        - 그래서 박싱된 기본타입에 == 연산자를 사용하면 오류가 일어나게 된다
+          ```java 
+            Comparator<Integer> integerComparator = (i, j) -> i < j ? -1 : (i == j ? 0 : 1);
+            System.out.println(integerComparator.compare(new Integer(10), new Integer(10))); // 1반환.. i < j 비교시엔 오토언박싱을 통해서 예상된   값을 반환하나, i == j 비교시에 "객체 참조의 식별성"을 보게되므로.. 두 인스턴스가 비록 값은 같을지라도 엄연히 다르니.. 0이 아닌 1을 반환한다..
+            System.out.println(integerComparator.compare(Integer.valueOf(10), Integer.valueOf(10))); // 0 반환. -128~127 까지는 캐싱되어있기때문에 동일한 인스턴스가 동일하다
+
+            // 비교자를 써야한다면 만들어져있는걸 사용하자..
+            Comparator<Integer> tComparator = Comparator.naturalOrder();
+            int compare = tComparator.compare(new Integer(10), new Integer(10));
+            System.out.println(compare); // 0 반환. Integer에 구현되어있는 compareTo를 사용하게되어 문제없이 비교됨
+          ```
+      - 기본 타입의 값은 언제나 유효하나, 박싱된 기본 타입의 값은 유효하지않은 값인 null을 가질 수 있다
+        - 박싱된 타입은 null을 가질 수 있기때문에 특별히 주의해야할 점이 있다
+          - 기본 타입과 박싱된 기본 타입을 혼용한 연산에서는 박싱된 기본 타입의 박싱이 자동으로 풀린다(언박싱). 그러나 이때, 만약 null참조인 상태를 언박싱하면 NullPointerException이 발생한다!
+            - 이를 해결하기위해서는 박싱된기본타입 쓰지말고 그냥 기본타입 사용하라~
+      - 기본 타입이 박싱된 기본타입보다 시간과 메모리 사용면에서 효율적이다
+        - 박싱과 언박싱이 지속적으로 이루어진다면 매우매우 성능이 저하된다
+          - 개발 실수로 기본타입을 계속 박싱하도록하면.. 필요없는 객체를 생성하게되는꼴..
+            ```java
+              int i = 128; // -128 ~ 127 까지는 캐싱된 인스턴스를 가져오기때문에 오토박싱해도 항상 동일한 인스턴스를 가져오긴한다..
+              int j = 128;
+
+              Integer boxedI = i; // 오토박싱 -> 새로운 객체 생성
+              Integer boxedJ = j; // 오토박싱 -> 새로운 객체 생성
+
+              System.out.println(boxedI == boxedJ);
+            ```
+  - 박싱된 기본타입을 언제쓰는게 좋을까?
+    - 컬렉션의 원소, 키, 값으로 사용
+      - 자바 언어가 타입 파라미터로 기본 타입을 지원안하기때문..
+    - 리플렉션을 통해 메서드를 호출할 때도 박싱된 기본타입 사용필요
+
+---
+
+- 아이템62_다른 타입이 적절하다면 문자열 사용을 피하라
+  - 문자열을 쓰지 말아야할 사례
+    - 문자열은 다른 값 타입을 대신하기에 적합하지 않다
+      - 데이터를 받을떄 주로 문자열을 사용하는데, 받을 데이터가 진짜 문자열일 때만 그렇게 하자
+      - 기본 타입이든 참조 타입이든 적절한 값 타입이 있다면 그것을 사용하고, 없다면 새로 하나 만들어라..
+      - **잘 지키자..**
+    - 문자열은 열거타입을 대신하기에 적합하지 않다
+      - 상수 열거할때는 열거타입으로!!
+    - 문자열은 혼합 타입을 대신하기에 적합하지 않다
+      - ex. `String compoundKey = className + "#" + i.next();`
+        - 만약 className이나 i.next()에 "#" 가 들어가있으면 에러 날수있음..
+        - 문자열을 따로 파싱해야하니.. 성능도 그렇고 오류날 가능성 높음
+        - String이 제공하는 기능에만 의존해야함
+      - => 전용 클래스를 만들자! private 정적 멤버 클래스가 이런걸로 쓰기 딱좋다
+    - 문자열은 권한을 표현하기에 적합하지 않다
+      - ex. ThreadLocal이 나오기전, 스레드 지역변수 기능을 만들기위해 각 스레드 마다 사용하는 key를 String으로 받았다고함. 여기서 사용된 key가 권한을 표현..
+        - 이렇게 사용하게되면, 개발자들끼리 소통의 오류로 같은 키를 사용하게되었을 경우 심각한 오류가 유발..
+        - => 클래스 자체를 key로 만들어서 사용한게 ThreadLocal
+          ```java
+            // ThreadLocal 내부
+            public void set(T value) {
+                Thread t = Thread.currentThread();
+                ThreadLocalMap map = getMap(t);
+                if (map != null) {
+                    map.set(this, value); // key로 ThreadLocal 자신을 셋팅
+                } else {
+                    createMap(t, value);
+                }
+            }
+            
+            ThreadLocalMap getMap(Thread t) {
+                return t.threadLocals;
+            }
+            
+            void createMap(Thread t, T firstValue) {
+                t.threadLocals = new ThreadLocalMap(this, firstValue);
+            }
+          ```
