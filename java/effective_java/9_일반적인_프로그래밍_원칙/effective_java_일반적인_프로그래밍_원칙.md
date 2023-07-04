@@ -233,8 +233,17 @@ effective_java_일반적인_프로그래밍_원칙
             ThreadLocalMap getMap(Thread t) {
                 return t.threadLocals;
             }
-            
+
             void createMap(Thread t, T firstValue) {
                 t.threadLocals = new ThreadLocalMap(this, firstValue);
             }
           ```
+
+---
+
+- 아이템63_문자열 연결은 느리니 주의하라
+  - 문자열 연결 연산자(+)는 여러 문자열을 합쳐주는 편리한 수단이나, 문자열 n개를 잇는 시간은 n^2에 비례..
+    - 두 문자열은 불변이라 피연산자인 양쪽 문자열 모두를 복사하므로 성능엔 당연 좋지않다~
+  - 문자열 연결이 잦다면, StringBuilder를 사용하자
+    - java17은 StringBuilder와 StringBuffer가 AbstractStringBuilder를 상속하는데, 대부분이 공통으로 사용됨. 특히나 append와 같은 부분은 완전동일..
+      - java8은 StringBuffer의 append 메서드에는 sychronized 키워드가 있다..
