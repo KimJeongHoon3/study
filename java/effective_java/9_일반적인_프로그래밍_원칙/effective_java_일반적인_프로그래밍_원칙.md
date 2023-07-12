@@ -84,7 +84,7 @@ effective_java_일반적인_프로그래밍_원칙
     - 병렬반복(parallel iteration)
       - 여러 컬렉션을 병렬로 순회해야 한다면 각각의 반복자와 인덱스 변수를 사용해서 엄격하고 명시적으로 제어해야한다
         - 보통 중첩된 for문을 쓸때 안쪽에 있는 루프를 다 돌면 다시 바깥 루프의 다음 원소로 가게되는 일련의 순차적인 과정이 있는데, 바깥루프와 안쪽루프를 순차적인 과정으로 도는게아닌 왔다갔다해야하는 즉, 병렬로 처리해야하는 경우가 있을때를 이야기하는듯함.. 
-    - 원소들의 묶음을 표현하는 타입을 작성해야한다면 Iterable 구현을 고민해보자~ 그래서 이를 사용하는 사용자가 for-each를 사용할수있도록 해주자~
+  - 원소들의 묶음을 표현하는 타입을 작성해야한다면 Iterable 구현을 고민해보자~ 그래서 이를 사용하는 사용자가 for-each를 사용할수있도록 해주자~
 
 ---
 
@@ -117,7 +117,7 @@ effective_java_일반적인_프로그래밍_원칙
           - 하지만, 8가지 반올림 모드를 제공해주기때문에, 반올림을 완벽히 제어가능하다.. 법으로 정해진 반올림을 수행해야하는 경우라면 개꿀~
         - 결국, 빨라야하거나 계산편의를 위해서 기본자료형을 사용해야한다면, int나 long으로..
           - 또한, 숫자가 너무 크지 않아야.. int를 사용하면 아홉자리 십진수까지.. long은 열여덟자리 십진수.. 이거 넘어가면 BigDecimal로 가야지..
-            - 참고로.. int는 8바이트로 음수포함일때 양수는 최대 2^31 - 1 의 값인데, 대략 2^10이 십진수 3자리(1024) 이므로 대략 9자리정도로 볼 수 있다~
+            - 참고로.. int는 4바이트로 음수포함일때 양수는 최대 2^31 - 1 의 값인데, 대략 2^10이 십진수 3자리(1024) 이므로 대략 9자리정도로 볼 수 있다~
         
     
   - float/double 관련 테스트 코드 (아이템10에서 테스트한 코드)
@@ -247,3 +247,125 @@ effective_java_일반적인_프로그래밍_원칙
   - 문자열 연결이 잦다면, StringBuilder를 사용하자
     - java17은 StringBuilder와 StringBuffer가 AbstractStringBuilder를 상속하는데, 대부분이 공통으로 사용됨. 특히나 append와 같은 부분은 완전동일..
       - java8은 StringBuffer의 append 메서드에는 sychronized 키워드가 있다..
+
+---
+
+- 아이템64_객체는 인터페이스를 사용해 참조하라
+  - 적합한 인터페이스만 있다면, 매개변수뿐 아니라 반환값, 변수, 필드를 전부 인터페이스 타입으로 선언하자
+    - 프로그램의 유연성을 위해!!! (구체 클래스를 사용하는, 생성자로 생성하는 부분만 변경하면 어디도 고치지않을수 있다..!)
+  - 적합한 인터페이스가 없다면? 클래스로!
+    - 값 클래스
+      - ex. String, BigInteger
+      - 보통 final 클래스로 지정되기도함
+    - 클래스 기반으로 작성된 프레임워크가 제공하는 객체일 경우
+      - 이런 경우라도 구현 클래스보다 상위의 클래스 혹은 추상클래스를 사용하자
+    - 인터페이스에는 없는 특별한 메서드 사용하는 경우
+      - ex. PriorityQueue에는 Queue 인터페이스에서 제공하지않는 comparator 메서드가 
+
+---
+
+- 아이템65_리플렉션보다는 인터페이스를 사용하라
+  - 리플렉션 기능을 활용하면 프로그램에서 임의의 클래스에 접근 가능
+    - 생성자(Constructor), 메서드(Method), 필드(Field) 인스턴스를 가져와서 해당 인스턴스를 통해 클래스의 멤버이름, 필드 타입, 메서드 시그니처 등 가져올 수 있음
+    - 또한 인스턴스를 생성하고, 메서드를 호출하거나, 필드에 접근할 수 있다
+  - 리플렉션의 단점
+    - 컴파일타임에 이루어지는 타입 검사가 주는 이점을 누릴수없음..
+      - 해당 클래스에 없는 메서드를 리플렉션으로 호출하면 런타임시에 에러발견..
+      - 아래 예시에는 6개의 예외를 런타임에 잡을수밖에 없다..
+    - 리플렉션을 이용하면 코드가 지저분해지고 장황해진다
+      - 아래 예시딱보면.. 더럽..
+    - 성능이 떨어진다
+      - 일반 메서드호출보다 훨씬느림
+      ```java
+        public static void main(String[] args) {
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start("리플렉션사용");
+            for (int i = 0; i < 100; i++) {
+                makeSetWithReflection(name);
+            }
+            stopWatch.stop();
+
+            stopWatch.start("일반생성자사용");
+            for (int i = 0; i < 100; i++) {
+                makeSetNormal();
+            }
+            stopWatch.stop();
+
+            System.out.println(stopWatch.prettyPrint());
+        }
+        
+
+        private static Set<String> makeSetNormal() {
+            return new HashSet<>();
+        }
+
+        private static Set<String> makeSetWithReflection(String clazzName) {
+            Class<? extends Set<String>> clazz = null;
+            try {
+                clazz = (Class<? extends Set<String>>) Class.forName(clazzName);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+
+            Constructor<? extends Set<String>> constructor = null;
+            try {
+                constructor = clazz.getDeclaredConstructor();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+
+            try {
+                return constructor.newInstance();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+                System.exit(1);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+                System.exit(1);
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+
+            return null;
+        }
+
+        /*
+          // 결과: 약 200배 차이남..
+
+          StopWatch '': running time = 2277726 ns
+          ---------------------------------------------
+          ns         %     Task name
+          ---------------------------------------------
+          002266631  100%  리플렉션사용
+          000011095  000%  일반생성자사용
+        */
+      ```
+  - 단점이 있기에 리플렉션은 아주 제한된 형태로만 사용하자
+    - 컴파일타임에 이용할 수 없는 클래스를 사용해야하는경우.. 그것도 인스턴스 생성에만 주로 쓰자.. 그리고 이렇게 만든 인스턴스는 인터페이스나 상위클래스로 참조해서 사용하자(물론, 인터페이스나 상위클래스가 있을때..)
+      - 이래야지 적어도 만들어진 클래스를 사용할때, 컴파일 타임에 오류를 발견할수 있다..! (즉, 런타임에 에러발견을 막기위해서 상위로의 변환이 필요하다는것..)
+  - 또한, 드물긴하나 런타임에 존재하지 않을 수도 있는 다른 클래스, 메서드, 필드와의 의존성을 관리할 때 사용하기 좋음
+    - 버전이 여러개 존재하는 외부 패키지를 다룰 때 유용
+      - 가장 오래된 버전만을 지원하도록 컴파일한 후, 이후 버전의 클래스와 메서드 등은 리플렉션으로 접근
+    
+---
+
+- 아이템66_네이티브 메서드는 신중히 사용하라
+  - 자바 네이티브 인터페이스(JNI)는 자바 프로그램이 네이티브 메서드를 호출하는 기술
+    - 네이티브 메서드란 C나 C++ 같은 네이티브 프로그래밍 언어로 작성한 메서드
+  - 네이티브 메서드 쓰임새? 
+    - 플랫폼 특화 기능사용을 위해
+    - 네이티브 코드로 작성된 라이브러리를 사용하기위해
+      - 자바 라이브러리가 없으면..
+    - 성능 개선을 위해 성능에 결정적인 영향을 주는곳만 네이티브로 사용
+      - => 이를 위해서는 네이티브 메서드를 사용하는것은 권장하지않음.. 자바 버전업 되는 과정에서 많은 튜닝으로 네이티브 구현보다도 빠른게 있다함
+  - 그러나, 자바가 성숙해가면서 하부 플랫폼 기능들을 점차 흡수하여, 네이티브 메서드를 사용할 필요가 줄어들고있음
+    - ex. 자바9부터 새로운 process api를 추가하여 OS 프로세스에 접근가능
+  - 네이티브 메서드 단점
+    - 네이티브 언어를 사용시에 이를 사용하는 어플리케이션 메모리 훼손 오류로부터 안전하지않음..
+    - 네이티브 언어는 플랫폼을 많이타고 이식성도 낮아서 속도가 오히려 느려질수도... 또한, 디버깅도 어렵..
+    - 가비지 컬렉터가 네이티브 메모리는 자동 회수하지 못하고, 심지어 추적조차 할수없음
+    - 자바코드와 네이티브 코드 경계를 넘나들때마다 비용 추가
+    - 네이티브 메서드와 자바코드 사이에 별도의 접착 코드를 작성해야함 (귀찮음, 가독성떨어짐)

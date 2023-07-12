@@ -1,2 +1,6 @@
 - rsyslog
-- https://m.blog.naver.com/sunchan683/221511250171
+  - https://m.blog.naver.com/sunchan683/221511250171
+  - [rsyslog 설정 관련 간단 개념설명](https://itragdoll.tistory.com/54)
+  - https://en.wikipedia.org/wiki/Syslog#Facility
+  - [rsyslog filter 적용](https://www.rsyslog.com/doc/v8-stable/configuration/filters.html)
+    - [이것도 참고하면좋을듯](https://www.claudiokuenzler.com/blog/1162/how-to-ignore-discard-certain-syslog-messages-rsyslogd-filters)
