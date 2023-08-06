@@ -12,3 +12,6 @@ csrf
     - 하지만, xss는 여전히 취약할수있음..
   - 핵심은 쿠키에 넣으면 동일하게 csrf에 취약할수있다는것..! 
   - https://kchanguk.tistory.com/197?category=887999
+  - https://www.baeldung.com/spring-security-csrf
+    - If our stateless API uses token-based authentication, such as JWT, we don't need CSRF protection, and we must disable it as we saw earlier.
+    - However, if our stateless API uses a session cookie authentication, we need to enable CSRF protection as we'll see next.
