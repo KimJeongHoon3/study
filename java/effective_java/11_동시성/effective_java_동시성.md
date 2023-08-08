@@ -33,6 +33,7 @@ effective_java_동시성
     - 이런 객체를 사실상불변(effectively immutable)이라하고, 다른 스레드에 이를 건네는 행위를 안전 발행(safe publication)이라한다
       - 안전발행 방법?
         - 초기화 과정에서 객체를 정적 필드, volatile 필드, final 필드, 혹은 보통의 락을 통해 접근하는 필드에 저장
+          - <span style="color:red"> 정적 필드가 왜 안전발행이지?</span>
         - 동시성 컬렉션에 저장.. 
           - ex. ConcurrentHashMap?
       - <span style="color:red">좀더 정확한 개념정리 필요<span>
