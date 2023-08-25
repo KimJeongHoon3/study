@@ -30,6 +30,11 @@ maven
         - test
         - system
         - import
+  - 프로젝트가 부모pom에 dependencyManagement를 사용하여 그곳에 정의된 A모듈의 버전과, 해당 프로젝트에서 의존하고있는 특정 프로젝트에서 가지고있는 A모듈의 버전중 무얼가져올까?
+    - maven dependencyManagement가 있으면, 의존하고 있는 프로젝트에 명시된 버전을 가져오는게 아닌, dependencyManagement에 지정한 버전을 가져온다. 다른 버전이 필요하다면, 직접 관련 프로젝트에 명시해주어야한다.
+      - > Dependency management - this allows project authors to directly specify the versions of artifacts to be used when they are encountered in transitive dependencies or in dependencies where no version has been specified.
+        - 전이된 종속성의 버전은 dependencyManagment에서 지정한 버전으로 적용된다는 이야기
+
 
   - 참고 사이트
     - [Maven – Introduction to the Dependency Mechanism](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html)
