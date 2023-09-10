@@ -163,8 +163,9 @@ effective_java_직렬화
 
   - 직렬화 프록시 패턴의 한계
     - 클라이언트가 멋대로 확장할 수 있는 클래스에는 적용 불가
-    - 객체 클래프에 순환이 있는 클래스 적용 불가
+    - 객체 그래프에 순환이 있는 클래스 적용 불가
       - 이런 객체의 메서드를 직렬화 프록시의 readReslove 안에서 호출하려하면 ClassCastException이 발생. 직렬화 프록시만 가졌을뿐 실제 객체는 아직 만들어진 것이 아니기 떄문
         - <span style="color:red">뭔소리??</span>
+        - LinkedList? Node안에 Node..
     - 좀 느리다..
     
