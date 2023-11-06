@@ -269,6 +269,7 @@ HTTP_김영한
     - HTML Form 데이터 전송
       - ***POST일때는*** HTML의 form 태그안의 내용을 submit하게되면, 웹브라우저는 HTTP 메세지를 생성할때, Content-Type을 application/x-www-form-urlencoded, body에 form태그안의 값을 기반으로 key=valuie&key2=value2... 이런식으로 보내게된다
         - urlencoded라는것은 말그래도 url로 넘어가는 데이터를 encoding처리를 한다는것인데, 한글이 넘어가면 %EA%B9.. 이런식으로 인코딩됨
+          - body에 데이터가 숫자나 알파벳이 아닐 경우 url인코딩을 사용하여 인코딩되는것이지, body의 데이터를 url로 옮기는게아니다.. (블로그 이상한 글에 현혹 노노)
       - ***GET일때는*** HTML의 form 태그 안의 내용을 submit하게되면, 웹브라우저는 HTTP 메세지를 생성할때, body에다가 뭐쓰지않고, URL에 쿼리파라미터로 보낸다
         - ex. GET /save<span style="color:skyblue">?username=kim&age=20</span> HTTP/1.1
       - 파일전송할때는 multipart/form-data 사용

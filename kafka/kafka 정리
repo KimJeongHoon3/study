@@ -417,6 +417,8 @@ https://www.joinc.co.kr/w/man/12/Kafka/docker
 -외부에서 kafka 연동할때 셋팅해야할것!
 advertise~~ 요거 셋팅해줘야함
 https://medium.com/@eun9882/kafka-trouble-shooting-remote-connect-error-a7970b00ffca
+https://parkcheolu.tistory.com/196
+설명굿: https://taaewoo.tistory.com/59
 
 -kafka 레퍼런스 한글번역
 https://godekdls.github.io/Apache%20Kafka/apis/
