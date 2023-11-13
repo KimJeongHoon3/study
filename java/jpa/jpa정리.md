@@ -299,7 +299,7 @@ spring:
       - 주의할점
         - 실무에서 가급적 지연로딩을 사용하라
           - 실무에서 수많은 테이블이 얽혀있는 상황에서는 즉시로딩을 통한 join문은 성능저하를 가져온다.. 예상치못하게..
-        - 즉시로딩은 JPQL에서 N+1 문제를 일으킨다
+        - 즉시로딩은 **JPQL**에서 N+1 문제를 일으킨다
           ```java
             //조건 : Member가 Team을 FK로 가지고있는 상황.. 
 
@@ -309,6 +309,9 @@ spring:
             // 2. 쿼리 실행하여 member data 가져오고 셋팅
             // 3. member 데이터 하나씩 보니, Team이 없네? 해당 member의 Team 쿼리 수행(만약 영속성컨텍스트에 찾는 Team 데이터가 있으면 그거사용) => select * from team where team_id=? 
             // 4. member의 Team이 셋팅될떄까지 3번 쿼리가 반복적으로 수행.. (데이터 갯수 N 만큼..)
+
+            // 반대도 마찬가지.. (select t from Team t, Team.class)
+            // N+1 이슈 관련 설명 매우 좋음 : https://velog.io/@jinyoungchoi95/JPA-%EB%AA%A8%EB%93%A0-N1-%EB%B0%9C%EC%83%9D-%EC%BC%80%EC%9D%B4%EC%8A%A4%EA%B3%BC-%ED%95%B4%EA%B2%B0%EC%B1%85
           ```
           - JPQL에서는 이런 문제를 해결하기위해서 fetch join을 사용하여 필요할때만 join해서 가져옴 (FetchType을 Lazy로 해도 fetch join을 사용하면 한방에 가져올수있음)
         - `@ManyToOne`, `@OneToOne`  의 디폴트는 FetchType.EAGER
@@ -336,6 +339,7 @@ spring:
         - CASCADE 옵션을 ALL이나 REMOVE로 셋팅했을때 부모 객체를 영속성 컨텍스트에서 remove하게되면 `orphanRemoval=false`로 놓아도 자식객체들은 다 지워짐
       - 고아객체제거옵션과 Cascade remove 옵션차이설명 굿
         - https://stackoverflow.com/questions/18813341/what-is-the-difference-between-cascadetype-remove-and-orphanremoval-in-jpa
+        - 설명 매우 좋음 : https://tecoble.techcourse.co.kr/post/2021-08-15-jpa-cascadetype-remove-vs-orphanremoval-true/
     - 영속성전이와 고아객체제거 옵션을 모두 활성화하면?
       - 부모 엔티티를 통해서 자식의 생명주기를 관리가능
       - 언제씀?
