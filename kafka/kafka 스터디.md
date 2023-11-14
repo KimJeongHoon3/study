@@ -22,7 +22,7 @@ kafka 스터디
     - leader-epoch를 언제사용하나?
       - leader-epoch는 이전 leader-epoch의 데이터가 보내질때 무시하기위한 용도로 사용.. 즉, 현재 leader-epoch가 아닌 이전의 숫자로 어떤 데이터가 들어오게되면 이는 무시된다..
       - https://stackoverflow.com/questions/50342961/what-is-a-role-of-leader-epoch-checkpoint-in-log-segment-of-kafka-partition
-    - 브로커 한대 죽으면(어떤거든 상관없음) 일단, 리더의 `leader-epoch-checkpoint`의 leader-epoch가 올라간다.. 그리고 startoffset도 하나 증가 (팔로워의 `leader-epoch-checkpoint`는 변동없음. 오직 리더만!)
+    - 브로커 한대 죽으면(어떤거든 상관없음) 일단, 리더의 `leader-epoch-checkpoint`의 leader-epoch가 올라간다.. ~~그리고 startoffset도 하나 증가~~ (팔로워의 `leader-epoch-checkpoint`는 변동없음. 오직 리더만!)
     - 또한 내부적으로 죽었다가 살아나면, 알아서 다시 기존 leader였던 브로커로 돌아가게되는데, 그때도 `leader-epoch-checkpoint`의 leader-epoch는 올라가게된다
       - 확실한건 leader-epoch 옆에 잇는값인 startoffset은 리더가 된 뒤에 아직 커밋이 안이루어진 첫 offset값이다
       - 이후에 데이터가 producing되어 나머지 팔로워의 복제가 모두 완료되면 팔로워의 `leader-epoch-checkpoint`가 리더와 동일하게 변경된다
@@ -30,9 +30,7 @@ kafka 스터디
     - 하.. 책에 나온설명.. 좀 이상하다.. 좀더 공식문서 찾아봐야할듯..
 
 
-- log-end-offset vs high-watermark
-  - https://stackoverflow.com/questions/39203215/kafka-difference-between-log-end-offsetleo-vs-high-watermarkhw
-  - log-end-offset은 단순히 Producer에서 마지막으로 발행한 메시지의 offset이고, high water mark는 모든 replica가 복제된 offset이다. 그렇기에, log-end-offset은 아직 복제 되기전까진 high water mark보다 앞서 있을 수 있다. 참고로 Lag은 consumer-group에서의 offset인 CURRENT-OFFSET을 log-end-offset에서 뺀값이다
+
 
 
 - high-watermark의 동작원리
@@ -66,7 +64,17 @@ kafka 스터디
 - 4장 카프카의 내부 동작 원리와 구현
   - high-watermark는 뭔가?
     - 카프카에서는 가장 최근 커밋된 오프셋 즉, 복제를 보장한 메세지의 오프셋을 이야기한다
-    - high-watermark는 
+    - high-watermark는 자신의 커밋된 지점을 가리키며, `replication-offset-checkpoint` 파일에서 확인할 수 있다
+    - 0번 오프셋의 데이터를 커밋하게되면, `replication-offset-checkpoint`는 해당 토픽의 오프셋이 0이 아닌, 1로 기록되는데, 이는 high watermark 라는 용어의 뜻을 알면 이해가 된다
+      - high watermark는 수위계와 관련이있다. 즉, 처음 물이들어와서 0에서 할당된 수위가 찼을때 눈금은 1을 가리킬 것이다. 그렇기에 이를 0번이라고 표현하지않고 1로 표현하는거로 보인다. 
+      - 하이워터마크라는 용어 유래 (챗gpt)
+        ```md
+          하이워터마크(High Watermark) 용어의 이름은 그 기능과 역할에서 유래되었습니다. 이 용어는 실제로 수위계와 관련이 있습니다. 아래와 같은 비유를 사용하여 이해할 수 있습니다.
+          1. **수위계와 유사성:** 하이워터마크는 데이터 스트림 또는 큐에서 어떤 지점까지 데이터가 도달했는지를 추적합니다. 이것은 물의 수위를 추적하는 수위계와 유사한 개념입니다. 수위계가 강이나 호수의 수위를 측정하듯이, 하이워터마크는 데이터 처리의 진행 상태를 측정합니다.
+          2. **고수위와 저수위:** 하이워터마크는 "고수위"와 "저수위"로 나뉩니다. "고수위"는 데이터 스트림에서 가장 높은 위치를 나타내며, 데이터 처리의 가장 최근 상태를 나타냅니다. "저수위"는 데이터 스트림에서 가장 낮은 위치를 나타내며, 처리가 완료된 데이터를 나타냅니다.
+          3. **데이터 처리의 흐름:** 하이워터마크는 데이터 스트림이나 큐를 따라 이동하면서 업데이트됩니다. 데이터가 처리되면 하이워터마크가 이동하며, 가장 최근 데이터가 어디까지 처리되었는지를 나타냅니다.
+          이처럼 하이워터마크는 데이터 처리의 상태를 시각화하고 추적하는 데 사용되며, 그 이름은 이 개념에서 수위를 추적하는 것과 유사성 때문에 붙여졌습니다.
+        ``` 
   - commit은 어떻게 이루어지나?
     - ISR내에서 모든 팔로워의 복제가 완료되면, 리더는 내부적으로 커밋되었다는 표시를 수행
     - **커밋되었다는것은 리플리케이션 팩터 수의 모든 리플리케이션이 전부 메세지를 저장했다는것을 의미한다!**
@@ -95,11 +103,19 @@ kafka 스터디
   - 리더 에포크(Leader Epoch)?
     - 카프카의 파티션들이 복구 동작을 할 때 메시지의 일관성을 유지하기 위한 용도로 이용
     - 리더에포크는 컨트롤러에 의해 관리되는 32비트의 숫자로 표현. 해당 리더에포크 정보는 리플리케이션 프로토콜에 의해 전파되고, 새로운 리더가 변 경된 후 변경된 리더에 대한 정보는 팔로워에게 전달. 리더에포크는 복구 동작 시 하이워터마크를 대체하는 수단으로도 활용
+    - leader epoch와 해당 epoch때 어디까지 커밋되었는지를 확인할 수 있다
+      - ex. (12 13) 으로 적혀있다면, leader epoch가 12일때 13까지 커밋이 되어있었다는걸 알 수 있고, leader(13 16) 이라면 새로운 리더가 선출되거나 리더가 변경되면서 leader epoch는 하나가 올라갔으며, 그때에 HWM가 16이므로 16까지 커밋되어있음을 알 수 있다.
     - => 브로커 복구시 하이워터마크로만의 한계점을 리더에포크로 보완했다고 보면 된다
       - 어떤 한계?
         - 리더와 팔로워의 하이워터마크가 불일치 되는 시점에서 브로커의 복구시 리더에포크가 사용
         - ex. 리더와 팔로워간에 데이터 복제는 되었지만, 리더만 커밋이 되었고 아직 팔로워는 커밋이 되지못한 상태일때, 만약 팔로워 브로커가 다운되어 복구되면 팔로워는 기동시 커밋된 부분까지만 메세지를 살린다. 즉, 이미 복제되었던 메세지를 날린다. 그때에, 커밋이 완료된 리더로부터 메세지를 받지못한 채 리더 브로커가 죽었다면, 팔로워 브로커는 리더가 될 것이고 새로 선출된 리더는 메세지 하나가 없는 상태가 된다. 하지만, 리더 에포크를 사용하게되면 팔로워 브로커가 기동시에 커밋된 부분까지만 메세지를 살리는게아닌, 리더 에포크를 통해 현재 리더의군집(리더에포크)가 어떤 메세지까지 커밋되었는지를 보고 해당 부분까지 커밋을 수행. 즉, 팔로워가 기동되면서 현재 리더의 커밋까지 커밋읆 맞춘다. (하이워터마크 상향조정) 이를 통해 유실을 방지할 수 있게된다.
+    - 테스트간에 발견한 내용들
+      - 브로커 한대 죽으면(어떤거든 상관없음) 일단, 리더의 `leader-epoch-checkpoint`의 leader-epoch가 올라간다..
+        - 즉, 리더가 변경되거나 선출작업이 나타나면, epoch가 올라간다
 
+  - log-end-offset vs high-watermark
+    - https://stackoverflow.com/questions/39203215/kafka-difference-between-log-end-offsetleo-vs-high-watermarkhw
+    - log-end-offset은 단순히 Producer에서 마지막으로 발행한 메시지의 offset이고, high water mark는 모든 replica가 복제된 offset이다. 그렇기에, log-end-offset은 아직 복제 되기전까진 high  water mark보다 앞서 있을 수 있다. 참고로 Lag은 consumer-group에서의 offset인 CURRENT-OFFSET을 log-end-offset에서 뺀값이다
 
 11/16 (목)
 - 모두 복제가 완료되어야만 consumer가 consuming을 진행하나?
