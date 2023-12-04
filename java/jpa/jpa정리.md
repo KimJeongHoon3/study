@@ -783,3 +783,10 @@ spring:
   - jpa는 기술명세.. 즉 인터페이스.. 객체에 종속성을 주기위함..
     - jpa 구현체중 하나가 hibernate
   - https://suhwan.dev/2019/02/24/jpa-vs-hibernate-vs-spring-data-jpa/
+
+
+- 복합키 serializable 사용하는 이유
+  - https://www.inflearn.com/questions/16570/%EB%B2%84%EA%B7%B8-%EB%AC%B8%EC%9D%98%EB%93%9C%EB%A0%A4%EB%B4%85%EB%8B%88%EB%8B%A4
+
+- 초기화 스키마 및 데이터 사용방법
+  - https://velog.io/@wlsh44/Spring-%EB%8D%B0%EC%9D%B4%ED%84%B0%EB%B2%A0%EC%9D%B4%EC%8A%A4-%EC%B4%88%EA%B8%B0%ED%99%94

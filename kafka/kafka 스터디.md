@@ -16,7 +16,10 @@ kafka 스터디
     - `$ sudo docker-compose logs -f kafka-1`
   - 카프카 토픽 설정 변경
     - `$ kafka-configs --bootstrap-server kafka-1:29092 --alter --entity-type topics --entity-name my-topic3 --add-config min.insync.replicas=1`
-
+  - 로그 파일 보기
+    - `$ kafka-dump-log --print-data-log --files 00000000000000000000.log`
+  - __transcation_state 토픽 로그 보기
+    - `$ kafka-console-consumer --bootstrap-server kafka-1:29092 --topic transaction-topic --formatter "kafka.coordinator.transaction.TransactionLog\$TransactionLogMessageFormatter" --from-beginning`
 
 - 4장 카프카의 내부 동작 원리와 구현
   - high-watermark는 뭔가?
@@ -204,10 +207,79 @@ kafka 스터디
     - 주의 사항일것 같은거?
       - 카프카에서 트랜잭션을 사용한 원자적 전송은 토픽의 특정 파티션으로 보내줘야 처리에 순서가 보장될 것으로 보임.. 즉, 순차적인 처리가 반드시 보장되어야한다면 2개 이상의 파티션을 사용하면 안됨 (물론, 파티션에 key를 지정하면 상관없겠지)
 
-- 중복없이 전송하는거 테스트
 - 트랜잭션 전송 테스트
-- 실습 참고
-  - https://colevelup.tistory.com/24#:~:text=%EC%8A%A4%ED%8B%B0%ED%82%A4%20%ED%8C%8C%ED%8B%B0%EC%85%94%EB%84%88(Sticky%20Partitioner,%EB%B0%B0%EC%B9%98%20%EC%A0%84%EC%86%A1%ED%95%98%EB%8A%94%20%EC%A0%84%EB%9E%B5%EC%9E%85%EB%8B%88%EB%8B%A4.
+  - transaction commit시 로그
+    - transaction-topic(트랜잭션을 적용하고자 하는 토픽) 로그
+      ```log
+        baseOffset: 60 lastOffset: 60 count: 1 baseSequence: 0 lastSequence: 0 producerId: 13 producerEpoch: 11 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 4627 CreateTime: 1700726758751 size: 86 magic: 2 compresscodec: NONE crc: 1272500548 isvalid: true 
+        | offset: 60 CreateTime: 1700726758751 keysize: -1 valuesize: 18 sequence: 0 headerKeys: [] payload: Hello Kafka TX - 0
+        baseOffset: 61 lastOffset: 61 count: 1 baseSequence: 1 lastSequence: 1 producerId: 13 producerEpoch: 11 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 4713 CreateTime: 1700726831332 size: 86 magic: 2 compresscodec: NONE crc: 2714197131 isvalid: true 
+        | offset: 61 CreateTime: 1700726831332 keysize: -1 valuesize: 18 sequence: 1 headerKeys: [] payload: Hello Kafka TX - 1
+        baseOffset: 62 lastOffset: 62 count: 1 baseSequence: 2 lastSequence: 2 producerId: 13 producerEpoch: 11 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 4799 CreateTime: 1700726836350 size: 86 magic: 2 compresscodec: NONE crc: 4164575494 isvalid: true 
+        | offset: 62 CreateTime: 1700726836350 keysize: -1 valuesize: 18 sequence: 2 headerKeys: [] payload: Hello Kafka TX - 2
+        baseOffset: 63 lastOffset: 63 count: 1 baseSequence: 3 lastSequence: 3 producerId: 13 producerEpoch: 11 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 4885 CreateTime: 1700726836882 size: 86 magic: 2 compresscodec: NONE crc: 1609077180 isvalid: true 
+        | offset: 63 CreateTime: 1700726836882 keysize: -1 valuesize: 18 sequence: 3 headerKeys: [] payload: Hello Kafka TX - 3
+        baseOffset: 64 lastOffset: 64 count: 1 baseSequence: 4 lastSequence: 4 producerId: 13 producerEpoch: 11 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 4971 CreateTime: 1700726837407 size: 86 magic: 2 compresscodec: NONE crc: 107707236 isvalid: true 
+        | offset: 64 CreateTime: 1700726837407 keysize: -1 valuesize: 18 sequence: 4 headerKeys: [] payload: Hello Kafka TX - 4
+        baseOffset: 65 lastOffset: 65 count: 1 baseSequence: -1 lastSequence: -1 producerId: 13 producerEpoch: 11 partitionLeaderEpoch: 0 isTransactional: true isControl: true position: 5057 CreateTime: 1700726838085 size: 78 magic: 2 compresscodec: NONE crc: 1068357547 isvalid: true 
+        | offset: 65 CreateTime: 1700726838085 keysize: 4 valuesize: 6 sequence: -1 headerKeys: [] endTxnMarker: COMMIT coordinatorEpoch: 0
+
+        baseOffset: 66 lastOffset: 66 count: 1 baseSequence: 0 lastSequence: 0 producerId: 13 producerEpoch: 12 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 5135 CreateTime: 1700726951174 size: 86 magic: 2 compresscodec: NONE crc: 2908803872 isvalid: true 
+        | offset: 66 CreateTime: 1700726951174 keysize: -1 valuesize: 18 sequence: 0 headerKeys: [] payload: Hello Kafka TX - 0
+        baseOffset: 67 lastOffset: 67 count: 1 baseSequence: -1 lastSequence: -1 producerId: 13 producerEpoch: 12 partitionLeaderEpoch: 0 isTransactional: true isControl: true position: 5221 CreateTime: 1700727006678 size: 78 magic: 2 compresscodec: NONE crc: 3781935704 isvalid: true 
+        | offset: 67 CreateTime: 1700727006678 keysize: 4 valuesize: 6 sequence: -1 headerKeys: [] endTxnMarker: COMMIT coordinatorEpoch: 0
+      ```
+    - __transaction_state 로그
+    ```log
+      Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=11, txnTimeoutMs=60000, state=Empty, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=-1, txnLastUpdateTimestamp=1700726737432)                                   // producer.inltTransactlons(); 호출시 찍힘
+      Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=11, txnTimeoutMs=60000, state=Ongoing, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700726792453, txnLastUpdateTimestamp=1700726792453) // producer.flush(); 호출시 찍힘 (즉, 레코드 처음 전송했을때 기록.. producer.beginTransaction() 메서드를 호출할떄 찍히는것이 아니다!!)
+      Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=11, txnTimeoutMs=60000, state=PrepareCommit, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700726792453, txnLastUpdateTimestamp=1700726838082) // producer.commitTransaction(); 호출시 찍히고 
+      Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=11, txnTimeoutMs=60000, state=CompleteCommit, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=1700726792453, txnLastUpdateTimestamp=1700726838085)                    // transaction 코디네이터에 transaction-topic에 트랜잭션 완료했다는 컨트롤메세지 전송한 뒤 남기는듯함
+
+
+      Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=12, txnTimeoutMs=60000, state=Empty, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=-1, txnLastUpdateTimestamp=1700726910801)
+      Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=12, txnTimeoutMs=60000, state=Ongoing, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700726968386, txnLastUpdateTimestamp=1700726968386)
+      Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=12, txnTimeoutMs=60000, state=PrepareCommit, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700726968386, txnLastUpdateTimestamp=1700727006672)
+      Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=12, txnTimeoutMs=60000, state=CompleteCommit, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=1700726968386, txnLastUpdateTimestamp=1700727006677)
+    ```
+  - Transaction abort시 로그
+    - transaction-topic(트랜잭션을 적용하고자 하는 토픽) 로그
+      ```log
+        baseOffset: 68 lastOffset: 68 count: 1 baseSequence: 0 lastSequence: 0 producerId: 13 producerEpoch: 13 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 5299 CreateTime: 1700727227285 size: 86 magic: 2 compresscodec: NONE crc: 2786302459 isvalid: true 
+        | offset: 68 CreateTime: 1700727227285 keysize: -1 valuesize: 18 sequence: 0 headerKeys: [] payload: Hello Kafka TX - 0
+        baseOffset: 69 lastOffset: 69 count: 1 baseSequence: -1 lastSequence: -1 producerId: 13 producerEpoch: 13 partitionLeaderEpoch: 0 isTransactional: true isControl: true position: 5385 CreateTime: 1700727241674 size: 78 magic: 2 compresscodec: NONE crc: 2908531184 isvalid: true 
+        | offset: 69 CreateTime: 1700727241674 keysize: 4 valuesize: 6 sequence: -1 headerKeys: [] endTxnMarker: ABORT coordinatorEpoch: 0    
+      ```
+    - __transaction_state 로그
+      ```log
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=13, txnTimeoutMs=60000, state=Empty, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=-1, txnLastUpdateTimestamp=1700727219675)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=13, txnTimeoutMs=60000, state=Ongoing, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700727234082, txnLastUpdateTimestamp=1700727234082)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=13, txnTimeoutMs=60000, state=PrepareAbort, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700727234082, txnLastUpdateTimestamp=1700727241671)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=13, txnTimeoutMs=60000, state=CompleteAbort, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=1700727234082, txnLastUpdateTimestamp=1700727241673)    
+      ```
+
+  - init 한번 여러번 begin transaction & commit 로그
+    - transaction-topic(트랜잭션을 적용하고자 하는 토픽) 로그
+      ```log
+        baseOffset: 70 lastOffset: 70 count: 1 baseSequence: 0 lastSequence: 0 producerId: 13 producerEpoch: 14 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 5463 CreateTime: 1700727434517 size: 86 magic: 2 compresscodec: NONE crc: 861819146 isvalid: true 
+        | offset: 70 CreateTime: 1700727434517 keysize: -1 valuesize: 18 sequence: 0 headerKeys: [] payload: Hello Kafka TX - 0
+        baseOffset: 71 lastOffset: 71 count: 1 baseSequence: -1 lastSequence: -1 producerId: 13 producerEpoch: 14 partitionLeaderEpoch: 0 isTransactional: true isControl: true position: 5549 CreateTime: 1700727438461 size: 78 magic: 2 compresscodec: NONE crc: 4123285463 isvalid: true 
+        | offset: 71 CreateTime: 1700727438461 keysize: 4 valuesize: 6 sequence: -1 headerKeys: [] endTxnMarker: COMMIT coordinatorEpoch: 0
+        baseOffset: 72 lastOffset: 72 count: 1 baseSequence: 1 lastSequence: 1 producerId: 13 producerEpoch: 14 partitionLeaderEpoch: 0 isTransactional: true isControl: false position: 5627 CreateTime: 1700727444247 size: 86 magic: 2 compresscodec: NONE crc: 3445833227 isvalid: true 
+        | offset: 72 CreateTime: 1700727444247 keysize: -1 valuesize: 18 sequence: 1 headerKeys: [] payload: Hello Kafka TX - 0
+        baseOffset: 73 lastOffset: 73 count: 1 baseSequence: -1 lastSequence: -1 producerId: 13 producerEpoch: 14 partitionLeaderEpoch: 0 isTransactional: true isControl: true position: 5713 CreateTime: 1700727448419 size: 78 magic: 2 compresscodec: NONE crc: 612415112 isvalid: true
+        | offset: 73 CreateTime: 1700727448419 keysize: 4 valuesize: 6 sequence: -1 headerKeys: [] endTxnMarker: COMMIT coordinatorEpoch: 0    
+      ```
+    - __transaction_state 로그
+      ```log
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=14, txnTimeoutMs=60000, state=Empty, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=-1, txnLastUpdateTimestamp=1700727429250)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=14, txnTimeoutMs=60000, state=Ongoing, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700727436443, txnLastUpdateTimestamp=1700727436443)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=14, txnTimeoutMs=60000, state=PrepareCommit, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700727436443, txnLastUpdateTimestamp=1700727438458)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=14, txnTimeoutMs=60000, state=CompleteCommit, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=1700727436443, txnLastUpdateTimestamp=1700727438460)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=14, txnTimeoutMs=60000, state=Ongoing, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700727445676, txnLastUpdateTimestamp=1700727445676)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=14, txnTimeoutMs=60000, state=PrepareCommit, pendingState=None, topicPartitions=HashSet(transaction-topic-0), txnStartTimestamp=1700727445676, txnLastUpdateTimestamp=1700727448415)
+        Lee-Dong-Hee::TransactionMetadata(transactionalId=Lee-Dong-Hee, producerId=13, producerEpoch=14, txnTimeoutMs=60000, state=CompleteCommit, pendingState=None, topicPartitions=HashSet(), txnStartTimestamp=1700727445676, txnLastUpdateTimestamp=1700727448418)    
+      ```
 
 
 
@@ -227,3 +299,8 @@ kafka 스터디
 
 20231123 과제
 - 5장 읽기 + 실습
+
+
+
+
+

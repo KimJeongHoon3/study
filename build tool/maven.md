@@ -70,3 +70,4 @@ maven
       - ex. `mvn surefire:test` 라고 명령하면, 위 표의 test phase이전의 모든 단계가 실행되지않고, 딱 해당 단계의 플러그인말 실행. 
       - 플러그인 골(Plugin Goal)
         - Maven에서 플러그인을 실행할 때에는 '플러그인이름:플러그인지원골'의 형식으로 실행할 기능을 선택한다. 예를 들어 compiler:compile은 'compiler'는 플러그인에서 'compile' 기능(goal)을 실행한다는 것을 뜻한다.
+- [Maven 관련 알고 있음 좋은 내용들](https://m.blog.naver.com/naverdev/120113627296)
