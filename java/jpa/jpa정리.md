@@ -337,6 +337,19 @@ spring:
           - 영속성전이와 유사함..
           - 예를들어 게시판에서 오직 해당 게시판에 종속된 첨부파일일때는 사용하기 적절.. 그러나, 첨부파일을 다른곳에서도 사용한다고하면 절대 노
         - CASCADE 옵션을 ALL이나 REMOVE로 셋팅했을때 부모 객체를 영속성 컨텍스트에서 remove하게되면 `orphanRemoval=false`로 놓아도 자식객체들은 다 지워짐
+        - 핵심은 CASCADE 옵션은 해당 옵션이 선언된 엔티티를 포함한 엔티티 자체가 제거되거나 생성되는 것에 영향을 받는것! 
+          - orphanRemoval 옵션은 해당 옵션이 선언된 엔티티와 이를 포함한 엔티티간에 관계가 끊어지면 제거되는것이다.. 
+            - 아래와 같은 예시에서 subEntities를 clear하게되면, Entity 클래스와 SubEntity 클래스간의 관계가 끊어진, 즉 SubEntity는 고아가된 상태이기때문에 제거된다
+              - 물론 여기서 clear 사용시 N+1 문제가 또한 발생한다.. (delete를 SubEntity 하나씩 지우게됨..)
+            ```java
+            @Entity
+            class Entity {
+              // ...
+              @OneToMany(orphanReomval = true)
+              List<SubEntity> subEntities = new ArrayList<>();
+              // ...
+            }
+            ```
       - 고아객체제거옵션과 Cascade remove 옵션차이설명 굿
         - https://stackoverflow.com/questions/18813341/what-is-the-difference-between-cascadetype-remove-and-orphanremoval-in-jpa
         - 설명 매우 좋음 : https://tecoble.techcourse.co.kr/post/2021-08-15-jpa-cascadetype-remove-vs-orphanremoval-true/

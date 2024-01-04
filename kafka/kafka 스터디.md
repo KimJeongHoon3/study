@@ -282,6 +282,8 @@ kafka 스터디
       ```
 
 
+- 카프카 스트림즈도 exactly once를 보장하도록 할 수 잇는데, transaction api를 사용하여 가능
+  - https://velog.io/@youngerjesus/Kafka-%EC%8B%A4%EC%8B%9C%EA%B0%84-%EC%8A%A4%ED%8A%B8%EB%A6%AC%EB%B0%8D-%EB%8D%B0%EC%9D%B4%ED%84%B0-%EC%B2%98%EB%A6%AC-Exactly-Once
 
 ---
 
@@ -304,3 +306,30 @@ kafka 스터디
 
 
 
+---
+
+카프카 도입시 고려해야할 부분
+
+- 중복 메시징 이슈
+  - 중복메시지 걸러내는 로직구현
+    - subscribe_id와 msg_id 로 구성되어있는 PROCESSED_MESSAGE 테이블(이미 처리된 대상이 있는 테이블)을 만들어준다!
+- 메시지 순서 보장을 위해 고려해야할 점
+  - 순서보장이 필요한 이벤트에는 동일한 메세지 key를 사용하여 발행
+- 트랜잭셔널 메시징을 지킬 수 있는 개발 방법
+  - 비동기 메시징을 활용한 서비스 구현에서, 비지니스 로직 완료 후(완료 이벤트 발행) 그 다음 진행해야할 로직이 있을때 사용
+  - 트랜잭셔널 아웃박스 패턴 (Transactional Outbox Pattern)
+    - Transactional Outbox Pattern은 데이터베이스와 메시지 큐를 사용하는 분산 시스템에서 데이터 일관성을 유지하는 패턴. 이 패턴은 데이터베이스 작업과 메시지 전송을 하나의 트랜잭션으로 묶어 처리
+    - outbox 테이블 생성하여 이벤트를 계속 기록
+    - 
+  - 변경 데이터 캡쳐 (Change Data Capture - CDC)
+    - Debezium은 CDC 지원하는 대표적인 플랫폼인데, mysql의 binlog와 같은 트랜잭션 로그를 활용해서 변경된 데이터를 확인하고 이후 이를 메세지를 변환하여 타겟으로 설정한 카프카로 발행가능
+    - 별도의 Debezium 학습과 운영을 위한 비용필요
+    - 스키마 변경될때..?
+
+
+- 참고사이트
+  - https://medium.com/@greg.shiny82/%EC%8B%A4%EB%AC%B4-%EA%B4%80%EC%A0%90%EC%97%90%EC%84%9C%EC%9D%98-apache-kafka-%ED%99%9C%EC%9A%A9-023d468f9182
+  - https://medium.com/@greg.shiny82/%ED%8A%B8%EB%9E%9C%EC%9E%AD%EC%85%94%EB%84%90-%EC%95%84%EC%9B%83%EB%B0%95%EC%8A%A4-%ED%8C%A8%ED%84%B4%EC%9D%98-%EC%8B%A4%EC%A0%9C-%EA%B5%AC%ED%98%84-%EC%82%AC%EB%A1%80-29cm-0f822fc23edb
+  - https://microservices.io/patterns/data/transactional-outbox.html
+  - [왜 트랜잭셔널 아웃박스 패턴이 필요한지 상세하게 잘 설명](https://blog.gangnamunni.com/post/transactional-outbox/)
+    - 좀더 보고 위에 정리해놓을것
