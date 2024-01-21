@@ -1,5 +1,7 @@
 oauth2
 
+- 구글, 페이스북, 트위터와 같은 다양한 플랫폼의 특정한 사용자 데이터에 접근하기 위해 제3자 클라이언트(우리의 서비스)가 사용자의 접근 권한을 위임(Delegated Authorization)받을 수 있는 표준 프로토콜이다.
+  - [정리굿](https://hudi.blog/oauth-2.0/)
 - 인증을 받은 이후에, **OAuth로 인가를 받으면** Access Token이 발급됩니다. 이후 요청하는 모든 건에 대해서는 리소스 서버가 해당 토큰을 바탕으로 인가받은 클라이언트인지를 확인하고 사용 가능한 토큰인 경우 리소스에 대한 요청을 처리하는 것이 기본 프로세스
 - oauth2.0은 인가(authorization)를 위한것 (인증을 위해서 사용하지마기엔 단점이많다~ 하단 참고)
 - 용어
@@ -24,6 +26,7 @@ oauth2
   - Authorization Code
     - Authorization Code Grant Type은 Authorization Server에게 토큰을 발행받기 위해서 code값을 요청하고 이 code값을 바탕으로 토큰을 발급받는다!
     - ![](2023-05-08-10-59-51.png)
+    - [공식문서](https://developer.okta.com/blog/2018/04/10/oauth-authorization-code-grant-type)
   - Implicit
     - Authorization Code 와 매우 유사하나, Code를 발행하는 flow가 사라지고, 토큰을 발급해주는 형태가 콜백에 쿼리스트링으로 해준다..
       - 토큰을 쿼리스트링으로 발급해주니.. url에 노출되므로 탈취의 위험이있다..

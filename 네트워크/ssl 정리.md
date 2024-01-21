@@ -50,3 +50,63 @@
 - [참고사이트](https://run-it.tistory.com/29)
 - [간결하게 잘 나옴](https://cheapsslsecurity.com/p/what-is-2-way-ssl-and-how-does-it-work/)
 - [쉽게 정리](https://nuritech.tistory.com/25#:~:text=%EA%B2%80%EC%A6%9D%20%EC%9B%90%EB%A6%AC%EB%8A%94%20%EC%95%84%EB%9E%98%EC%99%80%20%EA%B0%99%EB%8B%A4,%EB%90%9C%20%EC%9D%B8%EC%A6%9D%EC%84%9C%EB%A5%BC%20%EB%B3%B5%ED%98%B8%ED%99%94%20%ED%95%9C%EB%8B%A4.)
+
+
+
+- tls1.2 
+  - RSA handshake
+    - ![](2024-01-20-19-07-25.png)
+      - [출처](https://blog.cloudflare.com/content/images/2014/Sep/ssl_handshake_rsa.jpg)
+    
+  - Diffie-hellman handshake
+    - ![](2024-01-20-19-07-57.png)
+      - [출처](https://blog.cloudflare.com/content/images/2014/Sep/ssl_handshake_diffie_hellman.jpg)
+    - ![Diffie-hellman 와이어샤크](2024-01-20-19-22-14.png)
+      - 대략 정리 (세션키 어떻게 만드는지를 중심으로..)
+        - Red: client, Blue: server
+        - Red -> Blue : Client Hello
+          - Red가 Blue에게 자신이 생성한 난수를 전달
+          - 현재상태 (키 교환에 필요한 값들만 정리)
+            - Red가 가지고있는 값: Client 난수
+            - Blue가 가지고있는 값: Client 난수
+        - Red <- Blue : Server Hello
+          - Blue가 Red 에게 자신이 생성한 난수를 전달
+          - 현재상태 (키 교환에 필요한 값들만 정리)
+            - Red가 가지고있는 값: Client 난수, Server 난수
+            - Blue가 가지고있는 값: Client 난수, Server 난수
+        - Red <- Blue : Certificate, Server Key Exchange, Server Hello Done
+          - Certificate
+            - 인증서전달
+          - Server Key Exchange
+            - Blue가 Red에게 diffie-hellman 키 교환을 위해 필요한 값들 전달
+            - 이때 서버의 private key로 암호화
+              - [관련내용](https://crypto.stackexchange.com/questions/47585/tls-does-diffie-hellman-make-private-keys-useless)
+          - Server Hello Done
+            - Blue가 Server에게 전달할거 다 전달했음을 알려줌
+          - 현재상태 (키 교환에 필요한 값들만 정리)
+            - Red가 가지고있는 값: Client 난수, Server 난수, pre-master secret key(diffie-hellman 키 교환을 통해 만듦. 이때, 서버(blue)는 아직 갖고있지못한데, 클라(red)로 부터 diffie-hellman 키 교환을 위한 값 전달을 못받았기때문), matser key (client난수, server난수, pre-master secret key 를 기반으로 만들어짐)
+            - Blue가 가지고있는 값: Client 난수, Server 난수
+        - Red -> Blue : Client Key Exchange, Chnage Cipher Sepc, Encryted Handshake Messgae
+          - Client Key Exchange
+            - 해당 단계에서 Blue에게로 받은 인증서 검사
+            - 서버로 부터 전달받은 diffie-hellman 관련 데이터들을 인증서에서 가져온 서버의 public key로 복호화
+            - diffie-hellman 키 교환을 위해 필요한 값 전달
+          - 현재상태 (키 교환에 필요한 값들만 정리)
+            - Red가 가지고있는 값: Client 난수, Server 난수, pre-master secret key, master key
+            - Blue가 가지고있는 값: Client 난수, Server 난수, pre-master secret key, master key
+        - Red <- Blue : Chnage Cipher Sepc, Encryted Handshake Messgae
+          - 이제 Blue가 가지고있는 master key로 암호화하여 데이터 전송
+        
+        - 참고
+          - Encryted Handshake Messgae (챗gpt답변)
+            - SSL/TLS 핸드셰이크의 "Encrypted Handshake Message" 단계는 핸드셰이크 과정을 마무리하는 단계입니다. 이 단계에서, 클라이언트와 서버는 앞서 협상된 암호화 설정(세션 키 포함)을 사용하여 핸드셰이크 메시지를 암호화합니다. 이렇게 암호화된 메시지는 두 당사자가 핸드셰이크 과정에서 합의한 암호화 방식을 성공적으로 적용했음을 확인하는 역할을 합니다. 즉, 이 단계는 양측이 핸드셰이크 중 교환한 모든 정보를 안전하게 암호화했으며, 이제부터 모든 통신이 암호화된 채널을 통해 이루어질 것임을 나타냅니다.
+          - Chnage Cipher Sepc (챗gpt답변)
+            - "Change Cipher Spec" 단계는 SSL/TLS 핸드셰이크 과정의 일부로, 이 단계에서는 통신 양측이 이전 단계에서 협상한 암호화 방식(암호화 알고리즘, 키, 등)으로 전환하겠다는 의미입니다. 즉, 이 메시지는 실제로 데이터를 암호화하는 데 사용할 암호화 매개변수가 이제부터 적용될 것임을 양측에 알리는 신호로 작동합니다. 이 단계가 완료되면, 통신은 안전한 암호화된 채널을 통해 이루어지게 됩니다.
+  - [ssl handshake 종류 및 방법에 대해서 설명 매우 잘되어있음](https://dokydoky.tistory.com/463)
+  - [session key 어떻게 만드는지도 잘 나와있음. 좀더 추가로 보면 좋을 bealdung](https://www.baeldung.com/cs/pre-master-shared-secret-private-public-key)
+
+
+- diffie-hellman key exchange
+  - A와 B가 해당 암호화 공식을 사용하면, A만 알고있는 값이 있고 A가 모두에게 보여도 되는 값을 B에게 보내고, B 또한 자신만이 가지고있는 값이 있고 A에게 전달받은 값을 자신만 알고있는 값을 기반으로 만든 값을 A에게 응답해준다.(여기서 B가 A에게 전달하는 값은 모두가 알 수 있다). A와 B는 서로 전달받아 갖게된 값(모두에게 보여진값)과 자신들만이 가지고있는 값을 활용하여 A와 B 둘만이 알 수 있는 secret key를 얻게된다
+    - 즉, 너무 신기하게도 둘이 데이터 교환한걸 모두가 볼 수 있는데, 자신만이 가지고있는 값(서로 당연 모름)을 기반으로 생성된 값이 동일해져서 secret key(대칭키)로 사용할 수 있게된것!
+  

@@ -184,3 +184,6 @@
 - 동시성 제어(여러대의 서버있을때..)를 위한 분산락
   - redisson 활용 
     - https://velog.io/@hgs-study/redisson-distributed-lock
+
+
+- [Spring data redis, lettuce 사용법 관련 정리굿](https://assu10.github.io/dev/2023/09/24/springboot-redis-1/)

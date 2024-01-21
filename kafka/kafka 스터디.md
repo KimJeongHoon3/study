@@ -354,8 +354,9 @@ kafka 스터디
   - 비동기 메시징을 활용한 서비스 구현에서, 비지니스 로직 완료 후(완료 이벤트 발행) 그 다음 진행해야할 로직이 있을때 사용
   - 트랜잭셔널 아웃박스 패턴 (Transactional Outbox Pattern)
     - Transactional Outbox Pattern은 데이터베이스와 메시지 큐를 사용하는 분산 시스템에서 데이터 일관성을 유지하는 패턴. 이 패턴은 데이터베이스 작업과 메시지 전송을 하나의 트랜잭션으로 묶어 처리
-    - outbox 테이블 생성하여 이벤트를 계속 기록
-    - 
+    - outbox 테이블 생성하여 실제 상태변경에 따른 DB 수정과 같은 작업을 완료하여야 outbox 테이블에 데이터가 들어가게되고, 이를 relay 해주는 작업(하나의 어플리케이션이 될 수도 있으며, outbox 테이블을 주기적으로 조회하고 완료된 대상에 대해서 메세지 발행)을 수행하여, db에 변경된 작업이 온전히 수행된것을 보장한 대상에 대해서 이벤트를 발행(메시지 큐)한다.
+    - 이를 통해 메시지 큐와 분산 시스템에서 데이터 일관성을 유지함
+    - `transactional outbox pattern.md` 참고
   - 변경 데이터 캡쳐 (Change Data Capture - CDC)
     - Debezium은 CDC 지원하는 대표적인 플랫폼인데, mysql의 binlog와 같은 트랜잭션 로그를 활용해서 변경된 데이터를 확인하고 이후 이를 메세지를 변환하여 타겟으로 설정한 카프카로 발행가능
     - 별도의 Debezium 학습과 운영을 위한 비용필요
@@ -368,3 +369,6 @@ kafka 스터디
   - https://microservices.io/patterns/data/transactional-outbox.html
   - [왜 트랜잭셔널 아웃박스 패턴이 필요한지 상세하게 잘 설명](https://blog.gangnamunni.com/post/transactional-outbox/)
     - 좀더 보고 위에 정리해놓을것
+
+
+
