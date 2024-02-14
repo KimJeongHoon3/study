@@ -372,3 +372,11 @@ kafka 스터디
 
 
 
+
+- 카프카 활용
+  - 실시간 좌석 입장 화면 보여주기
+  - 구조
+  - 구조에 들어가는 기술들
+    - kafka consumer vs kafka streams
+    - vert.x? 다른 웹소켓?
+    - https://junuuu.tistory.com/729
