@@ -318,6 +318,20 @@ HTTP_김영한
         - 동사를 직접사용
         - members/{id}/upgrade
       - [참고사이트](https://restfulapi.net/resource-naming)
+        - 챗gpt 사용설명 굿
+        ```md
+          `http://api.example.com/device-management/managed-devices/{device-id}` URL에서 "device-management" 부분은 실제로 단수형이 아니라, 리소스의 범주나 서비스 영역을 나타내는 것으로 해석됩니다. 이 경우, "device-management"는 특정 리소스를 나타내는 것이 아니라, 관련 리소스들이 그룹화되어 있는 영역 또는 서비스의 이름을 나타냅니다. 
+
+          이 URL에서의 각 부분을 분석하면 다음과 같습니다:
+
+          - **device-management**: 이 부분은 전체 서비스 영역 또는 리소스 카테고리를 나타냅니다. 여기서는 '장치 관리'와 관련된 모든 리소스와 작업이 이 영역에 속한다고 해석할 수 있습니다.
+
+          - **managed-devices**: 이 부분은 '관리되는 장치들'이라는 리소스 컬렉션을 나타냅니다. 이는 복수형을 사용하여 여러 장치를 포함하는 컬렉션임을 나타냅니다.
+
+          - **{device-id}**: 이 부분은 특정 장치를 식별하는 고유 식별자입니다. 이는 'document resource archetype'에 해당하며, 단수형을 사용하여 특정 장치 하나를 나타냅니다.
+
+          따라서, "device-management"는 단수형이 아니라 서비스의 이름 또는 범주를 나타내는 용어로 이해하는 것이 적절합니다. 이는 RESTful API에서 리소스의 구조와 관계를 명확하게 표현하는 데 도움을 줍니다.
+        ```
       - 무튼 리소스(미네랄, 명사)를 정하고, 이에 맞는 HTTP 메서드로 정의해보고, HTTP메서드에 적절한게없다면 컨트롤 URI를 사용해라!
 - HTTP 상태코드
   - 클라이언트가 보낸 요청의 처리 상태를 응답에서 알려주는기능

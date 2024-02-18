@@ -44,7 +44,14 @@ jvm 구성 : 클래스 로더(Class Loader)가 컴파일된 자바 바이트코�
                     *성숙된 Object : 특정 횟수 이상 참조되어 기준 Age를 초과한 Object를 말함,,
             -Permanent 영역(java 1.8 이상부턴 없음)
                 -Class의 Meta정보나 Method의 Meta정보, Static 변수와 상수정보들이 저장되는 공간으로 흔히 메타데이터 저장 영역이라고 함,,
-                -Java 8이상부터는 Native 영역으로 이동하여 Metaspace 영역으로 변경
+                -Java 8이상부터는 Native 영역으로 이동하여 Metaspace 영역으로 변경 (Constant pool에 있던 클래스 메타데이터들이 여기로 옮겨짐)
+                -왜 metapace를 도입한걸까? (챗gpt 답변)
+                    -Metaspace는 PermGen의 고정된 크기 제한 문제를 해결하기 위해 Java 8에서 도입되었습니다. PermGen은 고정된 크기의 메모리 공간을 가졌기 때문에, 클래스 메타데이터가 이 공간을. 초과하면 `OutOfMemoryError`를 일으킬 수 있었습니다. 반면, Metaspace는 JVM이 실행되는 시스템의 네이티브 메모리를 사용합니다. 이는 Metaspace가 필요에 따라 동적으로 크기를 조절할 수 있음을 의미하며, 이로 인해 클래스 메타데이터에 대한 더 큰 유연성과 확장성을 제공합니다. 그러나 Metaspace의 크기가 너무 커지지 않도록 적절한 관리와 모니터링이 필요합니다.
+                -runtime constant pool vs metaspace (챗gpt 답변)
+		   -Runtime Constant Pool과 Metaspace는 Java에서 다른 목적으로 사용됩니다:
+                      - **Runtime Constant Pool**: 이것은 각 클래스 또는 인터페이스에 대한 런타임 표현의 일부로, JVM이 특정 클래스와 관련된 데이터를 처리할 때 사용합니다. 여기에는 리터럴 상수, 심볼릭 참조 등이 포함됩니다.
+                      - **Metaspace**: Metaspace는 주로 클래스 로더에 의해. 로드된 클래스와 메서드의 메타데이터를 저장하는 데 사용됩니다. 이 영역에는 클래스 구조, 메서드 데이터, 클래스 수준의 상수와 정적 변수 등이 포함됩니다.
+                    -간단히 말해, Runtime Constant Pool은 특정 클래스에 대한 상수와 참조를 저장하는 반면, Metaspace는 클래스 메타데이터 전반을 저장합니다. Metaspace는 또한 더 넓은 범위의 데이터를 포함하며, PermGen 영역의 대체물로 Java 8에서 도입되었습니다.
 
 
         -stack area : Method내에서 사용되는 값들(매개변수,지역변수,리턴값)이 저장되는 구역으로 메소드가 호출되는 LIFO로 하나씩 생성되고, 메소드 실행이 완료되면 LIFO로 하나씩 지워짐.. (Thread 별로 새로 생성)

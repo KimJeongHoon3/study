@@ -17,6 +17,16 @@
 
 - 그럼 왜 불변(immutable)일까?
   1. String 객체의 캐싱 기능 : 만약 new String("")과 같이 힙영역에 생성해서 접근하는방법은 메모리에 상당한 부담이된다.. 특히나 String은 너무너무너무 많이쓴다.. 그래서 이를 효율적으로 처리하기위해서 Perm 영역의 string constant pool에 생성하고(리터럴로 생성 또는 new String("").intern()) 이를 참조한다. string constant pool에 저장이되면 해당 pool에 처음들어온 string이라면 만들고 아니라면 재사용할수있도록 해준다.. 그렇게 캐싱이 가능하다! string constant pool은 자바1.7부터는 heap영역에 배치가되어서 가바지컬렉터의 대상이되어, OOM 을 방지해준다 (1.6버전 이하에서는 Perm 영역은 고정되어있고 Runtime 시에도 확장되지 않기때문에 intern 메소드를 자주 호출하면 OOM이 발생할 수 있다.)
+     - 챗 gpt 내용 참고
+       ```md
+        Java에서 Constant Pool의 개념은 두 가지 맥락에서 사용됩니다: 하나는 각 클래스 파일의 구조적 부분으로서의 Constant Pool이고, 다른 하나는 런타임 시 String 리터럴을 저장하는 String Constant Pool입니다.
+
+        - **클래스 파일의 Constant Pool**: 이것은 Method Area에 위치하며, 클래스와 인터페이스에 대한 상수 및 심볼릭 참조를 저장합니다. 
+        - **String Constant Pool**: 초기 Java 버전에서 이것은 Method Area에 위치했으나, Java 7부터는 힙 영역으로 이동했습니다. 이것은 런타임 시 생성되는 모든 문자열 리터럴을 저장합니다.
+
+        즉, 클래스 파일의 Constant Pool과 런타임의 String Constant Pool은 위치가 다르며, String Constant Pool은 Java 7 이후 힙 영역에 존재합니다.
+       ```
+     - => String constant pool은 GC 대상이다
   2. 보안기능 : 불변하기떄문에 참조에 대한 문자열 값을 바꿀수 없음(return해서 주지않는 이상..)
   3. 스레드 안전 : 여러 스레드가 동시에 String 객체를 참조할때, 전역변수로 선언되어있지않는 이상은 불변이기때문에 안전! 하지만 전역변수에 선언되어있는 string에 여러 스레드가 접근하여 값을 바꾸게된다면 당연히 스레드에 안전하지않다..
 
