@@ -32,6 +32,8 @@ openfeign + loadbalancer + eureka
       - 어떻게 그게 가능? 
         - > Spring Cloud creates a new ensemble as an ApplicationContext on demand for each named client using FeignClientsConfiguration. This contains (amongst other things) an feign.Decoder, a feign.Encoder, and a feign.Contract. It is possible to override the name of that ensemble by using the contextId attribute of the @FeignClient annotation.
           - Spring Cloud가 feing client에 따라 내부적으로 새로운 ApplicationContext를 생성하고 기본적으로 FeignClientsConfiguration를 사용하나, 그게 Configuration 에서 Bean으로 등록되어있는게 있다면(Spring Cloud가 새로 만든 ApplicationContext내부에서), 오버라이딩되는듯함
+            - 각 feignClient마다 자신의 ApplicationContext가 따로있기고 parent로 해당 어플리케이션의 applicationContext를 가지고있어서 해당 빈들도 주입할 수 있다
+            - 즉, feignClient configuration 상호간에는 영향이 없다.. 
       - `feign.Client` customizing 하기 
         - 공식문서에 보면, ApacheHttpClient를 사용할때 `CloseableHttpClient` 빈을 주입하여 커스텀하라고 되어있고, 여기서 셋팅한 빈을 주입하면 정상적으로 커스텀된다
         - 하지만, 이 ApacheHttpClient를 특정 feing client 에는 다른 셋팅을 하고싶을때 위의 FooConfiguration에서 `CloseableHttpClient` 빈을 다르게 주입한다해도 HttpClient는 기존 만들어진(전역적으로 셋팅된)것을 재사용하게된다

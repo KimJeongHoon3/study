@@ -380,3 +380,5 @@ kafka 스터디
     - kafka consumer vs kafka streams
     - vert.x? 다른 웹소켓?
     - https://junuuu.tistory.com/729
+    - 웹소켓 말고 SSE(Server-Sent Events)도 있음
+      - https://hamait.tistory.com/792

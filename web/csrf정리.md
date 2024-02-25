@@ -15,3 +15,7 @@ csrf
   - https://www.baeldung.com/spring-security-csrf
     - If our stateless API uses token-based authentication, such as JWT, we don't need CSRF protection, and we must disable it as we saw earlier.
     - However, if our stateless API uses a session cookie authentication, we need to enable CSRF protection as we'll see next.
+- spring security는 csrf token을 사용해서 제어해줌
+  - csrf 토큰은 세션에 저장됨 (spring security 디폴트)
+  - 세션에 저장한것과 헤더에 저장된 토큰 값을 비교하여 토큰 검증함
+  (- 이 세션 값이 어차피 쿠키에서 가져오는거니깐.. 쿠키에서 csrf 토큰 값을 빼내서 헤더에 저장하고 보내면 되지않나..? 물론 헤더 key값도 알아야할것이고, 세션이 어떤 쿠키인지, session에서 어떤키로 가지고잇는지 등 모두 알아야하긴하겠지만..)
