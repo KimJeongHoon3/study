@@ -135,5 +135,22 @@
   - 그림이랑 정리 잘되어있는 사이트 : https://12bme.tistory.com/138
 
 
+---
 
+- mysql의 인덱스(innodb)는 b-tree인가? b+tree인가?
+  - 공식문서상에는 b-tree
+    - https://dev.mysql.com/doc/refman/8.0/en/innodb-physical-structure.html
+  - 추가로, 공식문서에서 클래식한 b-tree는 아니고 변형이라고 이야기함
+    - > The use of the term B-tree is intended as a reference to the general class of index design. B-tree structures used by MySQL storage engines may be regarded as variants due to sophistications not present in a classic B-tree design.
+      - https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_b_tree
+  - 보통은 b+tree 라고들 하는데, 변형된 b tree 구조가 b+tree 와 같기떄문이 아닐까 추측됨..
+  - b+tree와 b-tree의 차이점?
+    - b-tree는 리프노드에 모든 데이터가 있지않다. 즉, 인덱스 값을 찾을때 꼭 리프까지가지 않고 브랜치노드에서 찾고 끝날수도 있는것. 그에 따라 범위를 검색할때 노드를 다시 타고 올라가야하는 수고가 있을 수 있다. 그러나, b+tree는 리프노드에 모든 데이터들이 있다. 즉, 브랜치에 있는 값이 리프에도 동일하게 있다. 그리고 리프노드는 연결리스트로 연결되어있기때문에, 범위를 검색할때 리프노드에서 다시 올라가지않고 리프노드에서만 가져올 수 있다
+    - b+tree는 공식 논문에 나와있는 내용은 아님. b-tree에서 리프노드에 변형을 가한 정도라고 생각하면됨
+      - https://en.wikipedia.org/wiki/B%2B_tree
+    - 개인생각
+      - dba께서 mysql의 b+tree는 브랜치노드가 횡으로만 커질뿐 깊이가 깊어지진않는다라고 말씀하셨는데, 그게 맞을까 싶음. 왜냐하면, 어쨋든 리프노드의 페이지에 데이터가 차면 split이 일어나고 그에 따라 리프노드가 횡으로 늘어나게되면서 브랜치노드에도 데이터가 추가될 수 있는데, 그때에 지정된 페이지의 크기를 넘어서서 depth를 추가해야하는 상황이면 추가될것으로 보임.. 브랜치노드가 횡으로만 늘어나게되면 결국 루트노드에 지정된 페이지 크기가 넘어섰을떄 에러밖에 뱉어줄게 없을거같은데.. 그렇게 만들어놓지않았을거라 추정...
+    - b+tree
+      - ![b+tree 이미지](2024-02-29-08-53-23.png)
+    - [참고하면 좋은 사이트](https://ssocoit.tistory.com/217)
 

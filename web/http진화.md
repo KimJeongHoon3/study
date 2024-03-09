@@ -1,7 +1,33 @@
 http 버전별 특징
 
 - https://developer.mozilla.org/ko/docs/Web/HTTP/Basics_of_HTTP/Evolution_of_HTTP#http1.0_%E2%80%93_%ED%99%95%EC%9E%A5%EC%84%B1_%EB%A7%8C%EB%93%A4%EA%B8%B0
-
+  - HTTP 0.9
+    - GET 메서드만있음 (HTTP 헤더없음)
+    - 아주 단순한 HTML 파일전달
+  - HTTP 1.0
+    - 요청에 버전정보 포함
+    - 브라우저가 요청에 대한 성공/실패 값을 알수있게됨
+    - HTTP 헤더등장
+      - content-type 이 추가되어, HTML 파일들외에 다른 문서 전송가능해짐
+  - HTTP 1.1
+    - 표준프로토콜
+    - 연결 재사용 가능
+    - 청크된 응답지원
+    - content negotiation이 도입되어, 클라이언트와 서버로 하여금 교환하려는 가장 적합한 컨텐츠에 대한 합의 가능
+  - HTTP 2.0
+    - 병렬 요청을 수행
+    - 헤더를 압축합니다. 요청 집합 간에 유사한 경우가 많으므로, 전송된 데이터의 중복과 오버헤드가 제거
+    - 레거시 브라우저와 서버 버전이 갱신되면서 웹 개발자의 큰 노력 없이도 자연스럽게 사용량이 늘어남
+  - HTTP 3.0
+    - TCP가 아닌 UDP 사용
 
 - [http 1.1 vs http 2.0](https://www.cloudflare.com/ko-kr/learning/performance/http2-vs-http1.1/)
+  - http2.0
+    - 로드 프로세스 중에 콘텐츠의 우선순위를 지정
+      - 페이지 상단의 이미지와 같이 사용자에게 가장 중요한 콘텐츠가 먼저 로드되는 경우 사용자는 페이지가 더 빨리 로드되는 것으로 인식
+  - http2.0 vs http1.0
+    - 멀티플렉싱
+      - 단일TCP연결을 사용하여 여러개의 요청을 보내어 처리 가능
+      - 요청시 스트림 식별자를 사용해서 구분하기때문에 한 소켓에 여러 요청을 보냈을때 구분가능하다
+    - http 헤더 패킷에서 중복정보 제거 (헤더압축)
 - [애니메이션으로 쉽게 정리](https://freecontent.manning.com/animation-http-1-1-vs-http-2-vs-http-2-with-push/?source=post_page-----565a7b184c--------------------------------)
