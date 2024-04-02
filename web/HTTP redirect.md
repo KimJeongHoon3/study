@@ -60,3 +60,6 @@ HTTP redirect
   - https://ypereirareis.github.io/blog/2019/06/04/haproxy-301-redirect-without-cache/ 
 
 - 3xx 관련 설명 굿 : https://www.drlinkcheck.com/blog/http-redirects-301-302-303-307-308
+- 301로 영구리다이렉트 되었을 경우 해결방법
+  - https://stackoverflow.com/questions/9130422/how-long-do-browsers-cache-http-301s
+  - 참고로 301로 영구리다이렉트 했을때, 캐시관련 헤더를 어떻게 셋팅하느냐에 따라 영구 리다이렉트를 막을 수 있긴한데, 그렇게되면 301 쓰지말고 302써라..
