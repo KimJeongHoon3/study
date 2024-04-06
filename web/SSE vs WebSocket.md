@@ -40,6 +40,7 @@
       - ![](2024-04-02-23-13-43.png)
   - 그래서 무얼선택해야하나?
     - 클라이언트에 지속적인 업데이트 스트림을 푸시하기만 하면 된다면 SSE가 더 적합한 선택. 반면에 이러한 이벤트 중 하나에 어떤 식으로든 클라이언트가 반응해야 하는 경우에는 WebSocket이 더 유용
+    - WebSocket을 날것 그대로 사용하진 않을테니 STOMP를 사용하게되고 이에 따라 spring 사용시 관련해서 추상화한 내용들에 대해서도 잘 알아야함.. 러닝커브.. (추가로 spring websocket 사용시 websocket 지원안되는경우를 대비하여 SOCKJS 또한 사용) 
     - postman에서 SSE, websocket 모두지원가능하여 테스트가능
       - jmeter와 gatling 으로 성능테스트도 가능
 
@@ -48,7 +49,36 @@
     - [완전 자세하고 명확한 설명](https://softwaremill.com/sse-vs-websockets-comparing-real-time-communication-protocols/#sse-vs-websockets-comparing-real-time-communication-protocols)
 
 - STOMP (WebSocket subprotocol)
-  - 
+  - https://docs.spring.io/spring-framework/reference/web/websocket/stomp/overview.html
+    - Simple Text Oriented Messaging Protocol
+    - TCP와 WebSocket같은 신뢰할수있는 양방향 스트리밍 네트워크 프로토콜에서 사용됨
+    - text oriented이지만, payload에 text뿐아니라 binary도 가능
+    - HTTP 스타일의 프레임
+      - STOMP 프레임은 COMMAND, HEADER, BODY 섹션으로 구성되며, 이는 HTTP 프로토콜의 요청 및 응답 형식을 모델
+        - "Frame-based protocol"이란 데이터를 전송할 때 "프레임"이라는 단위로 구성하여 전송하는 통신 프로토콜을 말함. 여기서 "프레임"은 통신 데이터의 기본 단위로, 일반적으로 헤더, 본문(body), 그리고 종종 트레일러(footer)로 구성
+      ```
+        COMMAND
+        header1:value1
+        header2:value2
 
+        Body^@
+      ```
+        - `SEND` 나 `SUBSCRIBE` 명령어를 통해서 메세지를 전송하거나 구독가능. 이를 통해 간단한 pub-sub 메커니즘 사용가능
+    - 스프링 사용하면, HTTP기반 보안, 공통 validation 등 사용가능
+    - path 관례
+      - `/topic/..` implies publish-subscribe (one-to-many)
+      - `/queue/` implies point-to-point (one-to-one) message exchanges
 - SockJS
   - https://velog.io/@koseungbin/WebSocket
+  -  SockJS는 WebSocket이 사용 가능한 환경에서는 WebSocket을 사용하고, 그렇지 않은 경우에는 다른 기술(예: AJAX 롱 폴링, iframe을 이용한 스트리밍 등)로 대체하여 통신
+
+- websocket 사용시 tomcat의 스레드모델
+  - tomcat 8.5는 websocket으로 통신시 NIO 사용한다함..
+    - 즉, 수많은 연결 요청이 온다해서 톰켓의 가용스레드가 없어지는건 아님
+  - 데이터 수신받고 요청 처리할때 톰켓 스레드풀에서 처리되는건아닌가??
+    - http 요청을 처리하는 톰켓 스레드풀과는 별도임
+    - spring에서는 clientInboundChannel(데이터 수신할때), clientOutboundChannel(데이터 송신할때) 에서 thread pool을 활용하는데, ThreadPoolExecutor가 사용됨
+      - https://docs.spring.io/spring-framework/reference/web/websocket/stomp/configuration-performance.html
+
+
+- [websocket 관련해서 한글로 설명이 매우좋음 (스프링 문서 해석도 다 해놓은듯)](https://velog.io/@koseungbin/WebSocket)
