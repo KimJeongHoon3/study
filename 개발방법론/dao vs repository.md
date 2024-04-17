@@ -1,0 +1,23 @@
+dao vs repository
+
+- https://www.baeldung.com/java-dao-vs-repository
+  - DAO pattern
+    - DAO는 데이터 영속화작업을 추상화한것 (abstraction of data persistence)
+    - 주로 테이블 중심인, 내부의 스토리지에 더 가까이 있음
+    - 그러므로, 많은 경우 DAO는 database 테이블과 매칭이됨
+      - 그래서 흉한 쿼리를 숨기고, 보다 간단하게 스토리지에서 저장하거나 검색할 수 있음
+    - 외부 Api를 사용해서 데이터를 접근해야하는거면, DAO 구현체에 외부 api 호출하는 로직이 있음
+    - (DAO를 쓴다고해서.. 저장하는걸 안하는건 아니다.. 단순히 CQRS에서는 조회용에 DAO를 쓰기때문에 저장을 안하는듯함)
+  - Repostory Pattern
+    - repository는 저장, 검색, 검색행동을 캡슐화하는 매커니즘. 
+      - > repository is a mechanism for encapsulating storage, retrieval, and search behavior, which emulates a collection of objects.
+        - Eric Evans’ book Domain-Driven Design
+    - 도메인과 data mapping layer 사이의 중재역할. 
+      - > mediates between the domain and data mapping layers using a collection-like interface for accessing domain objects.
+        - Patterns of Enterprise Application Architecture
+    - repository는 DAO와 유사하게 쿼리를 숨기고 데이터를 처리하는데 사용되나, 비지니스 로직에 더 가까운 계층에 속함 (repostiry가 domain 패키지에 있는 이유인듯)
+    - 리포지토리는 DAO를 사용하여 데이터베이스에서 데이터를 가져와 도메인 객체를 채울 수 있음. 또는 도메인 객체에서 데이터를 준비하여 지속성을 위해 DAO를 사용하여 스토리지 시스템으로 보낼 수 있음.
+    - 도메인 객체를 준비하는 복잡성을 숨긴다
+    - Repository는 DAO를 사용할 수 있지만, DAO는 repository를 사용할 수 없다
+  - => DAO는 repository보다 더 하위 계층으로써 데이터에 액세스할 수 있는 방법이며, 리포지토리는 비즈니스 사용 사례를 구현하는 데 이상적인 방법 (DAO를 활용해 적절한 도메인을 만든다)
+  - => 빈약한 도메인이라면, repository는 단순히 DAO 이다..

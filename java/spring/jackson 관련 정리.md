@@ -86,6 +86,12 @@ jackson 관련 정리
       private boolean isAvailable;
     ```
 
+- jackson 기본생성자 없이 deserialize 하는 방법
+  - `ParameterNamesModule` 모듈 추가하면됨
+    - `objectMapper.registerModule(new ParameterNamesModule());` 
+  - 근데 주의사항은 단 하나의 파라미터만 받는 생성자에는 `@JsonCreator` 이거를 해당 생성자에 추가해야한다.
+    - 이렇게 만든것은 LEGACY를 보존하기위해서라함
+    - https://github.com/FasterXML/jackson-modules-java8/tree/2.14/parameter-names
 
 - 참고사이트
   - https://www.baeldung.com/jackson-exception
