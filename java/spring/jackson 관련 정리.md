@@ -89,6 +89,9 @@ jackson 관련 정리
 - jackson 기본생성자 없이 deserialize 하는 방법
   - `ParameterNamesModule` 모듈 추가하면됨
     - `objectMapper.registerModule(new ParameterNamesModule());` 
+    - java 컴파일러에 `-parameters` 옵션을 셋팅해야함
+      - 이 옵션은 생성자나 메서드의 파라미터가 컴파일시에 arg0, arg1 이런식으로 변경되지않고 코드상에서 네이밍한 그대로 보여준다
+      - 그래서 이를 활용하면 별도로 @JsonCreator를 명시한 생성자에 @JsonProperty("변수명")을 쓰지않아도됨..
   - 근데 주의사항은 단 하나의 파라미터만 받는 생성자에는 `@JsonCreator` 이거를 해당 생성자에 추가해야한다.
     - 이렇게 만든것은 LEGACY를 보존하기위해서라함
     - https://github.com/FasterXML/jackson-modules-java8/tree/2.14/parameter-names
