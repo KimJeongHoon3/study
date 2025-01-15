@@ -44,3 +44,27 @@
   - 참고사이트
     - [mybatis 공식문서 한글번역](https://mybatis.org/mybatis-3/ko/configuration.html#typeHandlers)
     - [mybatis 공식문서](https://mybatis.org/mybatis-3/configuration.html#typeHandlers)
+
+---
+
+- 위 내용을 찾게된 원인 정리
+```java
+    @MappedJdbcTypes({JdbcType.VARCHAR, JdbcType.CHAR})
+    public class BooleanYnTypeHandler extends BooleanTypeHandler {
+    	@Override
+    	public void setNonNullParameter(PreparedStatement ps, int i, Boolean parameter, JdbcType jdbcType)
+    			throws SQLException {
+    		ps.setString(i, getYnFromBoolean(parameter));
+    	}
+
+      private String getYnFromBoolean(Boolean parameter) {
+        return parameter ? "Y" : "N"; // 요기
+      }
+    }
+```
+- 위의 소스를 보면서, BooleanTypeHandler를 extends하고 있으니, handler를 등록하게되면, 0이나 1로 db에 데이터가 있을때 조회시 알아서 java 의 Boolean type으로 변경될것인데, 이제 자바의 Boolean 타입이 db에 저장될때 "Y"나 "N"으로 무조건 들어가게 되는게 아닌가?("// 요기" 부분으로 인해..) 하는 생각이 들기시작..
+  - 즉, DB에 해당 컬럼에 "Y", "N"이 추가되어 기존 0,1만 있던 컬럼에 Y,N 까지 추가되는것은 아닌가 하는 생각이 들었다..
+- 실제 운영 테이블에 Boolean을 0과 1로 저장하고있는 테이블을 찾았는데 insert를 수행하도록 요청을 보내봤더니 여전히 0과 1로 저장되어있었음
+- 확인해보니 db에 data를 저장할때는 BooleanTypeHandler가 사용되었고, data를 읽어서 자바 타입으로 변경시에는 Boolean**Yn**TypeHandler가 사용
+  - 참고로 BooleanTypeHandler 는 디폴트로 제공되어지는 TypeHandler이고, BooleanYnTypeHandler는 커스텀하게 만든것
+- 왜 다른 TypeHandler가 쓰인것일까??

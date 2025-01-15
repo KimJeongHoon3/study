@@ -121,6 +121,17 @@ jackson 관련 정리
 - jackson 공식문서
   - https://github.com/FasterXML/jackson-docs
 
-{
-  "name":"hi"
-}
+- jackson 어떤 필드가 직렬화되는지 설명
+  - https://www.baeldung.com/jackson-field-serializable-deserializable-or-not
+    - 기본적으로 public 인 필드는 직렬화가능
+    - getter 사용시에 private 필드 직렬화 가능 (getter가 있으면 역직렬화도 알아서 된다. 필드가 있을거라 가정하여..)
+    - setter는 역직렬화만 가능..(getter이름이 일반적이지 않은 경우..) 직렬화는 불가 
+    - 클래스의 소스코드를 수정할 수 없는경우(ex. getter를 추가하지못한다거나..) objectMapper의 셋팅을 수정하라
+      - private 상관없이 모든 필드에 대해서 직렬화가능하도록 셋팅
+        ```java
+          ObjectMapper mapper = new ObjectMapper();
+          mapper.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
+          mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
+        ```
+    - `@JsonProperty` 를 사용해서 직렬화/역직렬화시 필드의 이름(키) 변경가능
+    - `@JsonIgnore` 를 사용해서 직렬화시 해당 필드를 제외하도록 할 수 있음
