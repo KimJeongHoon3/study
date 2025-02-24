@@ -60,3 +60,10 @@ spring security
     - authenticationEntryPoint 는 클라이언트의 credential을 요청하는 HTTP 응답을 보낼때 사용한다. 로그인 페이지로 리다이렉트를 해주거나, WWW-Authenticate 헤더로 응답하는 등의 일을 담당
 - 참고사이트
   - https://godekdls.github.io/Spring%20Security/servletsecuritythebigpicture/
+
+
+
+
+---
+- 내가 이걸로 뭘 알고 싶은가?
+- 

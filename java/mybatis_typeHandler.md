@@ -68,3 +68,15 @@
 - 확인해보니 db에 data를 저장할때는 BooleanTypeHandler가 사용되었고, data를 읽어서 자바 타입으로 변경시에는 Boolean**Yn**TypeHandler가 사용
   - 참고로 BooleanTypeHandler 는 디폴트로 제공되어지는 TypeHandler이고, BooleanYnTypeHandler는 커스텀하게 만든것
 - 왜 다른 TypeHandler가 쓰인것일까??
+
+
+
+---
+
+
+- Spring4에서 Spring5로 마이그레이션 진행과정에서 MyBatis의 버전을 함께 올리게되었는데, TypeHandler 동작이 기존과 달리되어 수정한 부분들이 있었습니다. 그중 자바에서의 Boolean 타입의 값을 'Y'나 'N'으로 변경하여 저장하도록 하는 커스텀한 TypeHandler가 있었습니다(디폴트로 제공되어지는 BooleanTypeHandler를 확장하여 만들었습니다). 해당 코드를 보았을때, DB에 기존 0,1만 있던 컬럼에 Y,N 까지 추가되는것은 아닌가 하는 생각이 들게되었고, 빠르게 Boolean을 0과 1로 저장하는 테이블을 찾아서 데이터를 insert 해보았을때 문제가 없는 것을 확인할 수 있었습니다. 확인해보니 db에 data를 저장할때는 디플트로 제공되어지는 BooleanTypeHandler가 사용되었고 data를 읽어서 자바 타입으로 변경시에는 직접만든 커스텀한 TypeHandler가 사용되었습니다. 왜 다르게 TypeHandler가 사용되어지는지를 확인하기 위해 공식문서와 코드를 자세히 살펴보았습니다.
+공식문서에서는 PreparedStatement에 파라미터를 바인딩하고 ResultSet에서 값을 가져올때마다 TypeHandler는 적절한 자바 타입의 값을 가져오기 위해 사용한다는 내용을 찾아볼 수 있었습니다. 또한 TypeHandler를 선택하는것은 자바의 타입과 db의 타입을 고려하여 선택되는 부분도 알려주고 있었습니다. 코드상에서도 TypeHandler의 후보군을 모아놓고 db의 타입과 자바의 타입을 맵핑해서 TypeHandler를 최종적으로 선택하는 부분을 찾아 볼 수 있었습니다. 결과적으로 PreparedStatement에 파라미터를 바인딩하고 ResultSet에서 값을 가져올때의 가장 큰 차이는 db의 타입을 아느냐 알지못하느냐인데, PreparedStatement에는 기본적으로 db 타입을 모르기때문에 null로 셋팅이되어 다르게 typeHandler를 가져오게되었던 것이었습니다(db의 type이 null이면 디폴트 typeHandler를 선택). 쿼리문에 명시적으로 db의 타입을 지정해주어야만 원하는 TypeHandler를 가져올 수 있었습니다.
+
+   ~~즉, TypeHandler는 두가지 측면에서 사용되어지는데 PreparedStatement에 파라미터를 설정할때(바인딩할때), 그리고 ResultSet에서 값을 가져올때 (자바 타입으로 변환할때) 사용된다는것을 볼 수 있었습니다.~~
+
+첫번째는 PreparedStatement에서 사용되는 쿼리문의 파라미터 바인딩시 java 타입을 db의 데이터에 맞도록 변경해주어야하는데, 이때 TypeHandler가 필요한 부분입니다. 즉, 쿼리문 실행을 위해 java 타입(ex. String)을 적절한 jdbc 타입(ex. VARCHAR)으로 변경하는데 TypeHandler를 사용하게됩니다. 그런데, 여기서 중요한점은 파라미터 바인딩하는 시점에 java 타입은 알 수 있으나, jdbc 타입을 알 수 없다는 것이었습니다(각 컬럼의 타입을 알기위해서 데이터베이스에 메타데이터를 요청하진 않는다). 그래서 변경하고자하는 자바의 타입과 jdbc 타입이 null인 대상이 선택되게 됩니다

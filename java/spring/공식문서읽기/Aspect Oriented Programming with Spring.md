@@ -161,8 +161,103 @@ Aspect Oriented Programming with Spring
     ```
 
 
+- [Using the ProxyFactoryBean to Create AOP Proxies](https://docs.spring.io/spring-framework/reference/core/aop-api/pfb.html)
+  - AOP의 proxy를 만들때는 `ProxyFactoryBean` 클래스의 `getObject()` 메서드를 를 사용한다. (클라이언트는 해당 bean에 접근할때 `ProxyFactoryBean` 자체를 받는게 아닌, `getObject()` 메서드를 통해서 만들어진 객체를 전달)
+    - `ProxyFactoryBean` 의 이점은 pointcut과 advice들이 IoC에 의해 관리될 수 있는 것이다.
+    - 왜냐하면 DI를 통해 여러 다른 빈들을 모두 주입받을 수 있기때문
+      - > For example, an advice may itself reference application objects (besides the target, which should be available in any AOP framework), benefiting from all the pluggability provided by Dependency Injection.)
+  - `ProxyFactoryBean`는 어떤 interceptor, target, target의 인터페이스 등을 셋팅하게된다
+  - 대상 클래스(target object)가 interface를 사용한다면 jdk dynamic proxy를 사용하지만, 그렇지않는다면 CGLIB를 사용한다
+    - CGLIB는 대상클래스의 서브클래스를 만드는 방식으로 동작한다. (서브클래스가 대상 클래스의 호출을 위임해준다 - 데코레이터 패턴활용)
+    - CGLIB 사용시 주의사항
+      - CGLIB proxying should generally be transparent to users. However, there are some issues to consider:
+        - final classes cannot be proxied, because they cannot be extended.
+        - final methods cannot be advised, because they cannot be overridden.
+        - private methods cannot be advised, because they cannot be overridden.
+        - Methods that are not visible, typically package private methods in a parent class from a different package, cannot be advised because they are effectively private.
+          - => package-private도 가능은한데, 사용하지않는걸 권함 (package-private이 원래 외부에 노출시키려고 한게 아니니깐)
+
 -----
 
 - 기타 확인내용
   - spring mvc에서 Controller 단에서 AOP를 적용했을때, Aspect 클래스에서 @Around 사용시 proceed 호출할때 예외 밖으로던지면, handlerException으로 잡음
     - spring aop 사용하여 컨트롤러 객체를 빈 후처리기에서 프록시객체로 만들었으므로, 컨트롤러에 적용되는 mvc 기술들은 영향받지않을것같다..! (ex. ArgumentResolver, PathVariable, HandlerException 등등)
+- AOP가 사용되는 `@Transactional` 선언된 클래스는 어떻게 Proxy bean이 되는걸까?
+  - `AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsAfterInitialization` 실행시 여러 BeanPostProcessor 들이 있는데, 그 중 `AnnotationAwareAspectJAutoProxyCreator` 가 사용
+    - ![디버그 캡처](2025-02-24-11-28-54.png)
+  - `AbstractAutoProxyCreator.wrapIfNecessary` 에서 proxy 생성 
+    - ![](2025-02-24-11-37-17.png)
+    - 내부적으로 [ProxyFactory](https://docs.spring.io/spring-framework/reference/core/aop-api/prog.html)를 사용
+      - `ProxyFactoryBean`과는 엄밀하게는 다르긴하나, `ProxyCreatorSupport`를 둘다 상속한다
+    ```java
+      // AbstractAutoProxyCreator 내부
+      private Object buildProxy(Class<?> beanClass, @Nullable String beanName,
+			@Nullable Object[] specificInterceptors, TargetSource targetSource, boolean classOnly) { // specificInterceptors에서 TransactionInterceptor가 들어있음 (TransactionInterceptor는 Advisor로 사용될 놈)
+
+        if (this.beanFactory instanceof ConfigurableListableBeanFactory clbf) {
+          AutoProxyUtils.exposeTargetClass(clbf, beanName, beanClass);
+        }
+
+        ProxyFactory proxyFactory = new ProxyFactory();
+        proxyFactory.copyFrom(this);
+
+        // ...
+
+        Advisor[] advisors = buildAdvisors(beanName, specificInterceptors); // Advisor로 wrapping
+        proxyFactory.addAdvisors(advisors);
+        proxyFactory.setTargetSource(targetSource);
+        customizeProxyFactory(proxyFactory);
+
+        proxyFactory.setFrozen(this.freezeProxy);
+        if (advisorsPreFiltered()) {
+          proxyFactory.setPreFiltered(true);
+        }
+
+        // Use original ClassLoader if bean class not locally loaded in overriding class loader
+        ClassLoader classLoader = getProxyClassLoader();
+        if (classLoader instanceof SmartClassLoader smartClassLoader && classLoader != beanClass.getClassLoader()) {
+          classLoader = smartClassLoader.getOriginalClassLoader();
+        }
+        return (classOnly ? proxyFactory.getProxyClass(classLoader) : proxyFactory.getProxy(classLoader)); // proxyFactory 내부에서 CGLIB나 JDK Dynamic Proxy 사용을 결정해서 Proxy를 생성하여 리턴
+      }
+    ```
+
+
+- AOP를 직접 만들어서 사용하게되도 `@Transactional`과 기본적인 동작과정은 당연 비슷.. CGLIB를 사용하면 `DynamicAdvisedInterceptor` 가 수행됨
+  - CGLIB로 만든 프록시 클래스는 `CGLIB$CALLBACK_0`에 있는 `DynamicAdvisedInterceptor`가 수행되고, `DynamicAdvisedInterceptor` 이 안에 커스텀하게 만든 advisors들이 있음
+    - ![](2025-02-24-15-01-40.png)
+  - 하지만, 커스텀하게 만든부분에 Pointcut을 정의하였다면, matcher를 통해서 pointcut을 확인하고 메서드를 호출함. 
+    ```java
+      @Override
+      @Nullable
+      public Object proceed() throws Throwable {
+        // We start with an index of -1 and increment early.
+        if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) { // 여기서 interceptor를 하나씩 가져옴
+          return invokeJoinpoint();
+        }
+
+        Object interceptorOrInterceptionAdvice =
+            this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
+        if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) { // 커스텀하게 만든곳(pointcut 정의 ex.annotation 지정)은 여기가 실행
+          // Evaluate dynamic method matcher here: static part will already have
+          // been evaluated and found to match.
+          InterceptorAndDynamicMethodMatcher dm =
+              (InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
+          Class<?> targetClass = (this.targetClass != null ? this.targetClass : this.method.getDeclaringClass());
+          if (dm.methodMatcher.matches(this.method, targetClass, this.arguments)) {
+            return dm.interceptor.invoke(this);
+          }
+          else {                                      // 여기는 언제 타게될까..............????????????
+            // Dynamic matching failed.
+            // Skip this interceptor and invoke the next in the chain.
+            return proceed();
+          }
+        }
+        else {                  // @Transactional로 선언한 곳은 여기가 바로 실행됨
+          // It's an interceptor, so we just invoke it: The pointcut will have
+          // been evaluated statically before this object was constructed.
+          return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this); 
+        }
+      }
+    ```
+    
