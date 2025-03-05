@@ -15,6 +15,8 @@ non-blocking은 호출된 함수가 바로 리턴 (제어권을 바로 돌려준
       - 메서드 호출한쪽에서 Future.isDone 으로 계속 결과 확인하는하여 결과 가져오는것
     - async + blocking
       - asnyc + non-blocking에서 실수로 blocking 호출한경우
+        - **=> 비동기 작업의 결과로 받은 Future를 get 메서드를 호출하여 blocking하는 경우.. 근데 이것도 결국 결과를 내가 신경쓰는거니깐 동기라고 봐야하지않을까..?**
+        - => CompletableFuture를 통해 비동기로 작업을 수행하는데, 작업내용에 동기식의 API(ex restTemplate)콜이 있는 경우
     - async + non-blocking
       - 메서드 요청하고 바로 리턴받는데, 결과는 별도스레드에서 메서드 호출시 넘겨준 콜백 실행될때..
 
