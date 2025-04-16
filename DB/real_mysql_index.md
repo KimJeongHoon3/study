@@ -154,3 +154,8 @@
       - ![b+tree 이미지](2024-02-29-08-53-23.png)
     - [참고하면 좋은 사이트](https://ssocoit.tistory.com/217)
 
+---
+
+- b+index 멀티컬럼 구조 (include columns는 빼고 이해하면됨)
+  - ![b+index 멀티컬럼 구조](2025-04-11-09-07-58.png)
+  - [출처](https://www.malinga.me/index-physical-structure-example-multi-column-non-clustered-index-with-includes/)
